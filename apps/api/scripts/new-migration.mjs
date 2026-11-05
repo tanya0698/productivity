@@ -41,7 +41,8 @@ let sql = execFileSync(
     "--to-schema-datamodel", join(api, "prisma", "schema.prisma"),
     "--script",
   ],
-  { encoding: "utf8", env: process.env },
+  // Only stdout becomes the SQL, and the update notice is off: Prisma's notice box once ended up in a migration.
+  { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], env: { ...process.env, PRISMA_HIDE_UPDATE_MESSAGE: "1" } },
 );
 
 /*

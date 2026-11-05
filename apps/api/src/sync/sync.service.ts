@@ -29,7 +29,8 @@ export class SyncService {
       const result = await this.prisma.$transaction(async (tx) => {
         // Per-user lock so change_seq values commit in the order they were
         // assigned; otherwise a puller could skip a row (plan §6.2).
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+        // Cast because the function returns void, which $queryRaw can't deserialize.
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))::text`;
 
         const already = await tx.syncChange.findUnique({
           where: { userId_operationId: { userId, operationId: op.operationId } },
