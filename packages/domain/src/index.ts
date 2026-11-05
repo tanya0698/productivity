@@ -6,3 +6,4 @@
  * the browser and in the worker, and is trivially unit-tested.
  */
 export * from "./tasks.ts";
+export * from "./notes.ts";

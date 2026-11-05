@@ -9,9 +9,13 @@ import {
   SunOutlined,
   DesktopOutlined,
   HomeOutlined,
+  SaveOutlined,
+  SyncOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
+import type { SyncStatus } from "@productivity/sync-engine";
+import { useSyncStatus } from "@productivity/sync-engine/react";
 import { getModules, findModuleByPath } from "@/shared/modules/registry";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
 
 const SIDER_WIDTH = 232;
@@ -125,9 +129,30 @@ function HeaderTitle() {
   return <Typography.Text type="secondary">{date}</Typography.Text>;
 }
 
-/** Placeholder until the sync engine reports real status (plan §6.6). */
+/** The sync states from plan §6.6, in words as well as an icon. */
+function syncLabel(status: SyncStatus): { icon: ReactNode; text: string } {
+  switch (status.state) {
+    case "syncing":
+      return { icon: <SyncOutlined spin />, text: "Syncing" };
+    case "pending":
+      return { icon: <SaveOutlined />, text: "Saved on this device" };
+    case "offline":
+      return {
+        icon: <DisconnectOutlined />,
+        text: status.pending ? `Offline — ${status.pending} queued` : "Offline",
+      };
+    case "needs_attention":
+      return {
+        icon: <WarningOutlined />,
+        text: status.reason === "conflict" ? "Needs attention — conflict" : "Needs attention — sync stopped",
+      };
+    case "idle":
+      return { icon: <CloudOutlined />, text: status.lastSyncedAt ? "Synced" : "Saved on this device" };
+  }
+}
+
 function SyncPill() {
-  const online = useOnlineStatus();
+  const { icon, text } = syncLabel(useSyncStatus());
   return (
     <Flex
       align="center"
@@ -136,9 +161,9 @@ function SyncPill() {
       style={{ borderRadius: 999, padding: "4px 12px", fontSize: 12 }}
       role="status"
     >
-      {online ? <CloudOutlined /> : <DisconnectOutlined />}
+      {icon}
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {online ? "Online" : "Offline — changes stay on this device"}
+        {text}
       </Typography.Text>
     </Flex>
   );

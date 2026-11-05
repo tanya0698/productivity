@@ -10,5 +10,5 @@ export type { ModuleManifest, ModuleWidget } from "./modules/types";
 export { getModules, getLiveModules, getModule, findModuleByPath } from "./modules/registry";
 export { ModulePage } from "./page/ModulePage";
 export { apiRequest, moduleApi, ApiRequestError } from "./api/client";
-export { useOnlineStatus } from "@/hooks/useOnlineStatus";
+export { useLocalRecords, useSyncRuntime, useSyncStatus } from "@productivity/sync-engine/react";
 export { useTheme } from "@/contexts/ThemeProvider";

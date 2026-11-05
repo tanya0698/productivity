@@ -1,7 +1,15 @@
+import "fake-indexeddb/auto";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 
 afterEach(() => cleanup());
+
+// jsdom has no ResizeObserver; antd's auto-sizing text box needs it.
+window.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 // jsdom has no matchMedia; antd's grid and our colour-mode hook need it.
 if (!window.matchMedia) {

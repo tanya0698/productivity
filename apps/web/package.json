@@ -15,11 +15,13 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@productivity/contracts": "*",
+    "@productivity/database-local": "*",
     "@productivity/domain": "*",
+    "@productivity/sync-engine": "*",
     "@productivity/theme": "*",
     "antd": "^6.1.1",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-router-dom": "^7.10.1"
   },
   "devDependencies": {
@@ -33,6 +35,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "fake-indexeddb": "^6.2.7",
     "globals": "^16.5.0",
     "jsdom": "^30.0.1",
     "typescript": "~5.9.3",

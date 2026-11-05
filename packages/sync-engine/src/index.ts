@@ -1,14 +1,23 @@
 /**
  * The sync engine (plan §6). Same code on web and Android; only the
- * `LocalDatabase` adapter and the `SyncTransport` differ.
+ * `LocalDatabase` implementation differs.
  *
  *   write()  — record + outbox entry in one local transaction (§6.4 step 1)
  *   push()   — send pending operations, apply per-operation results (steps 2–4)
  *   pull()   — fetch changes after the cursor, apply, advance cursor (step 5)
- *   sync()   — push then pull, with backoff on transient failure (step 6)
+ *   sync()   — push then pull
+ *
+ * Two rules keep offline edits from fighting each other:
+ *
+ *  - Only the oldest pending operation per record is sent in a round. When it
+ *    is accepted, the record's later operations are rebased onto the version
+ *    the server returned. Otherwise two edits made offline would both claim the
+ *    same base version and the second would conflict with the first.
+ *  - A pull never overwrites a record that still has pending operations: the
+ *    local copy is newer, and the push decides whether it really conflicts.
  *
  * Conflict *resolution* UI is not here: the engine records conflicts and the
- * app shows them (§6.5). Per-entity merge rules are a Phase 2 addition.
+ * app shows them (§6.5).
  */
 import type {
   EntityType,
@@ -19,13 +28,19 @@ import type {
 } from "@productivity/contracts";
 import type { LocalDatabase, LocalRecord } from "@productivity/database-local";
 
+export { createHttpTransport } from "./http.ts";
+export { SyncRuntime } from "./runtime.ts";
+export type { SyncRuntimeOptions } from "./runtime.ts";
+
 export interface SyncTransport {
   push(body: PushRequest): Promise<PushResponse>;
   pull(cursor: number): Promise<PullResponse>;
 }
 
+/** The states the app shows (plan §6.6). */
 export type SyncStatus =
   | { state: "idle"; lastSyncedAt: string | null }
+  | { state: "pending"; pending: number }
   | { state: "syncing" }
   | { state: "offline"; pending: number }
   | { state: "needs_attention"; reason: "conflict" | "auth" | "error"; detail?: string };
@@ -54,20 +69,31 @@ export class SyncEngine {
     this.o = { now: () => new Date(), batchSize: 100, ...options };
   }
 
-  /** Local write: the UI calls this; it never waits on the network. */
+  /**
+   * Local write: the UI calls this; it never waits on the network. The version
+   * comes from the stored record, not the caller's copy, because a sync may have
+   * moved it on since the screen read it.
+   */
   async write(entityType: EntityType, record: LocalRecord, op: "upsert" | "delete" = "upsert") {
-    const operation: SyncOperation = {
-      operationId: this.o.newId(),
-      entityType,
-      entityId: record.id,
-      op,
-      baseVersion: record.version > 0 ? record.version : null,
-      payload: op === "delete" ? null : record,
-      deviceId: this.o.deviceId,
-      clientTimestamp: this.o.now().toISOString(),
-    };
-    const stored = op === "delete" ? { ...record, deletedAt: operation.clientTimestamp } : record;
+    const clientTimestamp = this.o.now().toISOString();
     await this.o.db.transaction(async (tx) => {
+      const current = await tx.get(entityType, record.id);
+      const version = current?.version ?? record.version;
+      const stored: LocalRecord = {
+        ...record,
+        version,
+        deletedAt: op === "delete" ? clientTimestamp : record.deletedAt,
+      };
+      const operation: SyncOperation = {
+        operationId: this.o.newId(),
+        entityType,
+        entityId: record.id,
+        op,
+        baseVersion: version > 0 ? version : null,
+        payload: op === "delete" ? null : stored,
+        deviceId: this.o.deviceId,
+        clientTimestamp,
+      };
       await tx.put(entityType, stored, "pending");
       await tx.enqueue(operation);
     });
@@ -86,10 +112,13 @@ export class SyncEngine {
       await this.pull();
       this.lastSyncedAt = this.o.now().toISOString();
       const conflicts = await this.o.db.conflicts();
+      const pending = (await this.o.db.pendingOperations(Number.MAX_SAFE_INTEGER)).length;
       this.o.onStatus?.(
         conflicts.length
           ? { state: "needs_attention", reason: "conflict" }
-          : { state: "idle", lastSyncedAt: this.lastSyncedAt },
+          : pending
+            ? { state: "pending", pending }
+            : { state: "idle", lastSyncedAt: this.lastSyncedAt },
       );
     } catch (err) {
       if (err instanceof AuthSyncError) {
@@ -106,46 +135,59 @@ export class SyncEngine {
 
   private async push() {
     for (;;) {
-      const batch = await this.o.db.pendingOperations(this.o.batchSize);
-      if (!batch.length) return;
+      const queued = await this.o.db.pendingOperations(this.o.batchSize);
+      if (!queued.length) return;
 
-      const { results } = await this.o.transport.push({ operations: batch.map((b) => b.operation) });
-      const byId = new Map(batch.map((b) => [b.operation.operationId, b.operation]));
+      // Oldest operation per record only; the rest wait to be rebased.
+      const seen = new Set<string>();
+      const batch: SyncOperation[] = [];
+      for (const { operation } of queued) {
+        if (seen.has(operation.entityId)) continue;
+        seen.add(operation.entityId);
+        batch.push(operation);
+      }
 
-      await this.o.db.transaction(async (tx) => {
-        const done: string[] = [];
+      const { results } = await this.o.transport.push({ operations: batch });
+      const byId = new Map(batch.map((op) => [op.operationId, op]));
+
+      const settled = await this.o.db.transaction(async (tx) => {
+        let count = 0;
         for (const r of results) {
           const op = byId.get(r.operationId);
           if (!op) continue;
+          count++;
+          const local = await tx.get(op.entityType, op.entityId);
+          const later = (await tx.pendingFor(op.entityId)).filter((o) => o.operationId !== op.operationId);
+
           if (r.status === "accepted") {
-            const local = await tx.get(op.entityType, op.entityId);
-            if (local) await tx.put(op.entityType, { ...local, version: r.version }, "synced");
-            done.push(r.operationId);
-          } else if (r.status === "conflict") {
-            const local = await tx.get(op.entityType, op.entityId);
+            for (const next of later) await tx.replaceOperation({ ...next, baseVersion: r.version });
             if (local) {
-              await tx.recordConflict({
-                entityType: op.entityType,
-                entityId: op.entityId,
-                local,
-                server: r.serverRecord as LocalRecord,
-                detectedAt: this.o.now().toISOString(),
-              });
-              await tx.put(op.entityType, local, "conflict");
+              await tx.put(op.entityType, { ...local, version: r.version }, later.length ? "pending" : "synced");
             }
-            done.push(r.operationId);
-          } else {
-            // Rejected: the server will never accept it as-is. Drop it from the
-            // outbox but keep the record, flagged, so nothing is lost silently.
-            const local = await tx.get(op.entityType, op.entityId);
-            if (local) await tx.put(op.entityType, local, "conflict");
-            done.push(r.operationId);
+            await tx.dequeue([op.operationId]);
+            continue;
           }
+
+          // Conflict or rejected. The later edits build on this one and can't
+          // succeed either; the local record keeps their content, flagged, and
+          // the conflict entry holds both sides, so nothing is lost silently.
+          await tx.dequeue([op.operationId, ...later.map((o) => o.operationId)]);
+          if (!local) continue;
+          if (r.status === "conflict") {
+            await tx.recordConflict({
+              entityType: op.entityType,
+              entityId: op.entityId,
+              local,
+              server: r.serverRecord as LocalRecord,
+              detectedAt: this.o.now().toISOString(),
+            });
+          }
+          await tx.put(op.entityType, local, "conflict");
         }
-        await tx.dequeue(done);
+        return count;
       });
 
-      if (batch.length < this.o.batchSize) return;
+      if (settled === 0) throw new Error("The server returned no result for any pushed operation.");
     }
   }
 
@@ -155,11 +197,17 @@ export class SyncEngine {
       const res = await this.o.transport.pull(cursor);
       await this.o.db.transaction(async (tx) => {
         for (const c of res.changes) {
+          if ((await tx.pendingFor(c.entityId)).length) continue;
           const local = await tx.get(c.entityType, c.entityId);
-          // Don't overwrite an unsynced local edit; push will surface the conflict.
-          if (local && local.version < c.version && (await this.hasPending(c.entityId))) continue;
           if (c.op === "delete") {
-            if (local) await tx.put(c.entityType, { ...local, deletedAt: local.deletedAt ?? this.o.now().toISOString(), version: c.version }, "synced");
+            const record = (c.record as LocalRecord | null) ?? local;
+            if (record) {
+              await tx.put(
+                c.entityType,
+                { ...record, version: c.version, deletedAt: record.deletedAt ?? this.o.now().toISOString() },
+                "synced",
+              );
+            }
           } else if (c.record) {
             await tx.put(c.entityType, c.record as LocalRecord, "synced");
           }
@@ -170,11 +218,6 @@ export class SyncEngine {
       cursor = res.cursor;
       if (!res.hasMore) return;
     }
-  }
-
-  private async hasPending(entityId: string) {
-    const pending = await this.o.db.pendingOperations(Number.MAX_SAFE_INTEGER);
-    return pending.some((p) => p.operation.entityId === entityId);
   }
 }
 

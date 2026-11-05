@@ -19,6 +19,7 @@
     },
     "plugins": [
       "expo-secure-store",
+      "expo-sqlite",
       "expo-dev-client",
       "expo-font",
       [

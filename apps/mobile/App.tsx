@@ -11,8 +11,20 @@ import {
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from "@expo-google-fonts/manrope";
+import { SyncProvider } from "@productivity/sync-engine/react";
+import Text from "./src/components/Text";
 import MainTabs from "./src/navigation/MainTabs";
+import { openRuntime } from "./src/shared/data/openRuntime";
+import { SyncTriggers } from "./src/shared/data/SyncTriggers";
 import { ThemeProvider, usePalette } from "./src/theme";
+
+function Loading() {
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
+}
 
 function Root() {
   const p = usePalette();
@@ -44,11 +56,21 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         {fontsLoaded ? (
-          <Root />
+          <SyncProvider
+            open={openRuntime}
+            loading={<Loading />}
+            failed={() => (
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+                <Text weight="semiBold">Your notes couldn't be opened</Text>
+                <Text tone="secondary">The app's storage on this phone failed to open. Restart the app to try again.</Text>
+              </View>
+            )}
+          >
+            <SyncTriggers />
+            <Root />
+          </SyncProvider>
         ) : (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <ActivityIndicator size="large" />
-          </View>
+          <Loading />
         )}
       </ThemeProvider>
     </SafeAreaProvider>

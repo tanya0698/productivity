@@ -641,8 +641,8 @@ apps/web/
 │   │   ├── modules/               #   ModuleManifest + defineModule, registry lookups and checks
 │   │   ├── api/                   #   fetch wrapper for server-only calls (search, files, AI)
 │   │   ├── page/                  #   ModulePage frame
-│   │   ├── data/                  #   (Phase 1) useLocalQuery / useLocalMutation over the local DB + outbox
-│   │   ├── sync/                  #   (Phase 1) sync status, diagnostics; wraps packages/sync-engine
+│   │   ├── data/                  #   opens the local DB and sync runtime; sync triggers. Hooks come from @productivity/sync-engine/react
+│   │   ├── sync/                  #   (Phase 4) diagnostics screen
 │   │   ├── capture/               #   (Phase 2) global quick capture; modules contribute capture types
 │   │   └── search/                #   (Phase 2) universal search; modules contribute providers
 │   ├── features/
@@ -684,7 +684,10 @@ The manifest (`src/shared/modules/types.ts`) holds `key`, `name`, `description`,
 
 ### 11.4 What the scaffold contains (2026-10-22)
 
-- **Web:** the shell, Today page, `tasks` and `notes` modules with empty states, the theme, and tests for the registry and the app.
+- **Web:** the shell, Today page, a working `notes` module (plain text for now), `tasks` with an empty state, the theme, and tests.
+- **Android:** the shell, a working Notes screen on SQLite, and sync status in the header.
+- **Local storage and sync (Phase 0 goal, 2026-11-05):** IndexedDB and SQLite implementations of `LocalDatabase` pass one shared test suite. `npm run sync:check` runs the offline-to-online scenario between both storage engines through the real API and Supabase. Still to prove on real hardware: a browser, and `expo-sqlite` on a phone.
+- **Not built yet:** the conflict screen (conflicts are recorded with both sides kept, but can't be resolved in the app), and registering devices.
 - **Database:** Supabase, set up 2026-10-22 (ADR 0002). Migrations are generated with `prisma:new-migration` (a diff, no shadow database) and applied with `npm run db:migrate`.
 - **Not written yet:** deploying the API and worker (the database is Supabase).
 

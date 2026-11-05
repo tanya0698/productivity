@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GlassBackground from "./GlassBackground";
 import GlassCard from "./GlassCard";
+import SyncPill from "./SyncPill";
 import Text from "./Text";
 import { usePalette, radii } from "../theme";
 
@@ -27,7 +28,10 @@ export default function ScreenFrame({
     <View style={{ flex: 1, backgroundColor: p.page }}>
       <GlassBackground style={{ paddingTop: insets.top + 8, paddingBottom: 26, paddingHorizontal: 16 }}>
         {eyebrow ? <Text tone="secondary" style={styles.eyebrow}>{eyebrow}</Text> : null}
-        <Text weight="extraBold" style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <Text weight="extraBold" style={styles.title}>{title}</Text>
+          <SyncPill />
+        </View>
         {capturePlaceholder ? (
           <GlassCard strong style={styles.capture}>
             <Text tone="secondary">{capturePlaceholder}</Text>
@@ -47,7 +51,8 @@ export default function ScreenFrame({
 
 const styles = StyleSheet.create({
   eyebrow: { fontSize: 12 },
-  title: { fontSize: 26, letterSpacing: -0.3, marginBottom: 12 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 },
+  title: { fontSize: 26, letterSpacing: -0.3, flexShrink: 1 },
   capture: { paddingHorizontal: 12, paddingVertical: 11 },
   sheet: { flex: 1, marginTop: -14, borderTopLeftRadius: radii.lg + 2, borderTopRightRadius: radii.lg + 2 },
 });

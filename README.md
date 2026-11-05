@@ -55,6 +55,7 @@ There is no sign-in yet (ADR 0003, Supabase Auth is the leading option). In deve
 
 ```bash
 npm run verify     # typecheck, lint, test across every workspace
+npm run sync:check # with the API running: two devices sync offline edits through the real database
 ```
 
 ## Adding a module
