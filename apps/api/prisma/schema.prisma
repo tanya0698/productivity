@@ -1,0 +1,151 @@
+// Phase 1–2 tables from plan §7. Model fields are camelCase to match
+// @productivity/contracts; columns are snake_case via @map.
+// Add tables in deliberate migrations as each phase starts (§7.1).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Hosted on Supabase (ADR 0002). Both URLs point at the session pooler and end
+// with `?schema=app`: the tables live in their own `app` schema, which Supabase's
+// auto-generated Data API does not expose, so the NestJS API stays the only way
+// in. See .env.example.
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @db.Uuid
+  email        String   @unique
+  passwordHash String?  @map("password_hash")
+  displayName  String   @map("display_name")
+  timezone     String   @default("UTC")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  devices  Device[]
+  changes  SyncChange[]
+  projects Project[]
+  tasks    Task[]
+  notes    Note[]
+
+  @@map("users")
+}
+
+model Device {
+  id         String    @id @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String
+  platform   String // web | android | later windows | ios
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  changes SyncChange[]
+
+  @@map("devices")
+}
+
+/// One row per accepted change, written in the same transaction as the change.
+/// changeSeq is the pull cursor (plan §6.2). Writes take a per-user advisory
+/// lock so sequence values commit in order.
+model SyncChange {
+  changeSeq      BigInt   @id @default(autoincrement()) @map("change_seq")
+  userId         String   @map("user_id") @db.Uuid
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id") @db.Uuid
+  operationId    String   @map("operation_id") @db.Uuid
+  op             String // upsert | delete
+  version        BigInt
+  originDeviceId String?  @map("origin_device_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [originDeviceId], references: [id])
+
+  @@unique([userId, operationId])
+  @@index([userId, changeSeq])
+  @@map("sync_changes")
+}
+
+model Project {
+  id          String    @id @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  title       String
+  description String?
+  status      String    @default("active")
+  startDate   DateTime? @map("start_date") @db.Date
+  dueDate     DateTime? @map("due_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  version     BigInt    @default(1)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+  notes Note[]
+
+  @@index([userId, updatedAt])
+  @@map("projects")
+}
+
+model Task {
+  id                 String    @id @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  projectId          String?   @map("project_id") @db.Uuid
+  parentTaskId       String?   @map("parent_task_id") @db.Uuid
+  title              String
+  description        String?
+  status             String    @default("inbox")
+  priority           Int       @default(2) @db.SmallInt
+  // Due "on a day" vs due "at a time" are different things.
+  dueDate            DateTime? @map("due_date") @db.Date
+  dueAt              DateTime? @map("due_at") @db.Timestamptz
+  startDate          DateTime? @map("start_date") @db.Date
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  recurrenceRule     String?   @map("recurrence_rule")
+  recurrenceTimezone String?   @map("recurrence_timezone")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
+  version            BigInt    @default(1)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent   Task?    @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks Task[]   @relation("Subtasks")
+
+  @@index([userId, updatedAt])
+  @@index([userId, dueDate])
+  @@index([userId, dueAt])
+  @@map("tasks")
+}
+
+model Note {
+  id         String    @id @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  projectId  String?   @map("project_id") @db.Uuid
+  folderId   String?   @map("folder_id") @db.Uuid
+  title      String    @default("")
+  body       Json      @default("{}")
+  // Plain text extracted on save. Full-text search uses a generated tsvector
+  // column `search_vector` + GIN index added by hand in the init migration
+  // (plan §7.2); Prisma can't declare it. scripts/new-migration.mjs keeps
+  // generated migrations from dropping it.
+  bodyText   String    @default("") @map("body_text")
+  pinned     Boolean   @default(false)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  version    BigInt    @default(1)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, updatedAt])
+  @@map("notes")
+}

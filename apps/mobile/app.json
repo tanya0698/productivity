@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Productivity",
+    "slug": "productivity",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.productivity.app",
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "backgroundColor": "#3563F5"
+      },
+      "permissions": [
+        "SCHEDULE_EXACT_ALARM",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-dev-client",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#3563F5"
+        }
+      ]
+    ]
+  }
+}

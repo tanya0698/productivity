@@ -1,0 +1,36 @@
+{
+  "name": "@productivity/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:deploy": "node --env-file-if-exists=../../.env ../../node_modules/prisma/build/index.js migrate deploy",
+    "prisma:status": "node --env-file-if-exists=../../.env ../../node_modules/prisma/build/index.js migrate status",
+    "prisma:new-migration": "node scripts/new-migration.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@prisma/client": "^6.16.0",
+    "@productivity/contracts": "*",
+    "@productivity/domain": "*",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.10",
+    "@swc/cli": "^0.7.8",
+    "@swc/core": "^1.13.5",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.10.4",
+    "prisma": "^6.16.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

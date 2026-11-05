@@ -1,0 +1,26 @@
+{
+  "name": "personal-productivity",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Offline-first personal productivity platform: PWA + Android first. See personal_productivity_plan_pwa_android.md.",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "apps/worker",
+    "apps/mobile",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @productivity/web",
+    "dev:api": "npm run start:dev -w @productivity/api",
+    "dev:worker": "npm run dev -w @productivity/worker",
+    "dev:mobile": "npm run start -w @productivity/mobile",
+    "db:migrate": "npm run prisma:deploy -w @productivity/api",
+    "db:status": "npm run prisma:status -w @productivity/api",
+    "modules:mobile": "node scripts/emit-mobile-modules.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "verify": "npm run typecheck && npm run lint && npm run test"
+  }
+}

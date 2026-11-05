@@ -1,0 +1,25 @@
+{
+  /*
+    Shared packages ship as TypeScript source with no build step. Vite (web),
+    Metro (Android) and Node 24's built-in type stripping (api, worker) all load
+    them directly, which only works if:
+      - relative imports name the real file, extension included ("./tasks.ts")
+      - only erasable syntax is used (no enums, namespaces, parameter properties)
+  */
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
