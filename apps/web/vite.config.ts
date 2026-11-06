@@ -14,8 +14,8 @@ export default defineConfig({
         name: "Productivity",
         short_name: "Productivity",
         description: "Notes, tasks, calendar and reminders in one place",
-        theme_color: "#3563F5",
-        background_color: "#F3F1FA",
+        theme_color: "#0b0f14",
+        background_color: "#0b0f14",
         display: "standalone",
         // Used on laptops as well as phones, so no forced orientation.
         orientation: "any",

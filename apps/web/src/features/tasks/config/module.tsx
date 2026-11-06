@@ -21,7 +21,7 @@ export default defineModule({
   order: 10,
   entities: ["task"],
   widgets: [
-    { id: "summary", title: "Due today", span: 12, load: () => import("../widgets/SummaryWidget") },
+    { id: "summary", title: "Up next", span: 12, load: () => import("../widgets/SummaryWidget") },
   ],
   load: () => import("../index"),
   status: "live",

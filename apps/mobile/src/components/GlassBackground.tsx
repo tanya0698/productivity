@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { usePalette } from "../theme";
 
 /**
- * The blue→lavender gradient behind the app's frame (screen headers).
+ * The teal-tinted gradient into the ink behind screen headers.
  * Content below it sits on solid `palette.page` — glass and gradient are for
  * the frame only (plan §4.4).
  */

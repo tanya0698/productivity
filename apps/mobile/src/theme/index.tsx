@@ -3,7 +3,7 @@ import { useColorScheme } from "react-native";
 import { light, dark, radii, fonts, type Palette } from "@productivity/theme";
 
 /**
- * The same Lavender Glass tokens as the web app (packages/theme), following
+ * The same Ink & Teal tokens as the web app (packages/theme), following
  * the phone's light/dark setting.
  */
 const PaletteContext = createContext<Palette>(light);

@@ -2,29 +2,37 @@ import type { ReactNode } from "react";
 import { Flex, Typography } from "antd";
 
 /**
- * The frame every module page sits in: title, optional actions, then content
- * on the solid working sheet (glass belongs to the shell, not to pages).
+ * The frame every module page sits in, in the portfolio's style: a small mono
+ * label, a heavy title, a slate description, then the content.
  */
 export function ModulePage({
+  eyebrow,
   title,
   description,
   actions,
   children,
 }: {
+  /** Small uppercase mono label above the title, like "ELTON CHIPUKA". */
+  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <Flex vertical gap={16}>
-      <Flex justify="space-between" align="flex-start" wrap gap={12}>
-        <div>
-          <Typography.Title level={3} style={{ margin: 0 }}>
+    <Flex vertical gap={20}>
+      <Flex justify="space-between" align="flex-end" wrap gap={12}>
+        <Flex vertical gap={6}>
+          {eyebrow ? <span className="pp-label pp-label-brand">{eyebrow}</span> : null}
+          <Typography.Title level={1} style={{ margin: 0, fontSize: 34, lineHeight: 1.1 }}>
             {title}
           </Typography.Title>
-          {description ? <Typography.Text type="secondary">{description}</Typography.Text> : null}
-        </div>
+          {description ? (
+            <Typography.Text type="secondary" style={{ fontSize: 15, maxWidth: 640 }}>
+              {description}
+            </Typography.Text>
+          ) : null}
+        </Flex>
         {actions}
       </Flex>
       {children}

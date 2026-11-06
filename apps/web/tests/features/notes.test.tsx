@@ -18,7 +18,6 @@ const offline: SyncTransport = {
 
 function renderPage(db: MemoryDatabase) {
   const runtime = new SyncRuntime({ db, transport: offline, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
-  // Started by SyncProvider; a stopped transport just reports offline.
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {
     const open = useCallback(async () => runtime, []);
@@ -36,7 +35,7 @@ function renderPage(db: MemoryDatabase) {
 }
 
 describe("Notes page", () => {
-  it("shows the empty state, then saves a new note locally with no connection", async () => {
+  it("saves a new note locally once something is typed, with no connection", async () => {
     const db = new MemoryDatabase();
     renderPage(db);
     expect(await screen.findByText(/No notes yet/)).toBeTruthy();
@@ -51,15 +50,30 @@ describe("Notes page", () => {
       const [note] = await db.list("note");
       expect(note).toMatchObject({ title: "Groceries", bodyText: "milk and eggs" });
     });
-    // The create and the edit are both queued for the next sync.
-    expect((await db.pendingOperations(10)).length).toBe(2);
+    // One write, queued for the next sync: the note is created by the first save.
+    expect((await db.pendingOperations(10)).length).toBe(1);
     expect(await screen.findAllByText("Groceries")).toBeTruthy();
   });
 
-  it("deletes a note after confirming", async () => {
+  it("never saves a new note that is left empty", async () => {
     const db = new MemoryDatabase();
     renderPage(db);
     fireEvent.click(await screen.findByRole("button", { name: /New note/ }));
+    fireEvent.blur(await screen.findByLabelText("Note text"));
+    fireEvent.click(screen.getByRole("button", { name: /New note/ }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(await db.list("note")).toHaveLength(0);
+    expect(await db.pendingOperations(10)).toHaveLength(0);
+  });
+
+  it("deletes a saved note after confirming", async () => {
+    const db = new MemoryDatabase();
+    renderPage(db);
+    fireEvent.click(await screen.findByRole("button", { name: /New note/ }));
+    fireEvent.change(await screen.findByLabelText("Note text"), { target: { value: "temporary" } });
+    fireEvent.blur(screen.getByLabelText("Note text"));
+    await waitFor(async () => expect(await db.list("note")).toHaveLength(1));
+
     fireEvent.click(await screen.findByRole("button", { name: "Delete note" }));
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
 

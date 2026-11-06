@@ -1,20 +1,28 @@
 /**
- * "Lavender Glass" — the single source of colour, glass, radius and font tokens
- * for every client (plan §4.4). The web app maps these onto Ant Design's theme
- * in `apps/web/src/styles/theme/antdTheme.ts`; the Android app reads them
- * directly in `apps/mobile/src/theme/`.
+ * "Ink & Teal" — the single source of colour, glow, radius and font tokens for
+ * every client (plan §4.4). Taken from the owner's portfolio: near-black ink with
+ * soft teal and indigo glows, teal as the accent, indigo as the second accent,
+ * slate text, Inter for UI and JetBrains Mono for small uppercase labels.
  *
- * Rules that the values below are built around:
- *  - Glass and the gradient are for the app's frame only (sidebar, headers,
- *    capture field, tab bar, modals). Content sits on solid `surface`/`page`.
- *  - Text on glass or gradient is `textSecondary` or darker; `textMuted` is for
- *    solid surfaces only.
- *  - State colours (success/warning/error/ai) mean something and are never
- *    decorative. Badges pair a `*Soft` background with the `*Text` colour.
+ * The web app maps these onto Ant Design's theme in
+ * `apps/web/src/styles/theme/antdTheme.ts`; the Android app reads them directly
+ * in `apps/mobile/src/theme/`.
+ *
+ * Rules the values are built around:
+ *  - Colour carries meaning. Teal is the brand and primary action; indigo marks
+ *    tags and secondary accents; green, amber and red mean done, due soon and
+ *    overdue; violet means AI. Nothing decorative borrows a state colour.
+ *  - Badges pair a `*Soft` background with the `*Text` colour.
+ *  - The light theme uses darker teal and indigo: the dark theme's #2dd4bf is
+ *    only about 1.8:1 on white, far below the 4.5:1 text needs.
  */
 
 export interface Palette {
+  /** Corner glows behind the app: [teal, indigo]. Also the mobile header gradient's tint. */
+  glow: readonly [string, string];
+  /** Three-stop header gradient for Android, from teal-tinted to plain page. */
   gradient: readonly [string, string, string];
+  /** Translucent panels for the app's frame (sidebar, tab bar). */
   glass: { fill: string; fillStrong: string; border: string };
 
   page: string;
@@ -26,6 +34,7 @@ export interface Palette {
   borderStrong: string;
   focus: string;
 
+  heading: string;
   text: string;
   textSecondary: string;
   textMuted: string;
@@ -35,6 +44,11 @@ export interface Palette {
   primarySoft: string;
   primaryStrong: string;
   onPrimary: string;
+
+  /** Indigo: tags, chips, secondary emphasis. */
+  accent: string;
+  accentSoft: string;
+  accentText: string;
 
   success: string;
   successSoft: string;
@@ -53,112 +67,125 @@ export interface Palette {
   backdrop: string;
 }
 
-export const light: Palette = {
-  gradient: ["#BFD4FF", "#D9DEFF", "#ECE8FB"],
-  glass: {
-    fill: "rgba(255,255,255,0.55)",
-    fillStrong: "rgba(255,255,255,0.72)",
-    border: "rgba(255,255,255,0.75)",
-  },
-
-  page: "#F3F1FA",
-  surface: "#FFFFFF",
-  elevated: "#FFFFFF",
-  muted: "#EEEDF7",
-
-  border: "#E4E2F0",
-  borderStrong: "#CFCCE0",
-  focus: "#3563F5",
-
-  text: "#15151A",
-  textSecondary: "#55556A",
-  textMuted: "#74748A",
-  textDisabled: "#B9B8CC",
-
-  // park-check's #3D6BFF deepened one step: white text on it is ~4.9:1 (AA).
-  primary: "#3563F5",
-  primarySoft: "#E3EBFF",
-  primaryStrong: "#2B52D6",
-  onPrimary: "#FFFFFF",
-
-  success: "#2E9E6B",
-  successSoft: "#E4F5EC",
-  successText: "#20734D",
-  // Amber fails as text on light surfaces; use warningText on warningSoft.
-  warning: "#F5A524",
-  warningSoft: "#FDF1DA",
-  warningText: "#8A5A00",
-  error: "#E5484D",
-  errorSoft: "#FDE7E8",
-  errorText: "#BF2E36",
-  // Stronger than the lavender neutrals so AI suggestions stay distinct.
-  ai: "#8B4FD9",
-  aiSoft: "#F2EAFD",
-  aiText: "#6B33B8",
-
-  overlay: "rgba(21, 21, 40, 0.72)",
-  backdrop: "rgba(21, 21, 40, 0.45)",
-};
-
 export const dark: Palette = {
-  gradient: ["#1C2452", "#231F48", "#16172B"],
+  glow: ["rgba(45, 212, 191, 0.14)", "rgba(129, 140, 248, 0.12)"],
+  gradient: ["#0f2a2b", "#111a2a", "#0b0f14"],
   glass: {
-    fill: "rgba(34,38,78,0.55)",
-    fillStrong: "rgba(34,38,78,0.78)",
-    border: "rgba(255,255,255,0.12)",
+    fill: "rgba(15, 22, 32, 0.6)",
+    fillStrong: "rgba(15, 22, 32, 0.85)",
+    border: "rgba(255, 255, 255, 0.10)",
   },
 
-  page: "#121320",
-  surface: "#1A1B2B",
-  elevated: "#222437",
-  muted: "#1E1F31",
+  page: "#0b0f14",
+  surface: "#0f1620",
+  elevated: "#141d29",
+  muted: "#131b26",
 
-  border: "#2B2D44",
-  borderStrong: "#3A3C57",
-  focus: "#7D9BFF",
+  border: "#1c2532",
+  borderStrong: "#2a3442",
+  focus: "#5eead4",
 
-  text: "#E8E7F2",
-  textSecondary: "#A6A6BD",
-  textMuted: "#7E7E97",
-  textDisabled: "#4A4B63",
+  heading: "#f8fafc",
+  text: "#e2e8f0",
+  textSecondary: "#94a3b8",
+  textMuted: "#64748b",
+  textDisabled: "#475569",
 
-  primary: "#7D9BFF",
-  primarySoft: "#1F2A52",
-  primaryStrong: "#A3B8FF",
-  onPrimary: "#0E1330",
+  primary: "#2dd4bf",
+  primarySoft: "#0f2e2c",
+  primaryStrong: "#5eead4",
+  onPrimary: "#04201d",
 
-  success: "#4CC38A",
-  successSoft: "#16302A",
-  successText: "#4CC38A",
-  warning: "#F2B04A",
-  warningSoft: "#3A2E17",
-  warningText: "#F2B04A",
-  error: "#F2686C",
-  errorSoft: "#3D1D24",
-  errorText: "#F2686C",
-  ai: "#B794F6",
-  aiSoft: "#2B2145",
-  aiText: "#C4A8F8",
+  accent: "#818cf8",
+  accentSoft: "#1a1e3d",
+  accentText: "#a5b4fc",
+
+  success: "#4ade80",
+  successSoft: "#0f2a1a",
+  successText: "#86efac",
+  warning: "#fbbf24",
+  warningSoft: "#2b2211",
+  warningText: "#fcd34d",
+  error: "#f87171",
+  errorSoft: "#2e1517",
+  errorText: "#fca5a5",
+  ai: "#c084fc",
+  aiSoft: "#24183a",
+  aiText: "#d8b4fe",
 
   overlay: "rgba(0, 0, 0, 0.75)",
   backdrop: "rgba(0, 0, 0, 0.6)",
 };
 
+export const light: Palette = {
+  glow: ["rgba(20, 184, 166, 0.12)", "rgba(99, 102, 241, 0.10)"],
+  gradient: ["#d9f7f2", "#e8ecfb", "#f8fafc"],
+  glass: {
+    fill: "rgba(255, 255, 255, 0.7)",
+    fillStrong: "rgba(255, 255, 255, 0.88)",
+    border: "rgba(15, 23, 42, 0.08)",
+  },
+
+  page: "#f8fafc",
+  surface: "#ffffff",
+  elevated: "#ffffff",
+  muted: "#f1f5f9",
+
+  border: "#e2e8f0",
+  borderStrong: "#cbd5e1",
+  focus: "#0f766e",
+
+  heading: "#0b0f14",
+  text: "#0f172a",
+  textSecondary: "#475569",
+  textMuted: "#64748b",
+  textDisabled: "#94a3b8",
+
+  primary: "#0f766e",
+  primarySoft: "#ccfbf1",
+  primaryStrong: "#115e59",
+  onPrimary: "#ffffff",
+
+  accent: "#4f46e5",
+  accentSoft: "#e0e7ff",
+  accentText: "#4338ca",
+
+  success: "#16a34a",
+  successSoft: "#dcfce7",
+  successText: "#166534",
+  warning: "#d97706",
+  warningSoft: "#fef3c7",
+  warningText: "#92400e",
+  error: "#dc2626",
+  errorSoft: "#fee2e2",
+  errorText: "#b91c1c",
+  ai: "#9333ea",
+  aiSoft: "#f3e8ff",
+  aiText: "#7e22ce",
+
+  overlay: "rgba(11, 15, 20, 0.6)",
+  backdrop: "rgba(11, 15, 20, 0.4)",
+};
+
 export const palettes = { light, dark } as const;
 export type ColorMode = keyof typeof palettes;
 
-/** Rounded like park-check. */
-export const radii = { sm: 10, md: 14, lg: 18, pill: 999 } as const;
+export const radii = { sm: 10, md: 14, lg: 16, pill: 999 } as const;
 
-/** Manrope on every platform (plan §4.4). Weight 800 is for large headings only. */
+/** Inter for everything; JetBrains Mono for small uppercase labels and figures that line up. */
 export const fonts = {
-  family: '"Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  /** Font names registered by @expo-google-fonts/manrope on Android. */
+  family: '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  mono: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace',
+  /** Font names registered by @expo-google-fonts on Android. */
   native: {
-    regular: "Manrope_400Regular",
-    medium: "Manrope_500Medium",
-    semiBold: "Manrope_600SemiBold",
-    bold: "Manrope_700Bold",
-    extraBold: "Manrope_800ExtraBold",
+    regular: "Inter_400Regular",
+    medium: "Inter_500Medium",
+    semiBold: "Inter_600SemiBold",
+    bold: "Inter_700Bold",
+    extraBold: "Inter_800ExtraBold",
+    mono: "JetBrainsMono_500Medium",
+    monoBold: "JetBrainsMono_700Bold",
   },
+  /** Mono labels: uppercase, letter-spaced, like "ELTON CHIPUKA" and "FROM". */
+  labelTracking: "0.18em",
 } as const;

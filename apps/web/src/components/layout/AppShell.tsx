@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, Typography, type MenuProps } from "antd";
+import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, type MenuProps } from "antd";
 import {
   CloudOutlined,
   DisconnectOutlined,
@@ -33,37 +33,41 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav = <SidebarNav onNavigate={() => setDrawerOpen(false)} />;
 
   return (
-    <Layout style={{ minHeight: "100%", background: "var(--pp-gradient)" }}>
+    // Transparent all the way down, so the ink background and its glows (global.css) show through.
+    <Layout style={{ minHeight: "100vh", background: "transparent" }}>
       {isMobile ? (
         <Drawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           placement="left"
-          width={SIDER_WIDTH + 24}
+          size={SIDER_WIDTH + 24}
           styles={{ body: { padding: 12 } }}
         >
           {nav}
         </Drawer>
       ) : (
+        // No panel: the menu floats on the ink like the portfolio's navigation; only the selected item is tinted.
         <Layout.Sider
           width={SIDER_WIDTH}
-          className="pp-glass"
-          style={{ margin: 12, marginRight: 0, borderRadius: 18, padding: 12, height: "calc(100vh - 24px)", position: "sticky", top: 12 }}
+          style={{ padding: "20px 12px", height: "100vh", position: "sticky", top: 0 }}
         >
           {nav}
         </Layout.Sider>
       )}
 
       <Layout style={{ background: "transparent" }}>
-        <Layout.Header style={{ height: "auto", lineHeight: "normal", padding: "16px 20px" }}>
-          <Flex align="center" justify="space-between" gap={12}>
-            <Flex align="center" gap={8}>
-              {isMobile ? (
+        <Layout.Header
+          style={{ height: "auto", lineHeight: "normal", padding: isMobile ? "14px 16px" : "20px 32px 4px", maxWidth: 1180 }}
+        >
+          <Flex align="center" gap={12}>
+            {isMobile ? (
+              <>
                 <Button type="text" icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setDrawerOpen(true)} />
-              ) : null}
-              <HeaderTitle />
-            </Flex>
-            <Flex align="center" gap={8}>
+                <span className="pp-label pp-label-brand">Productivity</span>
+              </>
+            ) : null}
+            {/* marginLeft auto, not space-between: antd's Flex renders nothing for an empty group. */}
+            <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
               <SyncPill />
               <ColorModeSwitch />
             </Flex>
@@ -72,11 +76,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <Layout.Content
           style={{
-            margin: isMobile ? 0 : "0 12px 12px 12px",
-            padding: isMobile ? 16 : 24,
-            background: "var(--pp-page)",
-            border: "1px solid var(--pp-border)",
-            borderRadius: isMobile ? "18px 18px 0 0" : 18,
+            padding: isMobile ? "8px 16px 24px" : "12px 32px 40px",
+            maxWidth: 1180,
+            width: "100%",
             minHeight: 0,
           }}
         >
@@ -106,9 +108,9 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
     <Flex vertical gap={16}>
       <Flex align="center" gap={10} style={{ padding: "4px 8px" }}>
         <img src="/icon.svg" alt="" width={28} height={28} />
-        <Typography.Text strong style={{ fontSize: 16 }}>
+        <span className="pp-label pp-label-brand" style={{ fontSize: 13 }}>
           Productivity
-        </Typography.Text>
+        </span>
       </Flex>
       <Menu
         mode="inline"
@@ -122,11 +124,6 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
       />
     </Flex>
   );
-}
-
-function HeaderTitle() {
-  const date = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
-  return <Typography.Text type="secondary">{date}</Typography.Text>;
 }
 
 /** The sync states from plan §6.6, in words as well as an icon. */
@@ -162,9 +159,9 @@ function SyncPill() {
       role="status"
     >
       {icon}
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+      <span className="pp-label" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
         {text}
-      </Typography.Text>
+      </span>
     </Flex>
   );
 }

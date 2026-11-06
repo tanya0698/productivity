@@ -9,7 +9,7 @@
       "package": "com.productivity.app",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "backgroundColor": "#3563F5"
+        "backgroundColor": "#0b0f14"
       },
       "permissions": [
         "SCHEDULE_EXACT_ALARM",
@@ -25,7 +25,7 @@
       [
         "expo-notifications",
         {
-          "color": "#3563F5"
+          "color": "#2dd4bf"
         }
       ]
     ]

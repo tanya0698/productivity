@@ -27,9 +27,9 @@ export default function ScreenFrame({
   return (
     <View style={{ flex: 1, backgroundColor: p.page }}>
       <GlassBackground style={{ paddingTop: insets.top + 8, paddingBottom: 26, paddingHorizontal: 16 }}>
-        {eyebrow ? <Text tone="secondary" style={styles.eyebrow}>{eyebrow}</Text> : null}
+        {eyebrow ? <Text label tone="brand" style={styles.eyebrow}>{eyebrow}</Text> : null}
         <View style={styles.titleRow}>
-          <Text weight="extraBold" style={styles.title}>{title}</Text>
+          <Text weight="extraBold" tone="heading" style={styles.title}>{title}</Text>
           <SyncPill />
         </View>
         {capturePlaceholder ? (
@@ -50,9 +50,9 @@ export default function ScreenFrame({
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { fontSize: 12 },
+  eyebrow: { marginBottom: 4 },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 },
-  title: { fontSize: 26, letterSpacing: -0.3, flexShrink: 1 },
+  title: { fontSize: 30, letterSpacing: -0.6, flexShrink: 1 },
   capture: { paddingHorizontal: 12, paddingVertical: 11 },
   sheet: { flex: 1, marginTop: -14, borderTopLeftRadius: radii.lg + 2, borderTopRightRadius: radii.lg + 2 },
 });

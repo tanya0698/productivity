@@ -138,69 +138,51 @@ No widget customization until the layout has been lived with for a while.
 
 **Offline edit:** local write + outbox in one transaction → "Saved on this device" → sync worker pushes with stable operation IDs → server acknowledges → client pulls, advances cursor, shows any conflicts.
 
-### 4.4 Visual direction — "Lavender Glass"
+### 4.4 Visual direction — "Ink & Teal"
 
-Blue and lavender as the main colors, carried over from park-check (`Desktop/Experimental/park-check/mobile/src/theme/colors.ts`), with **glass only on the app's frame**: the sidebar, the Today header, the capture field, the Android tab bar, and modals sit on a blue→lavender gradient as translucent glass. Every list, card, note, and calendar grid sits on solid surfaces. **Manrope** on both web and Android, matching park-check (`@expo-google-fonts/manrope` on Android, Google Fonts or a self-hosted copy on web so the PWA still works offline). Weights 400 / 500 / 600 / 700, with 800 reserved for large headings. Use tabular numbers (`font-variant-numeric: tabular-nums`) for times, counts, and durations. Light and dark themes, following the system setting by default. Comfortable density with an optional compact mode on web.
+Taken from the owner's portfolio and its WhatsApp catalogue cards (`Desktop/Experimental/portfolio`): a near-black **ink** background with soft **teal and indigo glows** in the top corners, cards on a slightly lighter surface with faint borders, **teal** as the accent and **indigo** as the second accent, and slate text. Dark is the signature look; light is its equivalent on slate-50. Both follow the system setting by default, and the header has a light / system / dark switch.
 
-**Why:** glass and gradients give the app park-check's character, but a productivity app is long, dense lists read all day. Keeping glass on the frame and content on solid surfaces gives the look without making text harder to read. The app is also full of states (overdue, due soon, done, AI suggestion), which stand out only if decoration doesn't use those colors. Dark mode is designed alongside light mode because a lot of phone use happens at night.
+**Typography:** **Inter** for everything, with heavy (800), tightly spaced headings. **JetBrains Mono** for small uppercase, letter-spaced labels, like the portfolio's "ELTON CHIPUKA", "FROM" and "01 / 14". The app uses those for the brand mark, page eyebrows, dates and sync status. Times and counts use tabular figures.
 
-**Changes from park-check's values:**
-- Primary is deepened from `#3D6BFF` to `#3563F5`. With white text, the original is 4.4:1, just under the 4.5:1 minimum; the new one is about 4.9:1.
-- Muted text never sits directly on the gradient. Park-check's `#8A8A95` on `#BFD4FF` is about 2.3:1.
-- AI uses a stronger violet (`#8B4FD9`) so it doesn't blend into the lavender neutrals.
-- Park-check has no dark palette; a full dark version is added here.
+**Why:** it matches the owner's own brand. The dark ink is easy on the eyes all day and at night, and with colour kept for accents and states, overdue, due-soon, done and AI items stand out.
 
 #### Palette
 
-The tokens live in `packages/theme`. On the web, `apps/web/src/styles/theme/antdTheme.ts` maps them onto Ant Design's theme tokens (`colorPrimary`, `colorBgLayout`, …) and exposes glass and gradient as CSS variables; on Android they're read directly. The token names in the left column are descriptive; `gradient` and `glass` follow park-check's naming.
+Tokens live in `packages/theme`. On the web, `apps/web/src/styles/theme/antdTheme.ts` maps them onto Ant Design's theme tokens and exposes the glows, glass and mono label as CSS variables. On Android they're read directly.
 
-| Token | Light | Dark | Use |
+| Token | Dark | Light | Use |
 |---|---|---|---|
-| `gradient` | `#BFD4FF` → `#D9DEFF` → `#ECE8FB` | `#1C2452` → `#231F48` → `#16172B` | Behind the frame only (sidebar column, Today header, Android header) |
-| `glass.fill` | `rgba(255,255,255,0.55)` | `rgba(34,38,78,0.55)` | Sidebar, header pills |
-| `glass.fillStrong` | `rgba(255,255,255,0.72)` | `rgba(34,38,78,0.78)` | Capture field, Android tab bar (must stay legible) |
-| `glass.border` | `rgba(255,255,255,0.75)` | `rgba(255,255,255,0.12)` | Highlight edge on every glass element |
-| `background.page` | `#F3F1FA` | `#121320` | Working area behind cards |
-| `background.surface` | `#FFFFFF` | `#1A1B2B` | Cards, lists, editor |
-| `background.elevated` | `#FFFFFF` | `#222437` | Modals, popovers |
-| `background.muted` | `#EEEDF7` | `#1E1F31` | Hover, input fill, table headers |
-| `border.subtle` | `#E4E2F0` | `#2B2D44` | Dividers, card borders |
-| `border.strong` | `#CFCCE0` | `#3A3C57` | Inputs |
-| `border.focus` | `#3563F5` | `#7D9BFF` | Focus ring (always visible) |
-| `text.primary` | `#15151A` | `#E8E7F2` | Body text |
-| `text.secondary` | `#55556A` | `#A6A6BD` | Metadata, labels; the lightest text allowed on glass or gradient |
-| `text.muted` | `#74748A` | `#7E7E97` | Placeholders, hints, on solid surfaces only |
-| `brand.primary` | `#3563F5` | `#7D9BFF` | Buttons, links, active tab |
-| `brand.primarySoft` | `#E3EBFF` | `#1F2A52` | Selected rows, project chips |
-| `brand.primaryStrong` | `#2B52D6` | `#A3B8FF` | Hover/pressed, text on `primarySoft`, active sidebar item |
-| `semantic.success` | `#2E9E6B` | `#4CC38A` | Done, streaks, completed checkboxes |
-| `semantic.warning` | `#F5A524` | `#F2B04A` | Due soon (icons and fills, never text on light) |
-| `semantic.error` | `#E5484D` | `#F2686C` | Overdue, errors, calendar "now" line |
-| `semantic.purple` (AI) | `#8B4FD9` | `#B794F6` | AI proposals and the assistant only |
-| `semantic.info` | `#3563F5` | `#7D9BFF` | Same as primary; no separate info blue |
-| `semanticExtended.success.light` / `.text` | `#E4F5EC` / `#20734D` | `#16302A` / `#4CC38A` | Done badge background / text |
-| `semanticExtended.warning.light` / `.text` | `#FDF1DA` / `#8A5A00` | `#3A2E17` / `#F2B04A` | Due-soon badge background / text |
-| `semanticExtended.error.light` / `.text` | `#FDE7E8` / `#BF2E36` | `#3D1D24` / `#F2686C` | Overdue badge background / text |
-| AI soft / text (new tokens) | `#F2EAFD` / `#6B33B8` | `#2B2145` / `#C4A8F8` | AI suggestion background / label |
-| radii | 10 / 14 / 18 / pill | same | Rounded like park-check |
+| `page` | `#0b0f14` | `#f8fafc` | App background (the portfolio's `ink`) |
+| `glow` | teal `rgba(45,212,191,.14)` · indigo `rgba(129,140,248,.12)` | teal `.12` · indigo `.10` | Radial glows, top-left and top-right |
+| `surface` | `#0f1620` | `#ffffff` | Cards, lists, editor (the portfolio's `surface`) |
+| `elevated` / `muted` | `#141d29` / `#131b26` | `#ffffff` / `#f1f5f9` | Popovers; hover and input fill |
+| `border` / `borderStrong` | `#1c2532` / `#2a3442` | `#e2e8f0` / `#cbd5e1` | Dividers, card edges / inputs |
+| `glass` | surface at 60%, border white 10% | white at 70%, border slate 8% | Sidebar and Android tab bar |
+| `heading` | `#f8fafc` | `#0b0f14` | Titles |
+| `text` | `#e2e8f0` | `#0f172a` | Body text |
+| `textSecondary` | `#94a3b8` | `#475569` | Descriptions, metadata |
+| `textMuted` | `#64748b` | `#64748b` | Mono labels, hints (never body text) |
+| `primary` | `#2dd4bf` | `#0f766e` | Teal: buttons, links, selection, brand label |
+| `primarySoft` / `primaryStrong` | `#0f2e2c` / `#5eead4` | `#ccfbf1` / `#115e59` | Selected rows / hover and selected text |
+| `onPrimary` | `#04201d` | `#ffffff` | Text on teal buttons |
+| `accent` (+ soft / text) | `#818cf8` (`#1a1e3d` / `#a5b4fc`) | `#4f46e5` (`#e0e7ff` / `#4338ca`) | Indigo: tags and chips, like the "WEBSITES" pill |
+| `success` (+ soft / text) | `#4ade80` (`#0f2a1a` / `#86efac`) | `#16a34a` (`#dcfce7` / `#166534`) | Done, streaks |
+| `warning` (+ soft / text) | `#fbbf24` (`#2b2211` / `#fcd34d`) | `#d97706` (`#fef3c7` / `#92400e`) | Due soon |
+| `error` (+ soft / text) | `#f87171` (`#2e1517` / `#fca5a5`) | `#dc2626` (`#fee2e2` / `#b91c1c`) | Overdue, errors |
+| `ai` (+ soft / text) | `#c084fc` (`#24183a` / `#d8b4fe`) | `#9333ea` (`#f3e8ff` / `#7e22ce`) | AI suggestions only |
+| radii | 10 / 14 / 16 / pill | same | |
 
-Badges use the `.light` background with the `.text` color, never the base color as text.
-
-Preview: <https://claude.ai/artifact/5ydZfD1G3annBPVHD3Jbu4>. Contrast ratios for every pairing, including glass blended over the gradient, are calculated on that page. Check every new pairing before adding it.
+**Contrast (checked 2026-11-06):** all 12 key pairs pass in both modes, from 4.04:1 (dark mono labels on page, which only need 3:1) up to 18.4:1. **Light mode doesn't use the bright teal:** `#2dd4bf` is about 1.8:1 on white, so light mode uses teal-700 `#0f766e` (5.5:1) and indigo-600.
 
 #### Rules
 
-- **Color carries meaning.** Red appears only for overdue/error, amber only for due soon, green only for done, violet only for AI. Blue and lavender are the brand colors; nothing decorative uses the state colors.
-- **Priority uses icons and labels, not just colors.** Four priority levels plus due states would otherwise make lists noisy.
-- **Module colors tint icons only.** The manifest's `color` is used on that module's icon and landing card, never as a page background. Keep module colors muted.
-- **Glass on the frame, solid content.** Glass and the gradient are allowed only on the sidebar, headers, capture field, tab bar, and modals. Lists, cards, notes, and the calendar grid always use solid `surface`/`page`.
-- **Text on glass is `text.secondary` or darker.** `text.muted` is for solid surfaces only.
-- **Blur differs by platform.** Web uses `backdrop-filter: blur(16px)`. Android uses translucency plus the border highlight, with no `expo-blur` (it blurs only on Android 12+ and falls back to a flat grey layer elsewhere). Don't put `elevation` on translucent views, because Android draws a solid grey rectangle behind them. Both rules come from park-check's `GlassCard.tsx` and `GlassTabBar.tsx`.
-- **One gradient.** A single `gradient` token, used behind the frame. No animated or WebGL backgrounds.
-- **Android tab bar** follows park-check's floating glass pill: icons only, with the active tab as a solid `primary` circle.
-- **One source of tokens.** Defined once in `packages/theme`, imported by the web app (through the antd theme) and the Android app, so they cannot drift.
-- **Dark mode is designed, not inverted.** Surfaces get lighter as they rise (page → surface → elevated) instead of relying on shadows, which barely show on dark backgrounds.
-
+- **Colour carries meaning.** Teal is the brand and primary action and indigo marks tags; green, amber and red mean done, due soon and overdue, and violet means AI. Nothing decorative uses the state colours.
+- **Badges** pair a `*Soft` background with the `*Text` colour, never the bright base as text.
+- **Pages sit on the ink.** No coloured header blocks: the glows sit behind everything, and content goes in surface cards with faint borders, as in the portfolio. The sidebar is a translucent card (`pp-glass`).
+- **Mono labels are small and quiet:** 11–13px, uppercase, about 0.18em tracking, muted, or teal for the brand and page eyebrows. Never for body text.
+- **Android:** the header uses a teal-tinted gradient into the ink, with park-check's floating tab-bar pill. There's no `expo-blur` and no `elevation` on translucent views (Android draws a grey rectangle behind them). Fonts come from `@expo-google-fonts/inter` and `jetbrains-mono`, imported one weight at a time, because the packages' index files bundle every weight (about 6 MB).
+- **One source of tokens.** Defined once in `packages/theme`, so web and Android can't drift.
+- **Dark mode is designed, not inverted.** Surfaces get lighter as they rise (page → surface → elevated), because shadows barely show on ink.
 ---
 
 ## 5. Architecture
@@ -589,7 +571,7 @@ AI proposes; the user decides.
 
 The web app uses the **folder layout** of hub--starter (`Desktop/Projects/hub--starter`) as a blueprint: each product area is a **self-registering module** in `src/features/<key>/`, built on a small **module SDK** in `src/shared/`. Creating a module's folder registers it: `src/features/registry.ts` globs every `config/module.tsx`, so there's no list to maintain.
 
-**Only the layout comes from hub--starter. No code does.** Its sign-in (UnifiedAuth), notifications (UnifiedNotifications), account pages, component wrappers and deploy scripts belong to City Parking and are not part of this app. Every file here is written for this project. The UI is built with **Ant Design** (the `antd` library itself), themed with Lavender Glass.
+**Only the layout comes from hub--starter. No code does.** Its sign-in (UnifiedAuth), notifications (UnifiedNotifications), account pages, component wrappers and deploy scripts belong to City Parking and are not part of this app. Every file here is written for this project. The UI is built with **Ant Design** (the `antd` library itself), themed with Ink & Teal.
 
 The Android app and the API use the same per-module convention, so a module key (`tasks`, `notes`, …) means the same thing everywhere: the folder name, the route `/<key>`, the API prefix `/api/<key>`, and the prefix on its notification types (`tasks.task.due`).
 
@@ -608,7 +590,7 @@ personal-productivity/
 │   ├── domain/                    # pure rules: task states, due state, later recurrence
 │   ├── sync-engine/               # outbox, cursor, push/pull, conflict recording
 │   ├── database-local/            # local-DB interface (+ Dexie / expo-sqlite adapters, Phase 0)
-│   └── theme/                     # Lavender Glass tokens, radii, Manrope
+│   └── theme/                     # Ink & Teal tokens, radii, Inter + JetBrains Mono
 ├── module-template/               # copy-and-rename starting point for a new module
 │   ├── web/mymodule/              #   → apps/web/src/features/<key>/
 │   ├── mobile/mymodule/           #   → apps/mobile/src/features/<key>/
@@ -630,7 +612,7 @@ npm workspaces avoid the pnpm symlink problems Expo's Metro bundler has in monor
 
 ```text
 apps/web/
-├── index.html                     # Manrope from Google Fonts
+├── index.html                     # Inter + JetBrains Mono from Google Fonts
 ├── vite.config.ts                 # vite-plugin-pwa, "@/…" alias, /api proxy → NestJS
 ├── vitest.config.ts · eslint.config.js · tsconfig.json · .env.example
 ├── public/icon.svg
@@ -891,7 +873,7 @@ Sequenced for earliest daily use. Order is the commitment; dates depend on avail
 ## 16. First sprint
 
 - [ ] Monorepo with npm workspaces (`apps/*`, `packages/*`); Expo app running inside it.
-- [x] Web shell in hub--starter's folder layout with new code: module registry, antd themed with Lavender Glass, Today page, PWA manifest.
+- [x] Web shell in hub--starter's folder layout with new code: module registry, antd themed with Ink & Teal, Today page, PWA manifest.
 - [ ] Create `module-template/` (web, mobile, api) and build `notes` from it as the first real module.
 - [x] CI: lint, typecheck, unit tests, builds (`.github/workflows/ci.yml`).
 - [ ] NestJS API with health endpoint; Postgres on Supabase; first migration (`users`, `devices`, `sync_changes`); single `/api` proxy in `vite.config.ts`.

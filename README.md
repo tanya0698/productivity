@@ -3,7 +3,7 @@
 One offline-first workspace for notes, tasks, calendar and reminders. Web (PWA) and Android first; Windows and iOS later.
 
 - **Plan:** [personal_productivity_plan_pwa_android.md](personal_productivity_plan_pwa_android.md) (the original [personal_productivity_platform_plan.md](personal_productivity_platform_plan.md) is kept for reference)
-- **Theme:** "Lavender Glass", tokens in [packages/theme](packages/theme/src/index.ts), plan §4.4
+- **Theme:** "Ink & Teal" (from the portfolio), tokens in [packages/theme](packages/theme/src/index.ts), plan §4.4
 - **Decisions:** [docs/adr/](docs/adr/)
 
 ## Layout
@@ -19,7 +19,7 @@ packages/
   domain/          Pure rules shared by every client (task status, due state)
   sync-engine/     Outbox + push/pull, same code on web and Android
   database-local/  One local-DB interface; in-memory reference adapter
-  theme/           Lavender Glass colours, glass, radii, Manrope
+  theme/           Ink & Teal colours, glows, radii, Inter + JetBrains Mono
 module-template/   Copy-and-rename starting points for a new module (web, mobile, api)
 docs/adr/          Architecture decision records
 scripts/           emit-mobile-modules.mjs (generates the Android module registry)

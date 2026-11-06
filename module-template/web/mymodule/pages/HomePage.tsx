@@ -8,7 +8,7 @@ import { ModulePage } from "@/shared";
  */
 export default function HomePage() {
   return (
-    <ModulePage title="MyModule" description="One line saying what this module is for">
+    <ModulePage eyebrow="Section" title="MyModule" description="One line saying what this module is for">
       <Card>
         <Empty description="Nothing here yet. Items you add on any device will appear here." />
       </Card>

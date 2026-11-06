@@ -8,7 +8,7 @@ import { ModulePage } from "@/shared";
  */
 export default function HomePage() {
   return (
-    <ModulePage title="Tasks" description="Everything you need to do, by due date and project">
+    <ModulePage eyebrow="Plan" title="Tasks" description="Everything you need to do, by due date and project">
       <Card>
         <Empty description="No tasks yet. Tasks you capture here or on your phone will appear here, grouped by due date." />
       </Card>

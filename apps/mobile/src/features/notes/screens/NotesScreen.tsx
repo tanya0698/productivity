@@ -21,27 +21,38 @@ export default function NotesScreen() {
   const { records } = useLocalRecords<Note>("note");
   const notes = useMemo(() => sortNotes(records), [records]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const open = notes.find((n) => n.id === openId);
+  // A new note lives here, unsaved, until something is typed into it.
+  const [draft, setDraft] = useState<Note | null>(null);
+  const stored = notes.find((n) => n.id === openId);
+  const open = stored ?? (draft && draft.id === openId ? draft : null);
 
-  const create = async () => {
+  const create = () => {
     const note = newNote(runtime.newId(), new Date());
-    await runtime.write("note", note);
+    setDraft(note);
     setOpenId(note.id);
   };
 
   if (open) {
     return (
-      <ScreenFrame title="Note">
-        <NoteEditor key={open.id} note={open} onClose={() => setOpenId(null)} />
+      <ScreenFrame eyebrow="Capture" title="Note">
+        <NoteEditor
+          key={open.id}
+          note={open}
+          isDraft={!stored}
+          onClose={() => {
+            setOpenId(null);
+            setDraft(null);
+          }}
+        />
       </ScreenFrame>
     );
   }
 
   return (
-    <ScreenFrame title="Notes">
+    <ScreenFrame eyebrow="Capture" title="Notes">
       <Pressable
         accessibilityRole="button"
-        onPress={() => void create()}
+        onPress={create}
         style={[styles.primary, { backgroundColor: p.primary }]}
       >
         <Text weight="semiBold" style={{ color: p.onPrimary }}>
@@ -74,16 +85,16 @@ export default function NotesScreen() {
   );
 }
 
-function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
+function NoteEditor({ note, isDraft, onClose }: { note: Note; isDraft: boolean; onClose: () => void }) {
   const runtime = useSyncRuntime();
   const p = usePalette();
   const [title, setTitle] = useState(note.title);
   const [text, setText] = useState(noteText(note));
   const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ note, title, text });
+  const latest = useRef({ note, title, text, isDraft });
   useEffect(() => {
-    latest.current = { note, title, text };
+    latest.current = { note, title, text, isDraft };
   });
 
   // Show changes pulled from another device, unless they'd replace what's being typed.
@@ -99,6 +110,7 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
     if (!dirty.current) return;
     dirty.current = false;
     const current = latest.current;
+    if (current.isDraft && !current.title.trim() && !current.text.trim()) return; // an empty new note is never saved
     void runtime.write("note", editNote(current.note, { title: current.title, text: current.text }, new Date()));
   };
 
@@ -120,7 +132,8 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
         onPress: () => {
           if (timer.current) clearTimeout(timer.current);
           dirty.current = false;
-          void runtime.write("note", latest.current.note, "delete").then(onClose);
+          if (latest.current.isDraft) onClose(); // never saved, so nothing to delete
+          else void runtime.write("note", latest.current.note, "delete").then(onClose);
         },
       },
     ]);

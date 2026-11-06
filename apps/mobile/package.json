@@ -10,7 +10,8 @@
     "typecheck": "node ../../scripts/emit-mobile-modules.mjs && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@expo-google-fonts/manrope": "^0.4.2",
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "@productivity/contracts": "*",
     "@productivity/database-local": "*",

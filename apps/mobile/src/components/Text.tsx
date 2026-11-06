@@ -2,17 +2,41 @@ import React from "react";
 import { Text as RNText, type TextProps } from "react-native";
 import { fonts, usePalette } from "../theme";
 
-type Weight = keyof typeof fonts.native;
-type Tone = "primary" | "secondary" | "muted";
+type Weight = Exclude<keyof typeof fonts.native, "mono" | "monoBold">;
+type Tone = "heading" | "primary" | "secondary" | "muted" | "brand";
 
-/** Manrope everywhere, with the palette's text tones. */
+/**
+ * Inter everywhere, with the palette's text tones. `label` gives the small
+ * uppercase JetBrains Mono style from the portfolio ("ELTON CHIPUKA", "FROM").
+ */
 export default function Text({
   weight = "regular",
   tone = "primary",
+  label = false,
   style,
+  children,
   ...rest
-}: TextProps & { weight?: Weight; tone?: Tone }) {
+}: TextProps & { weight?: Weight; tone?: Tone; label?: boolean }) {
   const p = usePalette();
-  const color = tone === "secondary" ? p.textSecondary : tone === "muted" ? p.textMuted : p.text;
-  return <RNText {...rest} style={[{ fontFamily: fonts.native[weight], color }, style]} />;
+  const color = {
+    heading: p.heading,
+    primary: p.text,
+    secondary: p.textSecondary,
+    muted: p.textMuted,
+    brand: p.primary,
+  }[tone];
+  const labelStyle = label
+    ? {
+        fontFamily: tone === "brand" ? fonts.native.monoBold : fonts.native.mono,
+        fontSize: 11,
+        // React Native takes letter spacing in points; ~0.18em at 11pt.
+        letterSpacing: 2,
+        textTransform: "uppercase" as const,
+      }
+    : { fontFamily: fonts.native[weight] };
+  return (
+    <RNText {...rest} style={[{ color }, labelStyle, style]}>
+      {children}
+    </RNText>
+  );
 }

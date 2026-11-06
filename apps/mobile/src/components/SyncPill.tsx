@@ -25,7 +25,7 @@ export default function SyncPill() {
   const status = useSyncStatus();
   return (
     <GlassCard style={{ borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-      <Text tone="secondary" style={{ fontSize: 11 }} accessibilityLiveRegion="polite">
+      <Text label tone="secondary" style={{ fontSize: 10, letterSpacing: 1 }} accessibilityLiveRegion="polite">
         {label(status)}
       </Text>
     </GlassCard>

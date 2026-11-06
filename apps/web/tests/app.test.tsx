@@ -9,8 +9,9 @@ describe("App", () => {
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Today" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    expect(await screen.findByText("Tasks")).toBeTruthy();
-    expect(screen.getByText("Notes")).toBeTruthy();
+    // Menu items specifically: "Notes" also labels a stat tile on Today.
+    expect(await screen.findByRole("menuitem", { name: /Tasks/ })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /Notes/ })).toBeTruthy();
   });
 
   it("shows a not-found page for an unknown address", async () => {

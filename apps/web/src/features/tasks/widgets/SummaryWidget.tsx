@@ -1,6 +1,6 @@
-import { Empty } from "antd";
+import { EmptyState } from "@/components/ui/EmptyState";
 
-/** This module's panel on the Today page. Must show an empty state, never an error. */
+/** The Today page's "Up next" panel. Lists the next tasks once the Tasks module stores them (Phase 2). */
 export default function SummaryWidget() {
-  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing for today." />;
+  return <EmptyState compact text="Nothing lined up. Tasks you add will appear here." />;
 }
