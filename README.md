@@ -49,7 +49,7 @@ npm run db:migrate
 
 Tables live in the `app` schema, not `public`, so Supabase's auto-generated Data API can't reach them; the NestJS API is the only way in. Don't move them to `public` or query them from the browser with `supabase-js`.
 
-There is no sign-in yet (ADR 0003, Supabase Auth is the leading option). In development the API treats every request as `DEV_USER_ID`.
+Sign-in uses Supabase Auth (ADR 0003). Put the project URL and publishable key in `apps/web/.env.local` and `apps/mobile/.env` (see their `.env.example`), and `SUPABASE_URL` in the root `.env`.
 
 ## Checks
 

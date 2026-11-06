@@ -20,6 +20,7 @@
     "@prisma/client": "^6.16.0",
     "@productivity/contracts": "*",
     "@productivity/domain": "*",
+    "jose": "^6.2.15",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },

@@ -5,7 +5,7 @@ import { DexieDatabase } from "@productivity/database-local/dexie";
 import { SqliteDatabase } from "@productivity/database-local/sqlite";
 import { openNodeSqlite } from "@productivity/database-local/node-sqlite";
 import type { PullResponse, PushRequest, PushResponse } from "@productivity/contracts";
-import { SyncEngine, TransientSyncError, createHttpTransport, type SyncTransport } from "./index.ts";
+import { AuthSyncError, SyncEngine, TransientSyncError, createHttpTransport, type SyncTransport } from "./index.ts";
 
 let n = 0;
 const newId = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
@@ -255,15 +255,33 @@ describe("createHttpTransport", () => {
     const down = (async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;
-    await expect(createHttpTransport("/api", down).pull(0)).rejects.toBeInstanceOf(TransientSyncError);
-    await expect(createHttpTransport("/api", reply(503)).pull(0)).rejects.toBeInstanceOf(TransientSyncError);
+    await expect(createHttpTransport("/api", { fetchImpl: down }).pull(0)).rejects.toBeInstanceOf(TransientSyncError);
+    await expect(createHttpTransport("/api", { fetchImpl: reply(503) }).pull(0)).rejects.toBeInstanceOf(TransientSyncError);
   });
 
   it("treats a 400 as a bug, not something to retry", async () => {
-    await expect(createHttpTransport("/api", reply(400)).pull(0)).rejects.not.toBeInstanceOf(TransientSyncError);
+    await expect(createHttpTransport("/api", { fetchImpl: reply(400) }).pull(0)).rejects.not.toBeInstanceOf(TransientSyncError);
+  });
+
+  it("sends the current access token, asking for it on every request", async () => {
+    const seen: (string | null)[] = [];
+    const capture = (async (_url: string, init?: RequestInit) => {
+      seen.push(new Headers(init?.headers).get("Authorization"));
+      return new Response(JSON.stringify({ changes: [], cursor: 0, hasMore: false }), { status: 200 });
+    }) as typeof fetch;
+    let token = "first";
+    const transport = createHttpTransport("/api", { fetchImpl: capture, getAccessToken: async () => token });
+    await transport.pull(0);
+    token = "refreshed";
+    await transport.pull(0);
+    expect(seen).toEqual(["Bearer first", "Bearer refreshed"]);
+  });
+
+  it("treats a 401 as a sign-in problem, not a network one", async () => {
+    await expect(createHttpTransport("/api", { fetchImpl: reply(401) }).pull(0)).rejects.toBeInstanceOf(AuthSyncError);
   });
 
   it("rejects a response that doesn't match the contract", async () => {
-    await expect(createHttpTransport("/api", reply(200, { nope: 1 })).pull(0)).rejects.toThrow();
+    await expect(createHttpTransport("/api", { fetchImpl: reply(200, { nope: 1 }) }).pull(0)).rejects.toThrow();
   });
 });

@@ -8,6 +8,7 @@ import NotFoundPage from "@/pages/NotFoundPage";
 
 /** One lazy route per live module, generated from the registry. */
 const moduleRoutes = getLiveModules().map((m) => ({ path: `${m.basePath}/*`, key: m.key, Component: lazy(m.load) }));
+const AccountPage = lazy(() => import("@/pages/account/AccountPage"));
 
 export function AppRoutes() {
   return (
@@ -15,6 +16,7 @@ export function AppRoutes() {
       <Suspense fallback={<Skeleton active />}>
         <Routes>
           <Route path="/" element={<TodayPage />} />
+          <Route path="/account" element={<AccountPage />} />
           {moduleRoutes.map(({ path, key, Component }) => (
             <Route key={key} path={path} element={<Component />} />
           ))}

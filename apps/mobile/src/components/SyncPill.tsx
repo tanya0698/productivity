@@ -15,7 +15,8 @@ function label(status: SyncStatus): string {
     case "offline":
       return status.pending ? `Offline — ${status.pending} queued` : "Offline";
     case "needs_attention":
-      return status.reason === "conflict" ? "Needs attention — conflict" : "Needs attention — sync stopped";
+      if (status.reason === "conflict") return "Needs attention — conflict";
+      return status.reason === "auth" ? "Sign in again to sync" : "Needs attention — sync stopped";
     case "idle":
       return status.lastSyncedAt ? "Synced" : "Saved on this device";
   }

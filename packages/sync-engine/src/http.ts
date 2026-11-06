@@ -6,13 +6,24 @@ import { AuthSyncError, TransientSyncError, type SyncTransport } from "./index.t
  * differently: retry later (network, 5xx), sign in again (401/403), or a bug
  * that retrying won't fix (other 4xx, a response that doesn't match the contract).
  */
-export function createHttpTransport(baseUrl: string, fetchImpl: typeof fetch = fetch): SyncTransport {
+export function createHttpTransport(
+  baseUrl: string,
+  options: {
+    /** The signed-in user's current access token; asked for on every request, so refreshes are picked up. */
+    getAccessToken?: () => Promise<string | null>;
+    fetchImpl?: typeof fetch;
+  } = {},
+): SyncTransport {
   const root = baseUrl.replace(/\/$/, "");
+  const fetchImpl = options.fetchImpl ?? fetch;
 
-  async function request(path: string, init?: RequestInit): Promise<unknown> {
+  async function request(path: string, init: RequestInit = {}): Promise<unknown> {
+    const token = await options.getAccessToken?.();
+    const headers = new Headers(init.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
     let res: Response;
     try {
-      res = await fetchImpl(`${root}${path}`, init);
+      res = await fetchImpl(`${root}${path}`, { ...init, headers });
     } catch (err) {
       throw new TransientSyncError(`Network error: ${String(err)}`);
     }

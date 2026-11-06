@@ -20,8 +20,8 @@ function runnerFor(db: Pick<SQLite.SQLiteDatabase, "runAsync" | "getAllAsync">):
   };
 }
 
-async function openDriver(): Promise<SqliteDriver> {
-  const db = await SQLite.openDatabaseAsync("productivity.db");
+async function openDriver(fileName: string): Promise<SqliteDriver> {
+  const db = await SQLite.openDatabaseAsync(fileName);
   await db.execAsync("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
   let queue: Promise<unknown> = Promise.resolve();
   return {
@@ -44,9 +44,13 @@ async function openDriver(): Promise<SqliteDriver> {
   };
 }
 
-/** Opens the phone's local database and the sync runtime. Stable reference, as SyncProvider requires. */
-export async function openRuntime(): Promise<SyncRuntime> {
-  const db = await SqliteDatabase.open(await openDriver());
+/**
+ * Opens the signed-in user's local database and the sync runtime. One SQLite
+ * file per account, so a second account on the same phone never sees the
+ * first one's notes.
+ */
+export async function openRuntime(userId: string, getAccessToken: () => Promise<string | null>): Promise<SyncRuntime> {
+  const db = await SqliteDatabase.open(await openDriver(`productivity-${userId}.db`));
   const deviceId = await ensureDeviceId(db, newId);
-  return new SyncRuntime({ db, transport: createHttpTransport(API_URL), deviceId, newId });
+  return new SyncRuntime({ db, transport: createHttpTransport(API_URL, { getAccessToken }), deviceId, newId });
 }

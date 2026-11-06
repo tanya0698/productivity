@@ -1,6 +1,9 @@
 import "fake-indexeddb/auto";
 import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+// antd's first render is slow when every test file runs in parallel; the 1s default flakes.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => cleanup());
 

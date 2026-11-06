@@ -1,11 +1,13 @@
 import { Controller, Get, Module } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.module";
+import { Public } from "../../common/auth";
 
 @Controller("health")
 class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** `GET /api/health` — up, plus whether the database answers. */
+  /** `GET /api/health` — up, plus whether the database answers. Open to anyone. */
+  @Public()
   @Get()
   async check() {
     let database: "up" | "down" = "up";

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, type MenuProps } from "antd";
+import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, Typography, type MenuProps } from "antd";
 import {
   CloudOutlined,
   DisconnectOutlined,
@@ -9,6 +9,8 @@ import {
   SunOutlined,
   DesktopOutlined,
   HomeOutlined,
+  LogoutOutlined,
+  SafetyOutlined,
   SaveOutlined,
   SyncOutlined,
   WarningOutlined,
@@ -16,6 +18,7 @@ import {
 import type { SyncStatus } from "@productivity/sync-engine";
 import { useSyncStatus } from "@productivity/sync-engine/react";
 import { getModules, findModuleByPath } from "@/shared/modules/registry";
+import { useAuth } from "@/shared/auth/AuthProvider";
 import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
 
 const SIDER_WIDTH = 232;
@@ -105,7 +108,7 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
   ];
 
   return (
-    <Flex vertical gap={16}>
+    <Flex vertical gap={16} style={{ height: "100%" }}>
       <Flex align="center" gap={10} style={{ padding: "4px 8px" }}>
         <img src="/icon.svg" alt="" width={28} height={28} />
         <span className="pp-label pp-label-brand" style={{ fontSize: 13 }}>
@@ -122,6 +125,42 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
           onNavigate();
         }}
       />
+      <AccountFooter onNavigate={onNavigate} />
+    </Flex>
+  );
+}
+
+/** Who's signed in, account settings, and the way out. Sits at the bottom of the navigation. */
+function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
+  const { session, signOut } = useAuth();
+  const navigate = useNavigate();
+  return (
+    <Flex
+      vertical
+      gap={8}
+      style={{ marginTop: "auto", padding: "12px 8px 4px", borderTop: "1px solid var(--pp-border)" }}
+    >
+      <span className="pp-label" style={{ fontSize: 10 }}>
+        Signed in as
+      </span>
+      <Typography.Text ellipsis style={{ fontSize: 13 }} title={session?.user.email ?? undefined}>
+        {session?.user.email ?? "Unknown account"}
+      </Typography.Text>
+      <Flex gap={8} wrap>
+        <Button
+          size="small"
+          icon={<SafetyOutlined />}
+          onClick={() => {
+            navigate("/account");
+            onNavigate();
+          }}
+        >
+          Account
+        </Button>
+        <Button size="small" icon={<LogoutOutlined />} onClick={() => void signOut()}>
+          Sign out
+        </Button>
+      </Flex>
     </Flex>
   );
 }
@@ -141,7 +180,12 @@ function syncLabel(status: SyncStatus): { icon: ReactNode; text: string } {
     case "needs_attention":
       return {
         icon: <WarningOutlined />,
-        text: status.reason === "conflict" ? "Needs attention — conflict" : "Needs attention — sync stopped",
+        text:
+          status.reason === "conflict"
+            ? "Needs attention — conflict"
+            : status.reason === "auth"
+              ? "Sign in again to sync"
+              : "Needs attention — sync stopped",
       };
     case "idle":
       return { icon: <CloudOutlined />, text: status.lastSyncedAt ? "Synced" : "Saved on this device" };

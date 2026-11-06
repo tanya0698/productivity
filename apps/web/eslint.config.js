@@ -18,7 +18,7 @@ export default tseslint.config(
   },
   {
     // Module manifests and the theme context export data/hooks, not components.
-    files: ["src/features/*/config/module.tsx", "src/contexts/**"],
+    files: ["src/features/*/config/module.tsx", "src/contexts/**", "src/shared/auth/**"],
     rules: { "react-refresh/only-export-components": "off" },
   },
 );

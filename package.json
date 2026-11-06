@@ -23,6 +23,7 @@
     "db:status": "npm run prisma:status -w @productivity/api",
     "modules:mobile": "node scripts/emit-mobile-modules.mjs",
     "sync:check": "node scripts/sync-two-devices.ts",
+    "auth:check": "node scripts/auth-check.ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

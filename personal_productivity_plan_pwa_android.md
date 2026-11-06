@@ -642,7 +642,7 @@ apps/web/
 └── tests/                         # setup.ts, app.test.tsx, shared/
 ```
 
-There is no sign-in yet. Auth is ADR 0003; Supabase Auth is the leading option. Until it's decided, the API treats every request as `DEV_USER_ID` in development.
+Sign-in uses Supabase Auth (ADR 0003): `src/shared/auth/` holds the client (sign-in only) and session provider, `src/pages/auth/SignInPage.tsx` the sign-in, sign-up and reset page. Each account gets its own local database.
 
 ### 11.3 A feature module
 
@@ -901,7 +901,7 @@ Sequenced for earliest daily use. Order is the commitment; dates depend on avail
 | Database hosting | **Decided:** Supabase Postgres, `app` schema, API as the only way in (ADR 0002) |
 | API/worker hosting | Open, decide when deploying |
 | End-to-end encryption | Open, Phase 0 ADR (decide first) |
-| Auth: Supabase Auth (leading), reuse UnifiedAuth, or a NestJS `identity` module | Open, ADR 0003 |
+| Auth | **Decided:** Supabase Auth, email and password; API verifies tokens against the project's public keys; local data per account (ADR 0003) |
 | AI provider and consent model | Open, before Phase 6 |
 | Backup retention and tombstone purge window | Open, before Phase 4 |
 | Minimum Android version and browser matrix | Open, Phase 0 (suggest Android 10+, current Chrome/Edge/Firefox) |
