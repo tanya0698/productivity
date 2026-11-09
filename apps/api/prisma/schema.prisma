@@ -25,11 +25,12 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  devices  Device[]
-  changes  SyncChange[]
-  projects Project[]
-  tasks    Task[]
-  notes    Note[]
+  devices   Device[]
+  changes   SyncChange[]
+  projects  Project[]
+  tasks     Task[]
+  notes     Note[]
+  reminders Reminder[]
 
   @@map("users")
 }
@@ -113,10 +114,11 @@ model Task {
   deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
   version            BigInt    @default(1)
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  parent   Task?    @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subtasks Task[]   @relation("Subtasks")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent    Task?      @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks  Task[]     @relation("Subtasks")
+  reminders Reminder[]
 
   @@index([userId, updatedAt])
   @@index([userId, dueDate])
@@ -143,9 +145,41 @@ model Note {
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
   version    BigInt    @default(1)
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  reminders Reminder[]
 
   @@index([userId, updatedAt])
   @@map("notes")
+}
+
+/// Plan §7.2 / §8.2. Typed nullable links (at most one set; none = standalone).
+/// `remindAt` is the first occurrence; repeats keep the same wall-clock time in
+/// `timezone`. `lastHandledAt` is the occurrence most recently dismissed, so a
+/// repeating reminder moves on without rewriting its start. `eventId` arrives
+/// with the calendar (Phase 3b).
+model Reminder {
+  id             String    @id @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  taskId         String?   @map("task_id") @db.Uuid
+  noteId         String?   @map("note_id") @db.Uuid
+  title          String?
+  remindAt       DateTime  @map("remind_at") @db.Timestamptz
+  timezone       String
+  recurrenceRule String?   @map("recurrence_rule")
+  status         String    @default("scheduled") // scheduled | snoozed | dismissed | done
+  snoozedUntil   DateTime? @map("snoozed_until") @db.Timestamptz
+  lastHandledAt  DateTime? @map("last_handled_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  version        BigInt    @default(1)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  note Note? @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([userId, remindAt])
+  @@map("reminders")
 }

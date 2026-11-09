@@ -3,32 +3,35 @@ import { Checkbox } from "antd";
 import { ClockCircleOutlined, ExclamationCircleOutlined, FlagFilled, FlagOutlined } from "@ant-design/icons";
 import { dueState, isDone, priorityLabel, type LocalTask } from "@productivity/domain";
 import type { TaskPriority } from "@productivity/contracts";
-import { formatDue } from "./formatDue";
+import { formatTaskDue } from "./formatDue";
 import { ProjectTag } from "../projects/ProjectSelect";
 
 export type Task = LocalTask & { deletedAt: string | null };
 
 /** Red for overdue, amber for today, plain for later: always with words, never colour alone. */
 export function DueBadge({ task, now, today }: { task: Task; now: Date; today: string }) {
-  const date = task.dueDate ?? task.dueAt?.slice(0, 10);
-  if (!date) return null;
+  const when = formatTaskDue(task, today);
+  if (!when) return null;
   const state = dueState(task, now, today);
   if (state === "overdue") {
     return (
       <span className="pp-badge pp-badge-error">
-        <ExclamationCircleOutlined /> Overdue · {formatDue(date, today)}
+        <ExclamationCircleOutlined /> Overdue · {when}
       </span>
     );
   }
   if (state === "due_soon") {
     return (
       <span className="pp-badge pp-badge-warning">
-        <ClockCircleOutlined /> Due {formatDue(date, today).toLowerCase()}
+        <ClockCircleOutlined /> Due {lowerRelative(when)}
       </span>
     );
   }
-  return <span className="pp-badge">{formatDue(date, today)}</span>;
+  return <span className="pp-badge">{when}</span>;
 }
+
+/** "Due today 14:00" reads better than "Due Today 14:00"; dates keep their capitals ("Due Fri 13 Nov"). */
+const lowerRelative = (s: string) => s.replace(/^(Today|Tomorrow|Yesterday)/, (w) => w.toLowerCase());
 
 /** Priority as an icon plus its name. Normal is the default and isn't shown in lists. */
 export function PriorityLabel({ priority, always = false }: { priority: TaskPriority; always?: boolean }) {

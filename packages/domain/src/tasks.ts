@@ -72,6 +72,10 @@ export function dueState(
 export const localDate = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
+/** The local calendar day a task is due: its date, or the day its due time falls on here. */
+export const taskDay = (task: Pick<Task, "dueDate" | "dueAt">): string | null =>
+  task.dueDate ?? (task.dueAt ? localDate(new Date(task.dueAt)) : null);
+
 /** `localDate` shifted by whole days, e.g. tomorrow = addDays(today, 1). */
 export function addDays(date: string, days: number): string {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
@@ -111,7 +115,7 @@ export function newTask(id: string, now: Date, fields: NewTaskFields): LocalTask
 
 export function editTask<T extends LocalTask>(
   task: T,
-  changes: Partial<Pick<LocalTask, "title" | "description" | "dueDate" | "priority" | "projectId">>,
+  changes: Partial<Pick<LocalTask, "title" | "description" | "dueDate" | "dueAt" | "priority" | "projectId">>,
   now: Date,
 ): T {
   return {
@@ -136,9 +140,12 @@ export const taskGroupTitle: Record<TaskGroupKey, string> = {
 };
 
 function compareOpen(a: LocalTask, b: LocalTask): number {
-  const ad = a.dueDate ?? a.dueAt?.slice(0, 10) ?? "9999-12-31";
-  const bd = b.dueDate ?? b.dueAt?.slice(0, 10) ?? "9999-12-31";
-  return ad.localeCompare(bd) || a.priority - b.priority || a.createdAt.localeCompare(b.createdAt);
+  const ad = taskDay(a) ?? "9999-12-31";
+  const bd = taskDay(b) ?? "9999-12-31";
+  // Same day: timed tasks in time order, ahead of ones due "some time that day".
+  const at = a.dueAt ?? "~";
+  const bt = b.dueAt ?? "~";
+  return ad.localeCompare(bd) || at.localeCompare(bt) || a.priority - b.priority || a.createdAt.localeCompare(b.createdAt);
 }
 
 /**
@@ -154,7 +161,7 @@ export function groupTasks<T extends LocalTask>(tasks: readonly T[], now: Date, 
     }
     const state = dueState(t, now, today);
     if (state === "overdue") groups.overdue.push(t);
-    else if (state === "due_soon" && (t.dueDate === today || t.dueAt?.slice(0, 10) === today)) groups.today.push(t);
+    else if (state === "due_soon" && taskDay(t) === today) groups.today.push(t);
     else if (state === "none") groups.someday.push(t);
     else groups.upcoming.push(t);
   }

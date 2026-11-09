@@ -69,8 +69,46 @@ export const project = z.object({
 });
 export type Project = z.infer<typeof project>;
 
+/**
+ * How a reminder repeats. A fixed set of RFC 5545 rules for now, so every
+ * client expands them the same way (packages/domain/src/reminders.ts).
+ */
+export const reminderRepeat = z.enum([
+  "FREQ=DAILY",
+  "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+  "FREQ=WEEKLY",
+  "FREQ=MONTHLY",
+  "FREQ=YEARLY",
+]);
+export type ReminderRepeat = z.infer<typeof reminderRepeat>;
+
+export const reminderStatus = z.enum(["scheduled", "snoozed", "dismissed", "done"]);
+export type ReminderStatus = z.infer<typeof reminderStatus>;
+
+/** Plan §7.2, §8.2. Linked to a task or a note, or neither (standalone). */
+export const reminderObject = z.object({
+    ...syncFields,
+    taskId: z.uuid().nullable(),
+    noteId: z.uuid().nullable(),
+    /** Shown for standalone reminders; linked ones show the task or note. */
+    title: z.string().max(500).nullable(),
+    /** The first occurrence. Repeats keep its wall-clock time in `timezone`. */
+    remindAt: z.iso.datetime(),
+    /** IANA zone, e.g. "Africa/Harare". */
+    timezone: z.string().min(1).max(64),
+    recurrenceRule: reminderRepeat.nullable(),
+    status: reminderStatus,
+    snoozedUntil: z.iso.datetime().nullable(),
+    /** The occurrence most recently dismissed (repeating reminders). */
+    lastHandledAt: z.iso.datetime().nullable(),
+});
+export const reminder = reminderObject.refine((r) => !(r.taskId && r.noteId), {
+  message: "link a task or a note, not both",
+});
+export type Reminder = z.infer<typeof reminder>;
+
 /** Every entity type sync knows about. Modules register theirs here. */
-export const entityType = z.enum(["task", "note", "project"]);
+export const entityType = z.enum(["task", "note", "project", "reminder"]);
 export type EntityType = z.infer<typeof entityType>;
 
 // ─── Sync protocol (plan §6.4) ───────────────────────────────────────────────

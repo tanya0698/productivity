@@ -22,6 +22,8 @@ import { getModules, findModuleByPath } from "@/shared/modules/registry";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
 import { SearchPalette } from "@/shared/search/SearchPalette";
+import { ReminderAlerts } from "@/shared/reminders/ReminderAlerts";
+import { ReminderBell } from "@/shared/reminders/ReminderBell";
 
 const SIDER_WIDTH = 232;
 const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
@@ -98,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* marginLeft auto, not space-between: antd's Flex renders nothing for an empty group. */}
             <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
               {isMobile ? <Button type="text" icon={<SearchOutlined />} aria-label="Search" onClick={() => setSearchOpen(true)} /> : null}
+              <ReminderBell />
               <SyncPill />
               {/* On phones the colour switch lives in the navigation drawer, so the header fits. */}
               {isMobile ? null : <ColorModeSwitch />}
@@ -117,6 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Layout.Content>
       </Layout>
       <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <ReminderAlerts />
     </Layout>
   );
 }

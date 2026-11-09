@@ -1,3 +1,15 @@
+/** A task's due date, with its time when it has one: "Today", "Tomorrow 14:30", "Wed 12 Nov". */
+export function formatTaskDue(task: { dueDate: string | null; dueAt: string | null }, today: string): string | null {
+  if (task.dueDate) return formatDue(task.dueDate, today);
+  if (!task.dueAt) return null;
+  const at = new Date(task.dueAt);
+  const day = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+  return `${formatDue(day, today)} ${formatClock(at)}`;
+}
+
+/** 14:30, or 2:30 PM, as the device prefers. */
+export const formatClock = (d: Date) => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
 /** "Today", "Tomorrow", "Wed 12 Nov", or a full date further out. */
 export function formatDue(date: string, today: string): string {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];

@@ -107,6 +107,18 @@ export async function ownProjectOrNull(tx: Tx, userId: string, data: Record<stri
   return project ? data : { ...data, projectId: null };
 }
 
+/** Same rule for a reminder's task or note: the user's own, or no link (a standalone reminder). */
+export async function ownLinksOrNull(tx: Tx, userId: string, data: Record<string, unknown>) {
+  const out = { ...data };
+  if (typeof out.taskId === "string" && !(await tx.task.findFirst({ where: { id: out.taskId, userId }, select: { id: true } }))) {
+    out.taskId = null;
+  }
+  if (typeof out.noteId === "string" && !(await tx.note.findFirst({ where: { id: out.noteId, userId }, select: { id: true } }))) {
+    out.noteId = null;
+  }
+  return out;
+}
+
 /** `"2026-10-21"` ↔ a Date at UTC midnight, for `@db.Date` columns. */
 export const dateOnly = {
   toDb: (v: string | null | undefined) => (v ? new Date(`${v}T00:00:00.000Z`) : null),

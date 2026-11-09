@@ -345,6 +345,73 @@ h3.ant-typography {
   font-weight: 600;
 }
 
+/* ─── Reminders ─────────────────────────────────────────────────────────── */
+.pp-reminder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+}
+.pp-reminder + .pp-reminder {
+  border-top: 1px solid var(--pp-border);
+}
+.pp-reminder-icon {
+  color: var(--pp-text-muted);
+  font-size: 16px;
+}
+.pp-reminder-due .pp-reminder-icon {
+  color: var(--pp-warning-text);
+}
+.pp-reminder-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.pp-reminder-main:hover .pp-task-title {
+  color: var(--pp-primary);
+}
+.pp-reminder-main:focus-visible {
+  outline: 2px solid var(--pp-primary);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.pp-card-due {
+  border-color: color-mix(in srgb, var(--pp-warning-text) 45%, var(--pp-border));
+}
+.pp-reminder-past {
+  font-size: 13px;
+}
+.pp-alert-title {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--pp-heading);
+  cursor: pointer;
+  text-align: left;
+}
+.pp-alert-title:hover {
+  color: var(--pp-primary);
+}
+/* Phones: a due reminder's buttons go on their own row under it. */
+@media (max-width: 575px) {
+  .pp-reminder-due {
+    flex-wrap: wrap;
+  }
+  .pp-reminder-due .pp-reminder-actions {
+    width: 100%;
+  }
+}
+
 /* ─── Search ────────────────────────────────────────────────────────────── */
 .pp-search-trigger {
   display: inline-flex;

@@ -9,6 +9,7 @@ import {
   localDate,
   newTask,
   priorityLabel,
+  taskDay,
   taskGroupTitle,
   toggleDone,
   type LocalTask,
@@ -58,7 +59,7 @@ export default function TasksScreen() {
   const row = (task: Task) => {
     const done = isDone(task);
     const state = dueState(task, now, today);
-    const date = task.dueDate ?? task.dueAt?.slice(0, 10);
+    const date = taskDay(task);
     return (
       <Pressable
         key={task.id}
