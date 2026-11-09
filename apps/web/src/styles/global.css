@@ -280,6 +280,64 @@ h3.ant-typography {
   }
 }
 
+/* ─── State badges: soft background + text colour, never colour alone ─────── */
+.pp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--pp-muted);
+  color: var(--pp-text-secondary);
+}
+.pp-badge-error { background: var(--pp-error-soft); color: var(--pp-error-text); }
+.pp-badge-warning { background: var(--pp-warning-soft); color: var(--pp-warning-text); }
+.pp-badge-success { background: var(--pp-success-soft); color: var(--pp-success-text); }
+
+/* ─── Task rows ─────────────────────────────────────────────────────────── */
+.pp-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.pp-task:hover {
+  background: var(--pp-muted);
+}
+.pp-task-title {
+  font-size: 14px;
+  color: var(--pp-text);
+  word-break: break-word;
+}
+.pp-task-done .pp-task-title {
+  color: var(--pp-text-muted);
+  text-decoration: line-through;
+}
+.pp-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.pp-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--pp-text-secondary);
+}
+.pp-priority-urgent {
+  color: var(--pp-heading);
+  font-weight: 600;
+}
+
 /* Times, counts and durations line up in lists. */
 .pp-num {
   font-variant-numeric: tabular-nums;

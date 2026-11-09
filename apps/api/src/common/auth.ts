@@ -106,17 +106,22 @@ export class AuthGuard implements CanActivate {
 
   /**
    * Whether the account has a verified second factor, read from Supabase Auth's
-   * own table in the same database. Cached briefly so it isn't a query per request.
+   * own table in the same database.
+   *
+   * Only a "yes" is cached. Caching a "no" once let password-only sessions
+   * through for up to 30 seconds after two-step verification was turned on
+   * (caught by `npm run auth:check`). A cached "yes" errs the safe way: after
+   * turning it off, a password-only session waits at most 30 seconds.
    */
-  private readonly factorCache = new Map<string, { has: boolean; until: number }>();
+  private readonly hasFactorUntil = new Map<string, number>();
 
   private async hasSecondFactor(userId: string): Promise<boolean> {
-    const cached = this.factorCache.get(userId);
-    if (cached && cached.until > Date.now()) return cached.has;
+    if ((this.hasFactorUntil.get(userId) ?? 0) > Date.now()) return true;
     const rows = await this.prisma.$queryRaw<{ n: number }[]>`
       SELECT count(*)::int AS n FROM auth.mfa_factors WHERE user_id = ${userId}::uuid AND status = 'verified'`;
     const has = (rows[0]?.n ?? 0) > 0;
-    this.factorCache.set(userId, { has, until: Date.now() + 30_000 });
+    if (has) this.hasFactorUntil.set(userId, Date.now() + 30_000);
+    else this.hasFactorUntil.delete(userId);
     return has;
   }
 
