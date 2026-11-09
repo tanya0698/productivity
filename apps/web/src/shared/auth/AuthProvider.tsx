@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
 export interface AuthState {
@@ -13,6 +13,12 @@ export interface AuthState {
   needsMfa: boolean;
   /** Arrived from a password-reset link: the app asks for a new password first. */
   recovering: boolean;
+  /**
+   * Arrived from an email-confirmation link. Set to the confirmed address (or
+   * "" if unknown) after that link's automatic session has been ended, so the
+   * sign-in page can say so and fill the email in.
+   */
+  confirmedEmail: string | null;
   /** Re-read the two-factor level, after verifying a code or changing factors. */
   refreshAssurance: () => Promise<void>;
   finishRecovery: () => void;
@@ -29,12 +35,24 @@ const AuthContext = createContext<AuthState | null>(null);
  * app opens: a second factor if the account has one, and a new password after
  * a reset link.
  */
-export function AuthProvider({ client, children }: { client: SupabaseClient; children: ReactNode }) {
+export function AuthProvider({
+  client,
+  fromEmailConfirmation = false,
+  children,
+}: {
+  client: SupabaseClient;
+  /** Opened from an email-confirmation link: end its automatic session and ask for the password. */
+  fromEmailConfirmation?: boolean;
+  children: ReactNode;
+}) {
   const [sessionReady, setSessionReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   // Tagged with the user it was read for, so a stale answer never applies to someone else.
   const [assurance, setAssurance] = useState<{ userId: string; needsMfa: boolean } | null>(null);
   const [recovering, setRecovering] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  // While true, the session a confirmation link created is ignored, so the app never opens with it.
+  const holdConfirmationSession = useRef(fromEmailConfirmation);
 
   const refreshAssurance = useCallback(async () => {
     const [{ data: level }, { data: current }] = await Promise.all([
@@ -48,12 +66,30 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
 
   useEffect(() => {
     let cancelled = false;
-    void client.auth.getSession().then(({ data }) => {
+    void client.auth.getSession().then(async ({ data }) => {
       if (cancelled) return;
+      if (holdConfirmationSession.current) {
+        // Confirming an email proves the address; it isn't a sign-in. End the
+        // session the link created (this device only) and ask for the password.
+        const email = data.session?.user.email ?? "";
+        if (data.session) await client.auth.signOut({ scope: "local" });
+        holdConfirmationSession.current = false;
+        try {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        } catch {
+          /* not fatal: the fragment was already consumed */
+        }
+        if (cancelled) return;
+        setConfirmedEmail(email);
+        setSession(null);
+        setSessionReady(true);
+        return;
+      }
       setSession(data.session);
       setSessionReady(true);
     });
     const { data } = client.auth.onAuthStateChange((event, next) => {
+      if (holdConfirmationSession.current) return;
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT") setRecovering(false);
       setSession(next);
@@ -89,6 +125,7 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
       client,
       needsMfa,
       recovering,
+      confirmedEmail,
       refreshAssurance,
       finishRecovery: () => setRecovering(false),
       getAccessToken: async () => (await client.auth.getSession()).data.session?.access_token ?? null,
@@ -96,7 +133,7 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
         await client.auth.signOut();
       },
     }),
-    [ready, session, client, needsMfa, recovering, refreshAssurance],
+    [ready, session, client, needsMfa, recovering, confirmedEmail, refreshAssurance],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

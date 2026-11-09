@@ -58,7 +58,20 @@ const auth = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/shared/auth/supabase", () => ({ supabase: auth.client }));
+const remember = vi.hoisted(() => ({ value: true, set: vi.fn() }));
+const landing = vi.hoisted(() => ({ fromConfirmation: false }));
+
+vi.mock("@/shared/auth/supabase", () => ({
+  supabase: auth.client,
+  get landedFromEmailConfirmation() {
+    return landing.fromConfirmation;
+  },
+  getRememberMe: () => remember.value,
+  setRememberMe: (v: boolean) => {
+    remember.value = v;
+    remember.set(v);
+  },
+}));
 
 const { default: App } = await import("@/App");
 
@@ -67,6 +80,24 @@ describe("App", () => {
     auth.state.session = null;
     auth.state.nextLevel = "aal1";
     auth.state.currentLevel = "aal1";
+    remember.value = true;
+    remember.set.mockClear();
+    landing.fromConfirmation = false;
+    auth.client.auth.signOut.mockClear();
+  });
+
+  it("an email-confirmation link confirms the address but doesn't sign you in", async () => {
+    // Supabase signs the user in from the link before the app runs.
+    auth.state.session = { access_token: "token", user: { id: "11111111-1111-4111-8111-111111111111", email: "new@example.com" } };
+    landing.fromConfirmation = true;
+    window.history.pushState({}, "", "/");
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeTruthy();
+    expect(screen.getByText(/Your email is confirmed/)).toBeTruthy();
+    expect((screen.getByLabelText("Email") as HTMLInputElement).value).toBe("new@example.com");
+    expect(auth.client.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(screen.queryByRole("heading", { name: "Today" })).toBeNull();
   });
 
   it("asks for the authenticator code before opening an account with two-step verification", async () => {
@@ -78,11 +109,11 @@ describe("App", () => {
     expect(screen.queryByRole("heading", { name: "Today" })).toBeNull();
 
     fireEvent.change(screen.getByLabelText("Code"), { target: { value: "000000" } });
-    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    fireEvent.click(screen.getByRole("button", { name: /Verify$/ }));
     expect(await screen.findByText(/That code didn't work/)).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Code"), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    fireEvent.click(screen.getByRole("button", { name: /Verify$/ }));
     expect(await screen.findByRole("heading", { name: "Today" })).toBeTruthy();
   });
 
@@ -96,7 +127,7 @@ describe("App", () => {
 
     fireEvent.change(screen.getByLabelText("New password"), { target: { value: "brand-new-pass" } });
     fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "brand-new-pass" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
+    fireEvent.click(screen.getByRole("button", { name: /Save new password$/ }));
     await waitFor(() => expect(auth.client.auth.updateUser).toHaveBeenCalledWith({ password: "brand-new-pass" }));
     expect(await screen.findByRole("heading", { name: "Today" })).toBeTruthy();
   });
@@ -108,12 +139,23 @@ describe("App", () => {
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "me@example.com" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "correct-horse" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(screen.getByRole("button", { name: /Sign in$/ }));
 
     await waitFor(() =>
       expect(auth.client.auth.signInWithPassword).toHaveBeenCalledWith({ email: "me@example.com", password: "correct-horse" }),
     );
     expect(await screen.findByRole("heading", { name: "Today" })).toBeTruthy();
+  });
+
+  it("honours 'Keep me signed in' before signing in", async () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+    await screen.findByRole("heading", { name: "Welcome back" });
+    fireEvent.click(screen.getByLabelText("Keep me signed in"));
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "me@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "correct-horse" } });
+    fireEvent.click(screen.getByRole("button", { name: /Sign in$/ }));
+    await waitFor(() => expect(remember.set).toHaveBeenLastCalledWith(false));
   });
 
   it("opens on Today when already signed in, with every module in the navigation", async () => {

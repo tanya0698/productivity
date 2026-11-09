@@ -5,7 +5,7 @@ import { SyncProvider } from "@productivity/sync-engine/react";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { AppRoutes } from "@/routes";
 import { AuthProvider, useAuth } from "@/shared/auth/AuthProvider";
-import { supabase } from "@/shared/auth/supabase";
+import { landedFromEmailConfirmation, supabase } from "@/shared/auth/supabase";
 import { openRuntime } from "@/shared/data/openRuntime";
 import { SyncTriggers } from "@/shared/data/SyncTriggers";
 import SignInPage from "@/pages/auth/SignInPage";
@@ -66,7 +66,7 @@ export default function App() {
   return (
     <ThemeProvider>
       {supabase ? (
-        <AuthProvider client={supabase}>
+        <AuthProvider client={supabase} fromEmailConfirmation={landedFromEmailConfirmation}>
           <SignedIn>
             <BrowserRouter>
               <AppRoutes />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, Button, Form, Input } from "antd";
+import { ArrowRightOutlined, LockOutlined } from "@ant-design/icons";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { AuthCard } from "./AuthCard";
 import { friendlyAuthError } from "./authErrors";
@@ -20,11 +21,27 @@ export default function SetNewPasswordPage() {
   };
 
   return (
-    <AuthCard title="Choose a new password" subtitle="You followed a reset link. Set a new password to continue.">
+    <AuthCard
+      title="Choose a new password"
+      subtitle="You followed a reset link. Set a new password to finish signing in."
+      footer={
+        <>
+          Changed your mind?{" "}
+          <Button type="link" style={{ padding: 0, fontWeight: 600 }} onClick={() => void signOut()}>
+            Cancel and sign out
+          </Button>
+        </>
+      }
+    >
       {error ? <Alert type="error" showIcon message={error} /> : null}
-      <Form layout="vertical" requiredMark={false} onFinish={(v) => void save(v)} disabled={busy}>
-        <Form.Item name="password" label="New password" rules={[{ required: true, min: 8, message: "Use at least 8 characters." }]}>
-          <Input.Password size="large" autoComplete="new-password" autoFocus />
+      <Form layout="vertical" requiredMark={false} size="large" onFinish={(v) => void save(v)} disabled={busy}>
+        <Form.Item
+          name="password"
+          label="New password"
+          extra="At least 8 characters."
+          rules={[{ required: true, min: 8, message: "Use at least 8 characters." }]}
+        >
+          <Input.Password prefix={<LockOutlined />} placeholder="Choose a password" autoComplete="new-password" autoFocus />
         </Form.Item>
         <Form.Item
           name="confirm"
@@ -38,15 +55,12 @@ export default function SetNewPasswordPage() {
             }),
           ]}
         >
-          <Input.Password size="large" autoComplete="new-password" />
+          <Input.Password prefix={<LockOutlined />} placeholder="Same password again" autoComplete="new-password" />
         </Form.Item>
-        <Button type="primary" size="large" htmlType="submit" block loading={busy}>
+        <Button type="primary" htmlType="submit" block loading={busy} icon={<ArrowRightOutlined />} iconPlacement="end">
           Save new password
         </Button>
       </Form>
-      <Button type="link" style={{ padding: 0, alignSelf: "flex-start" }} onClick={() => void signOut()}>
-        Cancel and sign out
-      </Button>
     </AuthCard>
   );
 }

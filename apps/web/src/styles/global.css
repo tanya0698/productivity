@@ -129,6 +129,157 @@ h3.ant-typography {
   color: var(--pp-text-muted);
 }
 
+/* ─── Auth screens: brand panel left, form right ─────────────────────────── */
+.pp-auth {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  min-height: 100vh;
+}
+
+/* Always ink, in both themes, so the brand side reads the same. */
+.pp-auth-brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 56px 44px;
+  background: #0b0f14;
+  color: #e2e8f0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pp-auth-brand-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(45, 212, 191, 0.28), transparent 50%),
+    radial-gradient(circle at 95% 30%, rgba(129, 140, 248, 0.22), transparent 50%),
+    radial-gradient(circle at 30% 100%, rgba(45, 212, 191, 0.1), transparent 45%);
+  pointer-events: none;
+}
+
+.pp-auth-brand-body,
+.pp-auth-brand-foot {
+  position: relative;
+}
+
+/* Centred in the panel; the footer stays pinned to the bottom. */
+.pp-auth-brand-body {
+  margin: auto 0;
+}
+
+.pp-auth-headline {
+  margin: 0;
+  font-size: 46px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  max-width: 12ch;
+}
+
+.pp-auth-pitch {
+  margin: 16px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #94a3b8;
+  max-width: 36ch;
+}
+
+.pp-auth-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 15px;
+  color: #cbd5e1;
+}
+
+.pp-auth-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pp-auth-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(45, 212, 191, 0.16);
+  color: #2dd4bf;
+  font-size: 12px;
+}
+
+.pp-auth-brand-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.pp-auth-brand-foot strong {
+  color: #f8fafc;
+  font-size: 16px;
+}
+
+.pp-auth-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.pp-auth-form-inner {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pp-auth-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-auth-compact-brand {
+  display: none !important;
+}
+
+.pp-auth-footer {
+  text-align: center;
+  color: var(--pp-text-secondary);
+  font-size: 14px;
+}
+
+/* The form's own rows: tighter than antd's default spacing. */
+.pp-auth-form .ant-form-item {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 991px) {
+  .pp-auth {
+    grid-template-columns: 1fr;
+  }
+  .pp-auth-brand {
+    display: none;
+  }
+  .pp-auth-compact-brand {
+    display: flex !important;
+  }
+}
+
 /* Times, counts and durations line up in lists. */
 .pp-num {
   font-variant-numeric: tabular-nums;
