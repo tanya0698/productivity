@@ -6,7 +6,7 @@ import { findModuleByPath, getModules, registryProblems } from "@/shared/modules
 
 describe("module registry", () => {
   it("discovers the modules in src/features", () => {
-    expect(getModules().map((m) => m.key)).toEqual(expect.arrayContaining(["tasks", "notes"]));
+    expect(getModules().map((m) => m.key)).toEqual(expect.arrayContaining(["tasks", "projects", "notes"]));
   });
 
   it("has no key/folder mismatch, duplicate key or duplicate route", () => {

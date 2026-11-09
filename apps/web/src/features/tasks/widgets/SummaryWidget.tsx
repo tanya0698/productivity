@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { localDate, toggleDone, upNext } from "@productivity/domain";
-import { useLocalRecords, useSyncRuntime } from "@/shared";
+import { TaskRow, useLocalRecords, useSyncRuntime, type Task } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { TaskRow, type Task } from "../components/TaskRow";
 
 /** Today's "Up next": overdue first, then today, then the soonest upcoming. Tick them off here. */
 export default function SummaryWidget() {

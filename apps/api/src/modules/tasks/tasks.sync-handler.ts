@@ -1,11 +1,12 @@
 import { task } from "@productivity/contracts";
-import { dateOnly, instant, versionedHandler } from "../../sync/sync-handler";
+import { dateOnly, instant, ownProjectOrNull, versionedHandler } from "../../sync/sync-handler";
 
 const editable = task.omit({ id: true, userId: true, createdAt: true, updatedAt: true, version: true, deletedAt: true });
 
 export const tasksSyncHandler = versionedHandler({
   entityType: "task",
   delegate: (tx) => tx.task as never,
+  prepare: ownProjectOrNull,
   toData: (payload) => {
     const t = editable.parse(payload);
     if (t.dueDate && t.dueAt) throw new Error("set dueDate or dueAt, not both");

@@ -10,7 +10,11 @@ export type LocalNote = Omit<Note, "userId"> & { userId?: string };
 export const noteText = (note: Pick<LocalNote, "body">): string =>
   typeof note.body.text === "string" ? note.body.text : "";
 
-export function newNote(id: string, now: Date, fields: { title?: string; text?: string } = {}): LocalNote {
+export function newNote(
+  id: string,
+  now: Date,
+  fields: { title?: string; text?: string; projectId?: string | null } = {},
+): LocalNote {
   const text = fields.text ?? "";
   const at = now.toISOString();
   return {
@@ -19,7 +23,7 @@ export function newNote(id: string, now: Date, fields: { title?: string; text?: 
     updatedAt: at,
     version: 0,
     deletedAt: null,
-    projectId: null,
+    projectId: fields.projectId ?? null,
     folderId: null,
     title: fields.title ?? "",
     body: { type: "plain", text },

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, Col, Input, List, Popconfirm, Row, Typography } from "antd";
+import { Button, Card, Col, Flex, Input, List, Popconfirm, Row, Typography } from "antd";
+import { useSearchParams } from "react-router-dom";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
-import { ModulePage, useLocalRecords, useSyncRuntime } from "@/shared";
+import { ModulePage, ProjectSelect, ProjectTag, useLocalRecords, useProjects, useSyncRuntime, type Project } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 const SAVE_DELAY_MS = 500;
@@ -15,9 +16,14 @@ export default function HomePage() {
   const runtime = useSyncRuntime();
   const { records, loading } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
   const notes = useMemo(() => sortNotes(records), [records]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { projects, byId } = useProjects();
+  // Links from elsewhere: ?note=<id> opens a note; ?new=1&project=<id> starts one in a project.
+  const [params] = useSearchParams();
   // A new note lives here, unsaved, until something is typed into it.
-  const [draft, setDraft] = useState<(LocalNote & { deletedAt: string | null }) | null>(null);
+  const [draft, setDraft] = useState<(LocalNote & { deletedAt: string | null }) | null>(() =>
+    params.get("new") ? newNote(runtime.newId(), new Date(), { projectId: params.get("project") }) : null,
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(() => draft?.id ?? params.get("note"));
   const stored = notes.find((n) => n.id === selectedId);
   const selected = stored ?? (draft && draft.id === selectedId ? draft : null);
 
@@ -56,10 +62,12 @@ export default function HomePage() {
                   >
                     <List.Item.Meta
                       title={<Typography.Text strong={note.id === selectedId}>{noteDisplayTitle(note)}</Typography.Text>}
-                      description={new Date(note.updatedAt).toLocaleString(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
+                      description={
+                        <Flex gap={8} align="center" wrap>
+                          {new Date(note.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                          {note.projectId && byId.get(note.projectId) ? <ProjectTag title={byId.get(note.projectId)!.title} /> : null}
+                        </Flex>
+                      }
                     />
                   </List.Item>
                 )}
@@ -75,6 +83,7 @@ export default function HomePage() {
               key={selected.id}
               note={selected}
               isDraft={!stored}
+              projects={projects}
               onDeleted={() => {
                 setSelectedId(null);
                 setDraft(null);
@@ -94,9 +103,11 @@ export default function HomePage() {
 function NoteEditor({
   note,
   isDraft,
+  projects,
   onDeleted,
 }: {
   note: LocalNote & { deletedAt: string | null };
+  projects: readonly Project[];
   /** Not saved yet: stays that way while it's empty, and discarding it writes nothing. */
   isDraft: boolean;
   onDeleted: () => void;
@@ -104,11 +115,12 @@ function NoteEditor({
   const runtime = useSyncRuntime();
   const [title, setTitle] = useState(note.title);
   const [text, setText] = useState(noteText(note));
+  const [projectId, setProjectId] = useState(note.projectId);
   const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ note, title, text, isDraft });
+  const latest = useRef({ note, title, text, projectId, isDraft });
   useEffect(() => {
-    latest.current = { note, title, text, isDraft };
+    latest.current = { note, title, text, projectId, isDraft };
   });
 
   // Show changes pulled from another device, unless they'd replace what's being typed.
@@ -116,6 +128,7 @@ function NoteEditor({
     if (dirty.current) return;
     setTitle(note.title);
     setText(noteText(note));
+    setProjectId(note.projectId);
   }, [note]);
 
   const save = () => {
@@ -123,9 +136,9 @@ function NoteEditor({
     timer.current = null;
     if (!dirty.current) return;
     dirty.current = false;
-    const { note: current, title: t, text: b, isDraft: draft } = latest.current;
+    const { note: current, title: t, text: b, projectId: p, isDraft: draft } = latest.current;
     if (draft && !t.trim() && !b.trim()) return; // an empty new note is never saved
-    void runtime.write("note", editNote(current, { title: t, text: b }, new Date()));
+    void runtime.write("note", { ...editNote(current, { title: t, text: b }, new Date()), projectId: p });
   };
 
   const changed = () => {
@@ -147,9 +160,24 @@ function NoteEditor({
   return (
     <Card
       extra={
-        <Popconfirm title="Delete this note?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => void remove()}>
-          <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete note" />
-        </Popconfirm>
+        <Flex gap={4} align="center">
+          <ProjectSelect
+            projects={projects}
+            value={projectId}
+            aria-label="Note project"
+            variant="borderless"
+            style={{ minWidth: 150 }}
+            onChange={(p) => {
+              setProjectId(p);
+              latest.current = { ...latest.current, projectId: p };
+              dirty.current = true;
+              save();
+            }}
+          />
+          <Popconfirm title="Delete this note?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => void remove()}>
+            <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete note" />
+          </Popconfirm>
+        </Flex>
       }
       title={
         <Input

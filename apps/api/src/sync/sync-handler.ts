@@ -38,6 +38,13 @@ export function versionedHandler(opts: {
   toData: (payload: Record<string, unknown>) => Record<string, unknown>;
   /** Prisma row → contract record. */
   toRecord: (row: Row) => Record<string, unknown>;
+  /**
+   * Last look at the data before it's written, with the user known: check
+   * references point at the user's own records. Never throw for a bad
+   * reference: a database error would fail the whole push and the client
+   * would retry it forever.
+   */
+  prepare?: (tx: Tx, userId: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>;
 }): SyncHandler {
   return {
     entityType: opts.entityType,
@@ -73,6 +80,7 @@ export function versionedHandler(opts: {
       } catch (err) {
         return { operationId: op.operationId, status: "rejected", reason: `invalid: ${String(err)}` };
       }
+      if (opts.prepare) data = await opts.prepare(tx, userId, data);
 
       const row = existing
         ? await d.update({ where: { id: op.entityId }, data: { ...data, version: existing.version + 1n } })
@@ -85,6 +93,18 @@ export function versionedHandler(opts: {
       return new Map(rows.map((r) => [r.id, opts.toRecord(r)]));
     },
   };
+}
+
+/**
+ * Keeps `projectId` only if it's one of the user's own projects (deleted ones
+ * included, so an offline edit can still land). Anything else becomes "no
+ * project" instead of a foreign-key error or a link into someone else's data.
+ */
+export async function ownProjectOrNull(tx: Tx, userId: string, data: Record<string, unknown>) {
+  const projectId = data.projectId;
+  if (typeof projectId !== "string") return data;
+  const project = await tx.project.findFirst({ where: { id: projectId, userId }, select: { id: true } });
+  return project ? data : { ...data, projectId: null };
 }
 
 /** `"2026-10-21"` ↔ a Date at UTC midnight, for `@db.Date` columns. */

@@ -10,8 +10,11 @@ export function ModulePage({
   title,
   description,
   actions,
+  back,
   children,
 }: {
+  /** A way back up, shown above the eyebrow (e.g. "All projects" on a project). */
+  back?: ReactNode;
   /** Small uppercase mono label above the title, like "ELTON CHIPUKA". */
   eyebrow?: string;
   title: string;
@@ -23,6 +26,7 @@ export function ModulePage({
     <Flex vertical gap={20}>
       <Flex justify="space-between" align="flex-end" wrap gap={12}>
         <Flex vertical gap={6}>
+          {back}
           {eyebrow ? <span className="pp-label pp-label-brand">{eyebrow}</span> : null}
           <Typography.Title level={1} style={{ margin: 0, fontSize: 34, lineHeight: 1.1 }}>
             {title}

@@ -6,22 +6,27 @@ import { editTask } from "@productivity/domain";
 import type { TaskPriority } from "@productivity/contracts";
 import type { Task } from "./TaskRow";
 import { priorityOptions } from "./priorityOptions";
+import { ProjectSelect } from "../projects/ProjectSelect";
+import type { Project } from "../projects/useProjects";
 
 interface Values {
   title: string;
   description?: string;
   due?: Dayjs | null;
   priority: TaskPriority;
+  projectId?: string | null;
 }
 
-/** Edit a task in a side panel: title, notes, due date, priority, or delete it. */
+/** Edit a task in a side panel: title, notes, due date, priority, project, or delete it. */
 export function TaskEditor({
   task,
+  projects,
   onClose,
   onSave,
   onDelete,
 }: {
   task: Task | null;
+  projects: readonly Project[];
   onClose: () => void;
   onSave: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -35,6 +40,7 @@ export function TaskEditor({
       description: task.description ?? "",
       due: task.dueDate ? dayjs(task.dueDate) : null,
       priority: task.priority,
+      projectId: task.projectId,
     });
   }, [task, form]);
 
@@ -48,6 +54,7 @@ export function TaskEditor({
           description: v.description?.trim() ? v.description.trim() : null,
           dueDate: v.due ? v.due.format("YYYY-MM-DD") : null,
           priority: v.priority,
+          projectId: v.projectId ?? null,
         },
         new Date(),
       ),
@@ -89,6 +96,9 @@ export function TaskEditor({
             <Select options={priorityOptions} />
           </Form.Item>
         </Flex>
+        <Form.Item name="projectId" label="Project">
+          <ProjectSelect projects={projects} />
+        </Form.Item>
         <Flex gap={8} justify="flex-end">
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" htmlType="submit">

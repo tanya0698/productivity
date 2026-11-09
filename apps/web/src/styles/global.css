@@ -80,6 +80,13 @@ h3.ant-typography {
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+/* Half-width tiles on a phone: a short date like "Dec 19" stays on one line. */
+@media (max-width: 575px) {
+  .pp-tile-value {
+    font-size: clamp(26px, 8vw, 40px);
+  }
 }
 
 .pp-tile-hint {
@@ -336,6 +343,79 @@ h3.ant-typography {
 .pp-priority-urgent {
   color: var(--pp-heading);
   font-weight: 600;
+}
+
+/* ─── Projects ──────────────────────────────────────────────────────────── */
+.pp-badge-project {
+  background: var(--pp-accent-soft);
+  color: var(--pp-accent-text);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pp-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pp-muted);
+  overflow: hidden;
+}
+.pp-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pp-primary);
+  transition: width 0.3s ease;
+}
+.pp-progress-text {
+  font-size: 12px;
+  color: var(--pp-text-secondary);
+  white-space: nowrap;
+}
+.pp-project-card {
+  height: 100%;
+}
+.pp-project-card:focus-visible,
+.pp-widget-project:focus-visible {
+  outline: 2px solid var(--pp-primary);
+  outline-offset: 2px;
+}
+.pp-widget-project {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: inherit;
+}
+.pp-widget-project:hover .pp-task-title {
+  color: var(--pp-primary);
+}
+.pp-note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pp-note-list > li {
+  padding: 10px 0;
+  min-width: 0;
+}
+.pp-note-list > li + li {
+  border-top: 1px solid var(--pp-border);
+}
+.pp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 13px;
+  color: var(--pp-text-secondary);
+  margin-bottom: 6px;
+}
+.pp-back:hover {
+  color: var(--pp-primary);
 }
 
 /* ─── Sync pill and conflicts ───────────────────────────────────────────── */

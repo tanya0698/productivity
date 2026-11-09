@@ -1,21 +1,8 @@
 import { useMemo, useState } from "react";
-import { App as AntApp, Button, Card, Collapse, DatePicker, Flex, Input, Select } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
-import type { Dayjs } from "dayjs";
-import {
-  groupTasks,
-  localDate,
-  newTask,
-  taskGroupTitle,
-  toggleDone,
-  type TaskGroupKey,
-} from "@productivity/domain";
-import type { TaskPriority } from "@productivity/contracts";
-import { ModulePage, useLocalRecords, useSyncRuntime } from "@/shared";
+import { App as AntApp, Card, Collapse } from "antd";
+import { groupTasks, localDate, taskGroupTitle, toggleDone, type TaskGroupKey } from "@productivity/domain";
+import { ModulePage, QuickAdd, TaskEditor, TaskRow, useLocalRecords, useProjects, useSyncRuntime, type Task } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { TaskRow, type Task } from "../components/TaskRow";
-import { TaskEditor } from "../components/TaskEditor";
-import { priorityOptions } from "../components/priorityOptions";
 
 const OPEN_GROUPS: TaskGroupKey[] = ["overdue", "today", "upcoming", "someday"];
 
@@ -29,6 +16,8 @@ export default function HomePage() {
   const { message } = AntApp.useApp();
   const { records, loading } = useLocalRecords<Task>("task");
   const [editing, setEditing] = useState<Task | null>(null);
+  const { projects, byId } = useProjects();
+  const projectName = (t: Task) => (t.projectId ? byId.get(t.projectId)?.title : undefined);
 
   const now = new Date();
   const today = localDate(now);
@@ -43,7 +32,7 @@ export default function HomePage() {
       title="Tasks"
       description={openCount ? `${openCount} to do. Saved on this device first, then synced.` : "Everything you need to do, by due date."}
     >
-      <QuickAdd />
+      <QuickAdd projects={projects} />
 
       {!loading && !records.length ? (
         <Card className="pp-card">
@@ -60,7 +49,7 @@ export default function HomePage() {
           styles={{ body: { padding: 6 } }}
         >
           {groups[key].map((task) => (
-            <TaskRow key={task.id} task={task} now={now} today={today} onToggle={toggle} onOpen={setEditing} />
+            <TaskRow key={task.id} task={task} now={now} today={today} onToggle={toggle} onOpen={setEditing} project={projectName(task)} />
           ))}
         </Card>
       ))}
@@ -82,6 +71,7 @@ export default function HomePage() {
 
       <TaskEditor
         task={editing}
+        projects={projects}
         onClose={() => setEditing(null)}
         onSave={(task) => {
           void runtime.write("task", task);
@@ -98,50 +88,3 @@ export default function HomePage() {
   );
 }
 
-/** Type a task, optionally pick a date and priority, press Enter. */
-function QuickAdd() {
-  const runtime = useSyncRuntime();
-  const [title, setTitle] = useState("");
-  const [due, setDue] = useState<Dayjs | null>(null);
-  const [priority, setPriority] = useState<TaskPriority>(3);
-
-  const add = async () => {
-    if (!title.trim()) return;
-    await runtime.write(
-      "task",
-      newTask(runtime.newId(), new Date(), { title, dueDate: due ? due.format("YYYY-MM-DD") : null, priority }),
-    );
-    setTitle("");
-    setDue(null);
-    setPriority(3);
-  };
-
-  return (
-    <Flex gap={8} wrap>
-      <Input
-        size="large"
-        prefix={<PlusOutlined />}
-        placeholder="Add a task"
-        aria-label="New task"
-        value={title}
-        maxLength={500}
-        onChange={(e) => setTitle(e.target.value)}
-        onPressEnter={() => void add()}
-        style={{ flex: "1 1 320px" }}
-      />
-      <DatePicker
-        size="large"
-        value={due}
-        onChange={setDue}
-        placeholder="Due date"
-        format="ddd D MMM"
-        aria-label="Due date"
-        style={{ width: 160 }}
-      />
-      <Select size="large" value={priority} onChange={setPriority} options={priorityOptions} aria-label="Priority" style={{ width: 140 }} />
-      <Button size="large" type="primary" onClick={() => void add()} disabled={!title.trim()}>
-        Add
-      </Button>
-    </Flex>
-  );
-}

@@ -6,6 +6,7 @@ import { HealthModule } from "./modules/health/health.module";
 import { SyncModule } from "./sync/sync.module";
 import { NotesModule } from "./modules/notes/notes.module";
 import { TasksModule } from "./modules/tasks/tasks.module";
+import { ProjectsModule } from "./modules/projects/projects.module";
 
 /**
  * One NestJS module per feature key, matching apps/web/src/features/<key> and
@@ -15,7 +16,7 @@ import { TasksModule } from "./modules/tasks/tasks.module";
  * AuthGuard runs on every route; mark open routes with @Public().
  */
 @Module({
-  imports: [PrismaModule, HealthModule, SyncModule, NotesModule, TasksModule],
+  imports: [PrismaModule, HealthModule, SyncModule, NotesModule, TasksModule, ProjectsModule],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

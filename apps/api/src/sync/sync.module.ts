@@ -10,6 +10,7 @@ import {
 import { pushRequest } from "@productivity/contracts";
 import { CurrentUser } from "../common/current-user";
 import { notesSyncHandler } from "../modules/notes/notes.sync-handler";
+import { projectsSyncHandler } from "../modules/projects/projects.sync-handler";
 import { tasksSyncHandler } from "../modules/tasks/tasks.sync-handler";
 import { SYNC_HANDLERS } from "./sync-handler";
 import { SyncService } from "./sync.service";
@@ -43,7 +44,7 @@ class SyncController {
   controllers: [SyncController],
   providers: [
     SyncService,
-    { provide: SYNC_HANDLERS, useValue: [notesSyncHandler, tasksSyncHandler] },
+    { provide: SYNC_HANDLERS, useValue: [projectsSyncHandler, notesSyncHandler, tasksSyncHandler] },
   ],
 })
 export class SyncModule {}

@@ -111,7 +111,7 @@ export function newTask(id: string, now: Date, fields: NewTaskFields): LocalTask
 
 export function editTask<T extends LocalTask>(
   task: T,
-  changes: Partial<Pick<LocalTask, "title" | "description" | "dueDate" | "priority">>,
+  changes: Partial<Pick<LocalTask, "title" | "description" | "dueDate" | "priority" | "projectId">>,
   now: Date,
 ): T {
   return {

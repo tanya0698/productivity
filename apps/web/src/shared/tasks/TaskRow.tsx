@@ -4,6 +4,7 @@ import { ClockCircleOutlined, ExclamationCircleOutlined, FlagFilled, FlagOutline
 import { dueState, isDone, priorityLabel, type LocalTask } from "@productivity/domain";
 import type { TaskPriority } from "@productivity/contracts";
 import { formatDue } from "./formatDue";
+import { ProjectTag } from "../projects/ProjectSelect";
 
 export type Task = LocalTask & { deletedAt: string | null };
 
@@ -48,12 +49,15 @@ export function TaskRow({
   today,
   onToggle,
   onOpen,
+  project,
 }: {
   task: Task;
   now: Date;
   today: string;
   onToggle: (task: Task) => void;
   onOpen?: (task: Task) => void;
+  /** The project's name, shown as a tag; left out on the project's own page. */
+  project?: string;
 }) {
   const done = isDone(task);
   const stop = (e: MouseEvent) => e.stopPropagation();
@@ -76,10 +80,11 @@ export function TaskRow({
       </span>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="pp-task-title">{task.title}</div>
-        {!done && (task.dueDate || task.dueAt || task.priority !== 3) ? (
+        {!done && (task.dueDate || task.dueAt || task.priority !== 3 || project) ? (
           <div className="pp-task-meta">
             <DueBadge task={task} now={now} today={today} />
             <PriorityLabel priority={task.priority} />
+            {project ? <ProjectTag title={project} /> : null}
           </div>
         ) : null}
       </div>

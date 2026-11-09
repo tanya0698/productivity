@@ -7,7 +7,7 @@ import { useSyncDetails, useSyncRuntime, useSyncStatus } from "@productivity/syn
 import { ModulePage } from "@/shared/page/ModulePage";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatDue } from "@/features/tasks/components/formatDue";
+import { formatDue } from "@/shared/tasks/formatDue";
 
 type Choice = "mine" | "theirs" | "both";
 

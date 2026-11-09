@@ -16,7 +16,7 @@ const offline: SyncTransport = {
   },
 };
 
-function renderPage(db: MemoryDatabase) {
+function renderPage(db: MemoryDatabase, path = "/notes") {
   const runtime = new SyncRuntime({ db, transport: offline, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {
@@ -24,7 +24,7 @@ function renderPage(db: MemoryDatabase) {
     return (
       <SyncProvider open={open} failed={() => null}>
         <AntApp>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={[path]}>
             <HomePage />
           </MemoryRouter>
         </AntApp>
@@ -64,6 +64,19 @@ describe("Notes page", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(await db.list("note")).toHaveLength(0);
     expect(await db.pendingOperations(10)).toHaveLength(0);
+  });
+
+  it("starts a note inside a project from a project's link", async () => {
+    const db = new MemoryDatabase();
+    const projectId = crypto.randomUUID();
+    renderPage(db, `/notes?new=1&project=${projectId}`);
+    const text = await screen.findByLabelText("Note text");
+    fireEvent.change(text, { target: { value: "Removal quotes" } });
+    fireEvent.blur(text);
+    await waitFor(async () => {
+      const [note] = await db.list("note");
+      expect(note).toMatchObject({ bodyText: "Removal quotes", projectId });
+    });
   });
 
   it("deletes a saved note after confirming", async () => {

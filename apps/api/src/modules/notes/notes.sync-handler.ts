@@ -1,11 +1,12 @@
 import { note } from "@productivity/contracts";
-import { instant, versionedHandler } from "../../sync/sync-handler";
+import { instant, ownProjectOrNull, versionedHandler } from "../../sync/sync-handler";
 
 const editable = note.omit({ id: true, userId: true, createdAt: true, updatedAt: true, version: true, deletedAt: true });
 
 export const notesSyncHandler = versionedHandler({
   entityType: "note",
   delegate: (tx) => tx.note as never,
+  prepare: ownProjectOrNull,
   toData: (payload) => {
     const n = editable.parse(payload);
     return {
