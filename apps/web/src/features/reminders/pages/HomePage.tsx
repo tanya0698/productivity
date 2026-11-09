@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, App as AntApp, Button, Card, Collapse, Dropdown, Flex, Typography } from "antd";
-import { BellOutlined, CheckOutlined, ClockCircleOutlined, PlusOutlined, RetweetOutlined } from "@ant-design/icons";
+import { BellOutlined, CheckOutlined, ClockCircleOutlined, EllipsisOutlined, PlusOutlined, RetweetOutlined } from "@ant-design/icons";
 import {
   dismissReminder,
   endReminder,
@@ -28,6 +28,7 @@ import {
 } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ReminderEditor } from "../components/ReminderEditor";
+import { IconButton } from "@/components/ui/IconButton";
 
 /**
  * Reminders: what's due now (snooze, dismiss, or tick off the task), what's
@@ -235,9 +236,7 @@ function ReminderRow({
               },
             }}
           >
-            <Button size="small" type="text" aria-label={`More for ${title}`}>
-              •••
-            </Button>
+            <IconButton size="small" icon={<EllipsisOutlined />} tip="Skip or stop repeating" label={`More for ${title}`} />
           </Dropdown>
         ) : null}
       </Flex>

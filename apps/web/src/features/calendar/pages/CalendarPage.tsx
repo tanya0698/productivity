@@ -10,6 +10,7 @@ import { EventEditor, type EditorTarget } from "../components/EventEditor";
 import { MonthView } from "../components/MonthView";
 import { TimeGrid } from "../components/TimeGrid";
 import { daysFrom, useCalendarItems, weekStart, ymd, type CalendarItem } from "../components/items";
+import { IconButton } from "@/components/ui/IconButton";
 
 type View = "month" | "week" | "day" | "agenda";
 const VIEWS: View[] = ["month", "week", "day", "agenda"];
@@ -143,8 +144,8 @@ export default function CalendarPage() {
     >
       <Flex align="center" gap={8} wrap className="pp-cal-toolbar">
         <Button onClick={() => go({ date: dayjs(today) })}>Today</Button>
-        <Button icon={<LeftOutlined />} aria-label="Previous" onClick={() => go({ date: date.subtract(...step[view]) })} />
-        <Button icon={<RightOutlined />} aria-label="Next" onClick={() => go({ date: date.add(...step[view]) })} />
+        <IconButton type="default" icon={<LeftOutlined />} tip={`Previous ${view === "agenda" ? "two weeks" : view}`} onClick={() => go({ date: date.subtract(...step[view]) })} />
+        <IconButton type="default" icon={<RightOutlined />} tip={`Next ${view === "agenda" ? "two weeks" : view}`} onClick={() => go({ date: date.add(...step[view]) })} />
         <Typography.Title level={4} style={{ margin: "0 8px 0 4px", fontSize: 18 }}>
           {title}
         </Typography.Title>

@@ -30,6 +30,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { ProjectEditor } from "../components/ProjectEditor";
 import { ProjectProgress } from "../components/ProjectProgress";
 import { statusOptions } from "../components/status";
+import { IconButton } from "@/components/ui/IconButton";
 
 type Note = LocalNote & { deletedAt: string | null };
 
@@ -106,7 +107,7 @@ export default function ProjectPage() {
             okButtonProps={{ danger: true }}
             onConfirm={() => void remove()}
           >
-            <Button danger icon={<DeleteOutlined />} aria-label="Delete project" />
+            <IconButton type="default" danger icon={<DeleteOutlined />} tip="Delete project" />
           </Popconfirm>
         </Flex>
       }

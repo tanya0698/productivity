@@ -61,7 +61,7 @@ export default function SignInScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.page }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <GlassBackground style={{ flex: 1, paddingTop: insets.top + 48, paddingHorizontal: 24 }}>
-        <Text label tone="brand">Productivity</Text>
+        <Text label tone="brand">Creedence</Text>
         <Text weight="extraBold" tone="heading" style={styles.title}>
           {mode === "sign-in" ? "Welcome back" : "Create your account"}
         </Text>

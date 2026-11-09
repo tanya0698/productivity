@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Tooltip } from "antd";
 import dayjs from "dayjs";
 import { layoutColumns } from "@productivity/domain";
 import { itemsOn, timeRange, type CalendarItem } from "./items";
@@ -122,9 +123,11 @@ export function TimeGrid({
             {itemsOn(items, d)
               .filter((i) => i.allDay)
               .map((i) => (
-                <button type="button" key={i.key} className={`pp-cal-chip pp-kind-${i.kind}`} onClick={() => onOpen(i)} title={i.title}>
-                  {i.title}
-                </button>
+                <Tooltip key={i.key} title={`${i.title} · ${i.kind === "task" ? "task due" : "all day"}`} mouseEnterDelay={0.3}>
+                  <button type="button" className={`pp-cal-chip pp-kind-${i.kind}`} onClick={() => onOpen(i)}>
+                    {i.title}
+                  </button>
+                </Tooltip>
               ))}
           </div>
         ))}

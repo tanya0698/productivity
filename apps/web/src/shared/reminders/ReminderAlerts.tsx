@@ -5,6 +5,7 @@ import { BellOutlined } from "@ant-design/icons";
 import { alertKey, dismissReminder, snoozeReminder } from "@productivity/domain";
 import { useSyncRuntime } from "@productivity/sync-engine/react";
 import { useActiveReminders, useNow, whenText, type ActiveReminder } from "./activeReminders";
+import { useNotifications } from "../notifications/store";
 
 const SEEN_KEY = "productivity:alerted";
 
@@ -38,6 +39,7 @@ export function ReminderAlerts() {
   const now = useNow(15_000);
   const { items, loading } = useActiveReminders(now);
   const shown = useRef(new Set<string>());
+  const { store: inbox } = useNotifications();
 
   useEffect(() => {
     if (loading) return;
@@ -53,12 +55,13 @@ export function ReminderAlerts() {
 
     function showAlert(item: ActiveReminder, key: string) {
       const close = () => notification.destroy(key);
+      const href = item.task ? `/tasks?task=${item.task.id}` : item.note ? `/notes?note=${item.note.id}` : item.event ? `/calendar?event=${item.event.id}` : "/reminders";
       const open = () => {
         close();
-        navigate(
-          item.task ? `/tasks?task=${item.task.id}` : item.note ? `/notes?note=${item.note.id}` : item.event ? `/calendar?event=${item.event.id}` : "/reminders",
-        );
+        inbox.markRead(key);
+        navigate(href);
       };
+      inbox.add({ id: key, kind: "reminder", title: item.title, body: `Reminder · ${whenText(item.at, new Date())}`, href });
       notification.open({
         key,
         duration: 0,
@@ -97,7 +100,7 @@ export function ReminderAlerts() {
       if (document.visibilityState === "hidden" && "Notification" in window && Notification.permission === "granted") {
         try {
           // `tag` makes the OS replace rather than stack a duplicate from another tab.
-          const n = new Notification(item.title, { body: whenText(item.at, new Date()), tag: key, icon: "/icon.svg" });
+          const n = new Notification(item.title, { body: whenText(item.at, new Date()), tag: key, icon: "/icon-192.png" });
           n.onclick = () => {
             window.focus();
             open();
@@ -108,7 +111,7 @@ export function ReminderAlerts() {
         }
       }
     }
-  }, [items, loading, now, notification, navigate, runtime]);
+  }, [items, loading, now, notification, navigate, runtime, inbox]);
 
   return null;
 }

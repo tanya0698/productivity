@@ -7,6 +7,15 @@ import { getLiveModules } from "@/shared/modules/registry";
 import { ModulePage } from "@/shared/page/ModulePage";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useOptionalAuth } from "@/shared/auth/AuthProvider";
+import { firstName } from "@/shared/auth/profile";
+
+/** "Good morning, Elton." by the hour on this device; just "Good morning." without a name. */
+function greeting(now: Date, name: string): string {
+  const h = now.getHours();
+  const part = h < 5 ? "evening" : h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
+  return `Good ${part}${name ? `, ${name}` : ""}.`;
+}
 
 type CaptureKind = "task" | "note";
 const CAPTURE_KEY = "productivity:capture-kind";
@@ -82,6 +91,7 @@ function QuickCapture() {
  */
 export default function TodayPage() {
   const now = new Date();
+  const name = firstName(useOptionalAuth()?.session?.user);
   const { records: tasks } = useLocalRecords<LocalTask & { deletedAt: string | null }>("task");
   const { records: notes } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
 
@@ -101,7 +111,7 @@ export default function TodayPage() {
     <ModulePage
       eyebrow={now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
       title="Today"
-      description="What needs you today, and everything you captured recently."
+      description={`${greeting(now, name)} Here's what needs you today, and everything you captured recently.`}
     >
       <Row gutter={[16, 16]}>
         <Col xs={12} md={8}>

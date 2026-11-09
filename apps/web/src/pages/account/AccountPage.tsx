@@ -4,18 +4,26 @@ import type { Factor } from "@supabase/supabase-js";
 import { ModulePage } from "@/shared/page/ModulePage";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { friendlyAuthError } from "@/pages/auth/authErrors";
+import { DataCard } from "./DataCard";
+import { ProfileCard } from "./ProfileCard";
 
-/** Account & security: who you're signed in as, your password, and two-step verification. */
+/** Account: profile, password, two-step verification, and your data (backup). */
 export default function AccountPage() {
   const { session } = useAuth();
   return (
-    <ModulePage eyebrow="Account" title="Account & security" description={`Signed in as ${session?.user.email ?? "unknown"}.`}>
+    <ModulePage eyebrow="Account" title="Account & data" description={`Signed in as ${session?.user.email ?? "unknown"}.`}>
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <ChangePassword />
+          <ProfileCard />
         </Col>
         <Col xs={24} lg={12}>
-          <TwoFactor />
+          <Flex vertical gap={16}>
+            <ChangePassword />
+            <TwoFactor />
+          </Flex>
+        </Col>
+        <Col xs={24}>
+          <DataCard />
         </Col>
       </Row>
     </ModulePage>

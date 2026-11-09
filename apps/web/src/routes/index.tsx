@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { Skeleton } from "antd";
 import { getLiveModules } from "@/shared/modules/registry";
 import { AppShell } from "@/components/layout/AppShell";
@@ -11,11 +11,17 @@ const moduleRoutes = getLiveModules().map((m) => ({ path: `${m.basePath}/*`, key
 const AccountPage = lazy(() => import("@/pages/account/AccountPage"));
 const SyncPage = lazy(() => import("@/pages/sync/SyncPage"));
 
+/** The first path segment: moving within a page (?query, sub-routes) doesn't replay the entrance. */
+const section = (pathname: string) => pathname.split("/")[1] ?? "";
+
 export function AppRoutes() {
+  const { pathname } = useLocation();
   return (
     <AppShell>
-      <Suspense fallback={<Skeleton active />}>
-        <Routes>
+      <Suspense fallback={<Skeleton active className="pp-page" />}>
+        {/* Keyed by section, so each page fades and rises in when you arrive (global.css .pp-page). */}
+        <div className="pp-page" key={section(pathname)}>
+          <Routes>
           <Route path="/" element={<TodayPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/sync" element={<SyncPage />} />
@@ -23,7 +29,8 @@ export function AppRoutes() {
             <Route key={key} path={path} element={<Component />} />
           ))}
           <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+          </Routes>
+        </div>
       </Suspense>
     </AppShell>
   );

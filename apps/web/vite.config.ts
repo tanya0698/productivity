@@ -11,9 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Productivity",
-        short_name: "Productivity",
-        description: "Notes, tasks, calendar and reminders in one place",
+        name: "Creedence",
+        short_name: "Creedence",
+        description: "Tasks, notes, calendar, habits and goals in one place. The digital engine behind your growth.",
         theme_color: "#0b0f14",
         background_color: "#0b0f14",
         display: "standalone",
@@ -21,11 +21,11 @@ export default defineConfig({
         orientation: "any",
         start_url: "/",
         scope: "/",
-        // SVG with sizes "any" installs in Chromium. Add 192/512 PNGs before
-        // shipping, for Safari and older browsers.
+        // From Experimental/logos/creedence-icon.png. Full-bleed, so it also works masked.
         icons: [
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml" },
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       devOptions: { enabled: true },

@@ -16,6 +16,7 @@ import { priorityOptions } from "./priorityOptions";
 import { ProjectSelect } from "../projects/ProjectSelect";
 import type { Project } from "../projects/useProjects";
 import { deviceTimezone, useReminders } from "../reminders/useReminders";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface Values {
   title: string;
@@ -135,7 +136,7 @@ export function TaskEditor({
       extra={
         task ? (
           <Popconfirm title="Delete this task?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => remove(task)}>
-            <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete task" />
+            <IconButton danger icon={<DeleteOutlined />} tip="Delete task" />
           </Popconfirm>
         ) : null
       }

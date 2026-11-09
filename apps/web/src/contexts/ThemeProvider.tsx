@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { App as AntApp, ConfigProvider } from "antd";
 import { palettes, type Palette } from "@productivity/theme";
 import { antdTheme, cssVariables } from "@/styles/theme/antdTheme";
@@ -10,6 +11,8 @@ interface ThemeContextValue {
   mode: "light" | "dark";
   setting: ColorModeSetting;
   setSetting: (s: ColorModeSetting) => void;
+  /** Switch to the other mode (and remember it), from whatever is showing now. */
+  toggle: () => void;
   palette: Palette;
 }
 
@@ -26,17 +29,33 @@ function readSetting(): ColorModeSetting {
 }
 
 /**
- * Light/dark following the system by default, with a manual override that
- * is remembered on this device. Wraps antd's ConfigProvider and <App> (the
+ * Light/dark following the system until the user picks one with the header
+ * toggle; that choice is remembered on this device. Wraps antd's ConfigProvider and <App> (the
  * latter so `App.useApp()` messages and modals pick up the theme).
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
   const [setting, setSettingState] = useState<ColorModeSetting>(readSetting);
-  const mode = setting === "system" ? (prefersDark ? "dark" : "light") : setting;
+  // Paper is white: printing (Reports → PDF) always uses the light theme.
+  const [printing, setPrinting] = useState(false);
+  useEffect(() => {
+    const before = () => flushSync(() => setPrinting(true));
+    const after = () => setPrinting(false);
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => {
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
+    };
+  }, []);
+  const mode = printing ? "light" : setting === "system" ? (prefersDark ? "dark" : "light") : setting;
   const palette = palettes[mode];
 
   const setSetting = (s: ColorModeSetting) => {
+    // A short cross-fade of colours while the palette swaps (none with reduced motion).
+    const root = document.documentElement;
+    root.classList.add("pp-theme-switching");
+    window.setTimeout(() => root.classList.remove("pp-theme-switching"), 400);
     setSettingState(s);
     try {
       localStorage.setItem(STORAGE_KEY, s);
@@ -45,14 +64,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
+  // Layout effect, so the CSS variables are in place before a print snapshot.
+  useLayoutEffect(() => {
     const root = document.documentElement;
     for (const [k, v] of Object.entries(cssVariables(palette))) root.style.setProperty(k, v);
     root.dataset.theme = mode;
     root.style.colorScheme = mode;
   }, [palette, mode]);
 
-  const value = useMemo(() => ({ mode, setting, setSetting, palette }), [mode, setting, palette]);
+  const value = useMemo(
+    () => ({ mode, setting, setSetting, toggle: () => setSetting(mode === "dark" ? "light" : "dark"), palette }),
+    // setSetting only touches state and storage.
+    [mode, setting, palette],
+  );
 
   return (
     <ThemeContext.Provider value={value}>

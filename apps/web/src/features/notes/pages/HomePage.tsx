@@ -5,6 +5,7 @@ import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
 import { ModulePage, ProjectSelect, ProjectTag, useLocalRecords, useProjects, useSyncRuntime, type Project } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IconButton } from "@/components/ui/IconButton";
 
 const SAVE_DELAY_MS = 500;
 
@@ -182,7 +183,7 @@ function NoteEditor({
             }}
           />
           <Popconfirm title="Delete this note?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => void remove()}>
-            <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete note" />
+            <IconButton danger icon={<DeleteOutlined />} tip="Delete note" />
           </Popconfirm>
         </Flex>
       }

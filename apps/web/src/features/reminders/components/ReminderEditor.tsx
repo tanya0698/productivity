@@ -5,6 +5,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { repeatLabel, rescheduleReminder } from "@productivity/domain";
 import type { ReminderRepeat } from "@productivity/contracts";
 import type { Reminder } from "@/shared";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface Values {
   title?: string;
@@ -70,7 +71,7 @@ export function ReminderEditor({
       extra={
         reminder && !isNew && onDelete ? (
           <Popconfirm title="Delete this reminder?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => onDelete(reminder)}>
-            <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete reminder" />
+            <IconButton danger icon={<DeleteOutlined />} tip="Delete reminder" />
           </Popconfirm>
         ) : null
       }

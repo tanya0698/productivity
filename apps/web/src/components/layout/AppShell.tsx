@@ -1,16 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, Typography, type MenuProps } from "antd";
+import { Button, Drawer, Flex, Grid, Layout, Menu, Tooltip, Typography, type MenuProps } from "antd";
 import {
   CloudOutlined,
   DisconnectOutlined,
   MenuOutlined,
   MoonOutlined,
   SunOutlined,
-  DesktopOutlined,
   HomeOutlined,
   LogoutOutlined,
-  SafetyOutlined,
+  UserOutlined,
   SaveOutlined,
   SearchOutlined,
   SyncOutlined,
@@ -20,10 +19,13 @@ import type { SyncStatus } from "@productivity/sync-engine";
 import { useSyncStatus } from "@productivity/sync-engine/react";
 import { getModules, findModuleByPath } from "@/shared/modules/registry";
 import { useAuth } from "@/shared/auth/AuthProvider";
-import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
+import { useTheme } from "@/contexts/ThemeProvider";
 import { SearchPalette } from "@/shared/search/SearchPalette";
+import { APP_NAME, brandImages } from "@/shared/brand";
+import { displayName } from "@/shared/auth/profile";
 import { ReminderAlerts } from "@/shared/reminders/ReminderAlerts";
-import { ReminderBell } from "@/shared/reminders/ReminderBell";
+import { NotificationBell } from "@/shared/notifications/NotificationBell";
+import { SyncNotices } from "@/shared/notifications/SyncNotices";
 import { FocusPill } from "@/shared/focus/FocusPill";
 import { FocusWatcher } from "@/shared/focus/FocusWatcher";
 
@@ -57,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const nav = <SidebarNav onNavigate={() => setDrawerOpen(false)} showColorMode={isMobile} />;
+  const nav = <SidebarNav onNavigate={() => setDrawerOpen(false)} />;
 
   return (
     // Transparent all the way down, so the ink background and its glows (global.css) show through.
@@ -89,24 +91,31 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Flex align="center" gap={12}>
             {isMobile ? (
               <>
-                <Button type="text" icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setDrawerOpen(true)} />
-                <span className="pp-label pp-label-brand pp-brand-mobile">Productivity</span>
+                <Tooltip title="Menu">
+                  <Button type="text" icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setDrawerOpen(true)} />
+                </Tooltip>
+                <span className="pp-label pp-label-brand pp-brand-mobile">{APP_NAME}</span>
               </>
             ) : (
-              <button type="button" className="pp-search-trigger pp-glass" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
-                <SearchOutlined />
-                <span>Search</span>
-                <kbd>{shortcutLabel}</kbd>
-              </button>
+              <Tooltip title={<>Search tasks, notes, projects and more · <kbd>{shortcutLabel}</kbd> or <kbd>/</kbd></>} mouseEnterDelay={0.4}>
+                <button type="button" className="pp-search-trigger pp-glass" onClick={() => setSearchOpen(true)} aria-label={`Search (${shortcutLabel})`}>
+                  <SearchOutlined />
+                  <span>Search</span>
+                  <kbd>{shortcutLabel}</kbd>
+                </button>
+              </Tooltip>
             )}
             {/* marginLeft auto, not space-between: antd's Flex renders nothing for an empty group. */}
             <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
-              {isMobile ? <Button type="text" icon={<SearchOutlined />} aria-label="Search" onClick={() => setSearchOpen(true)} /> : null}
+              {isMobile ? (
+                <Tooltip title="Search">
+                  <Button type="text" icon={<SearchOutlined />} aria-label="Search" onClick={() => setSearchOpen(true)} />
+                </Tooltip>
+              ) : null}
               <FocusPill />
-              <ReminderBell />
+              <NotificationBell />
               <SyncPill />
-              {/* On phones the colour switch lives in the navigation drawer, so the header fits. */}
-              {isMobile ? null : <ColorModeSwitch />}
+              <ColorModeToggle />
             </Flex>
           </Flex>
         </Layout.Header>
@@ -125,11 +134,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <ReminderAlerts />
       <FocusWatcher />
+      <SyncNotices />
     </Layout>
   );
 }
 
-function SidebarNav({ onNavigate, showColorMode }: { onNavigate: () => void; showColorMode: boolean }) {
+function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const current = findModuleByPath(pathname)?.key ?? (pathname === "/" ? "today" : "");
@@ -147,9 +157,9 @@ function SidebarNav({ onNavigate, showColorMode }: { onNavigate: () => void; sho
   return (
     <Flex vertical gap={16} style={{ height: "100%" }}>
       <Flex align="center" gap={10} style={{ padding: "4px 8px" }}>
-        <img src="/icon.svg" alt="" width={28} height={28} />
+        <img src={brandImages.mark} alt="" width={30} height={30} />
         <span className="pp-label pp-label-brand" style={{ fontSize: 13 }}>
-          Productivity
+          {APP_NAME}
         </span>
       </Flex>
       <Menu
@@ -162,18 +172,9 @@ function SidebarNav({ onNavigate, showColorMode }: { onNavigate: () => void; sho
           onNavigate();
         }}
       />
-      {/* One block pinned to the bottom: colour mode (phones only), then the account. */}
-      <Flex vertical gap={12} style={{ marginTop: "auto" }}>
-        {showColorMode ? (
-          <Flex align="center" justify="space-between" style={{ padding: "0 8px" }}>
-            <span className="pp-label" style={{ fontSize: 10 }}>
-              Colour mode
-            </span>
-            <ColorModeSwitch />
-          </Flex>
-        ) : null}
+      <div style={{ marginTop: "auto" }}>
         <AccountFooter onNavigate={onNavigate} />
-      </Flex>
+      </div>
     </Flex>
   );
 }
@@ -182,6 +183,7 @@ function SidebarNav({ onNavigate, showColorMode }: { onNavigate: () => void; sho
 function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
+  const name = displayName(session?.user);
   return (
     <Flex
       vertical
@@ -191,13 +193,22 @@ function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
       <span className="pp-label" style={{ fontSize: 10 }}>
         Signed in as
       </span>
-      <Typography.Text ellipsis style={{ fontSize: 13 }} title={session?.user.email ?? undefined}>
-        {session?.user.email ?? "Unknown account"}
-      </Typography.Text>
+      <Tooltip title={session?.user.email} placement="right" mouseEnterDelay={0.4}>
+        <Flex vertical style={{ minWidth: 0 }}>
+          {name ? (
+            <Typography.Text strong ellipsis style={{ fontSize: 13 }}>
+              {name}
+            </Typography.Text>
+          ) : null}
+          <Typography.Text ellipsis type={name ? "secondary" : undefined} style={{ fontSize: name ? 12 : 13 }}>
+            {session?.user.email ?? "Unknown account"}
+          </Typography.Text>
+        </Flex>
+      </Tooltip>
       <Flex gap={8} wrap>
         <Button
           size="small"
-          icon={<SafetyOutlined />}
+          icon={<UserOutlined />}
           onClick={() => {
             navigate("/account");
             onNavigate();
@@ -205,9 +216,11 @@ function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
         >
           Account
         </Button>
-        <Button size="small" icon={<LogoutOutlined />} onClick={() => void signOut()}>
-          Sign out
-        </Button>
+        <Tooltip title="Sign out of this device. Unsynced changes stay here until you sign back in.">
+          <Button size="small" icon={<LogoutOutlined />} onClick={() => void signOut()}>
+            Sign out
+          </Button>
+        </Tooltip>
       </Flex>
     </Flex>
   );
@@ -252,36 +265,31 @@ function SyncPill() {
     : full;
   const navigate = useNavigate();
   return (
-    <button
-      type="button"
-      className="pp-glass pp-sync-pill"
-      onClick={() => navigate("/sync")}
-      title="Sync details"
-      aria-label={`${full}. Open sync details`}
-    >
-      <span role="status" style={{ display: "contents" }}>
-        {icon}
-        <span className="pp-label" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
-          {text}
+    <Tooltip title={<>{full}<br />Click for sync details and conflicts.</>} mouseEnterDelay={0.3}>
+      <button type="button" className="pp-glass pp-sync-pill" onClick={() => navigate("/sync")} aria-label={`${full}. Open sync details`}>
+        <span role="status" style={{ display: "contents" }}>
+          {icon}
+          <span className="pp-label" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
+            {text}
+          </span>
         </span>
-      </span>
-    </button>
+      </button>
+    </Tooltip>
   );
 }
 
-function ColorModeSwitch() {
-  const { setting, setSetting } = useTheme();
+/** One button: light ↔ dark. The icon shows where it takes you, and turns as it switches. */
+function ColorModeToggle() {
+  const { mode, toggle } = useTheme();
+  const next = mode === "dark" ? "light" : "dark";
   return (
-    <Tooltip title="Colour mode">
-      <Segmented<ColorModeSetting>
-        size="small"
-        value={setting}
-        onChange={setSetting}
-        options={[
-          { value: "light", icon: <SunOutlined />, title: "Light" },
-          { value: "system", icon: <DesktopOutlined />, title: "Match system" },
-          { value: "dark", icon: <MoonOutlined />, title: "Dark" },
-        ]}
+    <Tooltip title={`Switch to ${next} mode`}>
+      <Button
+        type="text"
+        className="pp-mode-toggle"
+        icon={<span key={mode} className="pp-mode-icon">{next === "light" ? <SunOutlined /> : <MoonOutlined />}</span>}
+        aria-label={`Switch to ${next} mode`}
+        onClick={toggle}
       />
     </Tooltip>
   );

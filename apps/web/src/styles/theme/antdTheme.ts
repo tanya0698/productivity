@@ -7,6 +7,9 @@ import { fonts, radii, type Palette } from "@productivity/theme";
  * never hard-code a colour.
  */
 export function antdTheme(p: Palette, mode: "light" | "dark"): ThemeConfig {
+  // Things that float over content (tooltips, popovers, menus) need a clearly
+  // lifted surface in dark mode; "elevated" is only a hair above the cards.
+  const overlay = mode === "dark" ? "#1a2533" : p.elevated;
   return {
     algorithm: mode === "dark" ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
@@ -53,6 +56,22 @@ export function antdTheme(p: Palette, mode: "light" | "dark"): ThemeConfig {
       Button: { primaryShadow: "none", primaryColor: p.onPrimary },
       Tag: { defaultBg: p.accentSoft, defaultColor: p.accentText },
       Segmented: { itemSelectedBg: p.elevated, trackBg: p.muted },
+      // Tooltips draw text in colorTextLightSolid, which is the dark-on-teal text
+      // above; give them their own: light ink panel in dark mode, ink in light.
+      Tooltip: {
+        colorBgSpotlight: mode === "dark" ? "#243245" : p.heading,
+        colorTextLightSolid: mode === "dark" ? p.heading : p.page,
+        borderRadius: 8,
+        fontSize: 12,
+        paddingSM: 10,
+        paddingXS: 6,
+      },
+      Popover: { borderRadiusLG: radii.lg, colorBgElevated: overlay },
+      Notification: { borderRadiusLG: radii.lg, colorBgElevated: overlay },
+      Dropdown: { colorBgElevated: overlay },
+      Select: { colorBgElevated: overlay },
+      DatePicker: { colorBgElevated: overlay },
+      Modal: { contentBg: overlay, headerBg: overlay },
     },
   };
 }
@@ -69,6 +88,7 @@ export function cssVariables(p: Palette): Record<string, string> {
     "--pp-surface": p.surface,
     "--pp-muted": p.muted,
     "--pp-border": p.border,
+    "--pp-border-strong": p.borderStrong,
     "--pp-heading": p.heading,
     "--pp-text": p.text,
     "--pp-text-secondary": p.textSecondary,

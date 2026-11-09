@@ -1,14 +1,21 @@
 {
   "expo": {
-    "name": "Productivity",
-    "slug": "productivity",
+    "name": "Creedence",
+    "slug": "creedence",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0f14"
+    },
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "android": {
-      "package": "com.productivity.app",
+      "package": "com.creedence.app",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b0f14"
       },
       "permissions": [

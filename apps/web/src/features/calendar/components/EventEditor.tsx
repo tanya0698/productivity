@@ -21,6 +21,7 @@ import {
 import type { ReminderRepeat } from "@productivity/contracts";
 import { ProjectSelect, deviceTimezone, useLocalRecords, useReminders, useSyncRuntime, type Project, type Task } from "@/shared";
 import type { EventException } from "./items";
+import { IconButton } from "@/components/ui/IconButton";
 
 type Scope = "this" | "all";
 
@@ -227,7 +228,7 @@ export function EventEditor({
             okButtonProps={{ danger: true }}
             onConfirm={remove}
           >
-            <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete event" />
+            <IconButton danger icon={<DeleteOutlined />} tip="Delete event" />
           </Popconfirm>
         ) : null
       }

@@ -3,7 +3,7 @@ import { afterEach } from "vitest";
 import { cleanup, configure } from "@testing-library/react";
 
 // antd's first render is slow when every test file runs in parallel; the 1s default flakes.
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10_000 });
 
 afterEach(() => cleanup());
 

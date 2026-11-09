@@ -1,4 +1,5 @@
 import dayjs, { type Dayjs } from "dayjs";
+import { Tooltip } from "antd";
 import { itemsOn, timeRange, weekStart, ymd, type CalendarItem } from "./items";
 
 const SHOWN = 3;
@@ -50,16 +51,16 @@ export function MonthView({
                   {day.date()}
                 </button>
                 {onDayItems.slice(0, SHOWN).map((item) => (
-                  <button
-                    type="button"
-                    key={item.key}
-                    className={`pp-cal-chip pp-kind-${item.kind}${item.allDay ? "" : " pp-cal-chip-timed"}`}
-                    onClick={() => onOpen(item)}
-                    title={`${item.title} · ${timeRange(item)}`}
-                  >
-                    {item.allDay ? null : <span className="pp-num pp-cal-chip-time">{dayjs(item.start).format("HH:mm")}</span>}
-                    {item.title}
-                  </button>
+                  <Tooltip key={item.key} title={`${item.title} · ${timeRange(item)}`} mouseEnterDelay={0.3}>
+                    <button
+                      type="button"
+                      className={`pp-cal-chip pp-kind-${item.kind}${item.allDay ? "" : " pp-cal-chip-timed"}`}
+                      onClick={() => onOpen(item)}
+                    >
+                      {item.allDay ? null : <span className="pp-num pp-cal-chip-time">{dayjs(item.start).format("HH:mm")}</span>}
+                      {item.title}
+                    </button>
+                  </Tooltip>
                 ))}
                 {onDayItems.length > SHOWN ? (
                   <button type="button" className="pp-cal-more" onClick={() => onDay(d)}>

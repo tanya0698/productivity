@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Flex, Typography } from "antd";
 import { CheckOutlined } from "@ant-design/icons";
-import { dark } from "@productivity/theme";
+import { APP_NAME, APP_TAGLINE, brandImages } from "@/shared/brand";
 
 /**
  * The layout every signed-out and in-between screen uses (sign in, create
@@ -29,15 +29,10 @@ export function AuthCard({
       <aside className="pp-auth-brand" aria-hidden>
         <div className="pp-auth-brand-glow" />
         <Flex vertical gap={28} className="pp-auth-brand-body">
-          <Flex align="center" gap={12}>
-            <img src="/icon.svg" alt="" width={44} height={44} />
-            <span className="pp-label" style={{ color: dark.primary, fontWeight: 700, fontSize: 14 }}>
-              Productivity
-            </span>
-          </Flex>
+          <img src={brandImages.logoOnDark} alt="" width={220} height={220} className="pp-auth-logo" />
           <div>
             <h2 className="pp-auth-headline">Your day, in one place.</h2>
-            <p className="pp-auth-pitch">Notes, tasks and reminders that keep working offline and sync to every device.</p>
+            <p className="pp-auth-pitch">Tasks, notes, calendar, habits and goals that keep working offline and sync to every device.</p>
           </div>
           <ul className="pp-auth-points">
             {["Capture a note in one keystroke", "Works offline, syncs when you're back", "Two-step verification built in"].map(
@@ -53,17 +48,17 @@ export function AuthCard({
           </ul>
         </Flex>
         <div className="pp-auth-brand-foot">
-          <strong>Productivity</strong>
-          <span>Personal workspace · Web and Android</span>
+          <strong>{APP_NAME}</strong>
+          <span>{APP_TAGLINE}</span>
         </div>
       </aside>
 
       <main className="pp-auth-form">
         <div className="pp-auth-form-inner">
           <Flex align="center" gap={10} className="pp-auth-compact-brand">
-            <img src="/icon.svg" alt="" width={32} height={32} />
+            <img src={brandImages.mark} alt="" width={32} height={32} />
             <span className="pp-label pp-label-brand" style={{ fontSize: 13 }}>
-              Productivity
+              {APP_NAME}
             </span>
           </Flex>
           <div className="pp-auth-heading">

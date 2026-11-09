@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatTile } from "@/components/ui/StatTile";
 import { GoalEditor } from "../components/GoalEditor";
 import { useGoals } from "../components/useGoals";
+import { IconButton } from "@/components/ui/IconButton";
 
 type Habit = LocalHabit & { deletedAt: string | null };
 type HabitLog = LocalHabitLog & { deletedAt: string | null };
@@ -101,7 +102,7 @@ export default function GoalPage() {
             okButtonProps={{ danger: true }}
             onConfirm={remove}
           >
-            <Button danger icon={<DeleteOutlined />} aria-label="Delete goal" />
+            <IconButton type="default" danger icon={<DeleteOutlined />} tip="Delete goal" />
           </Popconfirm>
         </Flex>
       }
@@ -155,7 +156,7 @@ export default function GoalPage() {
                   </Checkbox>
                   {m.dueDate ? <span className={`pp-badge${!m.doneAt && m.dueDate < today ? " pp-badge-error" : ""}`}>{formatDue(m.dueDate, today)}</span> : null}
                   <Popconfirm title="Delete this milestone?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => void runtime.write("goal_milestone", m, "delete")}>
-                    <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={`Delete milestone: ${m.title}`} />
+                    <IconButton size="small" danger icon={<DeleteOutlined />} tip="Delete milestone" label={`Delete milestone: ${m.title}`} />
                   </Popconfirm>
                 </li>
               ))}

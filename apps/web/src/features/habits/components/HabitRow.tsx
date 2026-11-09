@@ -1,8 +1,9 @@
-import { Button, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import { CheckOutlined, FireOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { habitProgress, recentDays, scheduleLabel, streak, type DayMark, type LogIndex } from "@productivity/domain";
 import type { Habit } from "./useHabits";
+import { IconButton } from "@/components/ui/IconButton";
 
 const markText: Record<DayMark, string> = {
   done: "done",
@@ -42,11 +43,11 @@ export function HabitRow({
     <div className={`pp-habit${p.done ? " pp-habit-done" : ""}${p.scheduled ? "" : " pp-habit-off"}`}>
       {counting ? (
         <div className="pp-habit-counter" role="group" aria-label={`${habit.title}: ${p.count} of ${p.target}`}>
-          <Button size="small" shape="circle" icon={<MinusOutlined />} aria-label={`Remove one from ${habit.title}`} onClick={() => onUntick(habit)} disabled={!p.count} />
+          <IconButton type="default" size="small" shape="circle" icon={<MinusOutlined />} tip="Remove one" label={`Remove one from ${habit.title}`} onClick={() => onUntick(habit)} disabled={!p.count} />
           <span className="pp-num pp-habit-count">
             {p.count}/{p.target}
           </span>
-          <Button size="small" shape="circle" type={p.done ? "default" : "primary"} icon={<PlusOutlined />} aria-label={`Add one to ${habit.title}`} onClick={() => onTick(habit)} />
+          <IconButton size="small" shape="circle" type={p.done ? "default" : "primary"} icon={<PlusOutlined />} tip="Add one" label={`Add one to ${habit.title}`} onClick={() => onTick(habit)} />
         </div>
       ) : (
         <button

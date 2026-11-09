@@ -4,6 +4,7 @@ import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { WEEKDAY_NAMES, editHabit, type LocalGoal } from "@productivity/domain";
 import { useLocalRecords } from "@/shared";
 import type { Habit } from "./useHabits";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface Values {
   title: string;
@@ -74,11 +75,11 @@ export function HabitEditor({
         habit && !isNew ? (
           <Flex gap={4}>
             {onArchive ? (
-              <Button type="text" icon={<InboxOutlined />} aria-label="Archive habit" title="Archive (keeps its history)" onClick={() => onArchive(habit)} />
+              <IconButton icon={<InboxOutlined />} tip="Archive: hide it, keep its history" label="Archive habit" onClick={() => onArchive(habit)} />
             ) : null}
             {onDelete ? (
               <Popconfirm title="Delete this habit and its history?" okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => onDelete(habit)}>
-                <Button type="text" danger icon={<DeleteOutlined />} aria-label="Delete habit" />
+                <IconButton danger icon={<DeleteOutlined />} tip="Delete habit" />
               </Popconfirm>
             ) : null}
           </Flex>

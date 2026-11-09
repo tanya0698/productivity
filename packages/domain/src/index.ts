@@ -16,3 +16,5 @@ export * from "./calendar.ts";
 export * from "./habits.ts";
 export * from "./focus.ts";
 export * from "./goals.ts";
+export * from "./backup.ts";
+export * from "./reports.ts";

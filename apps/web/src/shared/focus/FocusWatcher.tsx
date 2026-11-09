@@ -4,6 +4,7 @@ import { App as AntApp, Button } from "antd";
 import { HourglassOutlined } from "@ant-design/icons";
 import { clock, isFinished, remainingMs } from "@productivity/domain";
 import { useFocus, useTicking } from "./useFocus";
+import { useNotifications } from "../notifications/store";
 
 /**
  * Finishes the focus timer when it runs out, on whatever page is open: saves
@@ -15,6 +16,7 @@ export function FocusWatcher() {
   const { notification } = AntApp.useApp();
   const navigate = useNavigate();
   const now = useTicking(!!timer?.runningSince);
+  const { store: inbox } = useNotifications();
 
   useEffect(() => {
     if (!timer || !isFinished(timer, now)) return;
@@ -22,6 +24,7 @@ export function FocusWatcher() {
     const focus = timer.kind === "focus";
     const title = focus ? `Focus done: ${timer.plannedMinutes} minutes` : "Break over";
     const body = focus ? "Time for a break." : "Ready for the next session?";
+    inbox.add({ id: `focus-${timer.sessionId}`, kind: "focus", title, body, href: "/focus" });
     notification.open({
       key: `focus-${timer.sessionId}`,
       icon: <HourglassOutlined style={{ color: "var(--pp-primary)" }} />,
@@ -43,7 +46,7 @@ export function FocusWatcher() {
     });
     if (document.visibilityState === "hidden" && "Notification" in window && Notification.permission === "granted") {
       try {
-        new Notification(title, { body, tag: `focus-${timer.sessionId}`, icon: "/icon.svg" });
+        new Notification(title, { body, tag: `focus-${timer.sessionId}`, icon: "/icon-192.png" });
       } catch {
         /* some browsers only allow notifications from a service worker */
       }
