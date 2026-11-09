@@ -8,3 +8,4 @@
 export * from "./tasks.ts";
 export * from "./notes.ts";
 export * from "./projects.ts";
+export * from "./search.ts";

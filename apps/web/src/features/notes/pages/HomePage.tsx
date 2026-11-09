@@ -24,6 +24,13 @@ export default function HomePage() {
     params.get("new") ? newNote(runtime.newId(), new Date(), { projectId: params.get("project") }) : null,
   );
   const [selectedId, setSelectedId] = useState<string | null>(() => draft?.id ?? params.get("note"));
+  // Opening a different ?note= while already on this page (from search) switches to it.
+  const noteParam = params.get("note");
+  const [seenParam, setSeenParam] = useState(noteParam);
+  if (noteParam !== seenParam) {
+    setSeenParam(noteParam);
+    if (noteParam) setSelectedId(noteParam);
+  }
   const stored = notes.find((n) => n.id === selectedId);
   const selected = stored ?? (draft && draft.id === selectedId ? draft : null);
 

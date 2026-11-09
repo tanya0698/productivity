@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { App as AntApp, Card, Collapse } from "antd";
+import { useSearchParams } from "react-router-dom";
 import { groupTasks, localDate, taskGroupTitle, toggleDone, type TaskGroupKey } from "@productivity/domain";
 import { ModulePage, QuickAdd, TaskEditor, TaskRow, useLocalRecords, useProjects, useSyncRuntime, type Task } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -16,6 +17,22 @@ export default function HomePage() {
   const { message } = AntApp.useApp();
   const { records, loading } = useLocalRecords<Task>("task");
   const [editing, setEditing] = useState<Task | null>(null);
+  // ?task=<id> (from search) opens that task once it has loaded.
+  const [params, setParams] = useSearchParams();
+  const linkedId = params.get("task");
+  const [openedLink, setOpenedLink] = useState<string | null>(null);
+  if (linkedId && linkedId !== openedLink) {
+    const linked = records.find((r) => r.id === linkedId);
+    if (linked) {
+      setOpenedLink(linkedId);
+      setEditing(linked);
+    }
+  }
+  const closeEditor = () => {
+    setEditing(null);
+    if (linkedId) setParams({}, { replace: true });
+    setOpenedLink(null);
+  };
   const { projects, byId } = useProjects();
   const projectName = (t: Task) => (t.projectId ? byId.get(t.projectId)?.title : undefined);
 
@@ -72,15 +89,15 @@ export default function HomePage() {
       <TaskEditor
         task={editing}
         projects={projects}
-        onClose={() => setEditing(null)}
+        onClose={closeEditor}
         onSave={(task) => {
           void runtime.write("task", task);
-          setEditing(null);
+          closeEditor();
           void message.success("Task saved");
         }}
         onDelete={(task) => {
           void runtime.write("task", task, "delete");
-          setEditing(null);
+          closeEditor();
           void message.success("Task deleted");
         }}
       />

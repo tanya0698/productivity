@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Drawer, Flex, Grid, Layout, Menu, Segmented, Tooltip, Typography, type MenuProps } from "antd";
 import {
@@ -12,6 +12,7 @@ import {
   LogoutOutlined,
   SafetyOutlined,
   SaveOutlined,
+  SearchOutlined,
   SyncOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
@@ -20,8 +21,10 @@ import { useSyncStatus } from "@productivity/sync-engine/react";
 import { getModules, findModuleByPath } from "@/shared/modules/registry";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
+import { SearchPalette } from "@/shared/search/SearchPalette";
 
 const SIDER_WIDTH = 232;
+const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
 
 /**
  * The app frame (plan §4.1, §4.4): gradient behind everything, glass sidebar
@@ -32,8 +35,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  const nav = <SidebarNav onNavigate={() => setDrawerOpen(false)} />;
+  // Ctrl/⌘+K anywhere, or "/" when not typing, opens search.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
+      if ((e.key === "k" || e.key === "K") && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const nav = <SidebarNav onNavigate={() => setDrawerOpen(false)} showColorMode={isMobile} />;
 
   return (
     // Transparent all the way down, so the ink background and its glows (global.css) show through.
@@ -68,11 +88,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Button type="text" icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setDrawerOpen(true)} />
                 <span className="pp-label pp-label-brand">Productivity</span>
               </>
-            ) : null}
+            ) : (
+              <button type="button" className="pp-search-trigger pp-glass" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
+                <SearchOutlined />
+                <span>Search</span>
+                <kbd>{shortcutLabel}</kbd>
+              </button>
+            )}
             {/* marginLeft auto, not space-between: antd's Flex renders nothing for an empty group. */}
             <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
+              {isMobile ? <Button type="text" icon={<SearchOutlined />} aria-label="Search" onClick={() => setSearchOpen(true)} /> : null}
               <SyncPill />
-              <ColorModeSwitch />
+              {/* On phones the colour switch lives in the navigation drawer, so the header fits. */}
+              {isMobile ? null : <ColorModeSwitch />}
             </Flex>
           </Flex>
         </Layout.Header>
@@ -88,11 +116,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </Layout.Content>
       </Layout>
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </Layout>
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
+function SidebarNav({ onNavigate, showColorMode }: { onNavigate: () => void; showColorMode: boolean }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const current = findModuleByPath(pathname)?.key ?? (pathname === "/" ? "today" : "");
@@ -125,7 +154,18 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
           onNavigate();
         }}
       />
-      <AccountFooter onNavigate={onNavigate} />
+      {/* One block pinned to the bottom: colour mode (phones only), then the account. */}
+      <Flex vertical gap={12} style={{ marginTop: "auto" }}>
+        {showColorMode ? (
+          <Flex align="center" justify="space-between" style={{ padding: "0 8px" }}>
+            <span className="pp-label" style={{ fontSize: 10 }}>
+              Colour mode
+            </span>
+            <ColorModeSwitch />
+          </Flex>
+        ) : null}
+        <AccountFooter onNavigate={onNavigate} />
+      </Flex>
     </Flex>
   );
 }
@@ -138,7 +178,7 @@ function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
     <Flex
       vertical
       gap={8}
-      style={{ marginTop: "auto", padding: "12px 8px 4px", borderTop: "1px solid var(--pp-border)" }}
+      style={{ padding: "12px 8px 4px", borderTop: "1px solid var(--pp-border)" }}
     >
       <span className="pp-label" style={{ fontSize: 10 }}>
         Signed in as

@@ -13,7 +13,7 @@ const unused: SyncTransport = {
   pull: async (cursor) => ({ changes: [], cursor, hasMore: false }),
 };
 
-function renderTasks(db: MemoryDatabase) {
+function renderTasks(db: MemoryDatabase, path = "/tasks") {
   const runtime = new SyncRuntime({ db, transport: unused, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {
@@ -21,7 +21,7 @@ function renderTasks(db: MemoryDatabase) {
     return (
       <SyncProvider open={open} failed={() => null}>
         <AntApp>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={[path]}>
             <HomePage />
           </MemoryRouter>
         </AntApp>
@@ -98,5 +98,14 @@ describe("Tasks page", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Delete task" }));
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
     await waitFor(async () => expect(await db.list("task")).toHaveLength(0));
+  });
+
+  it("opens the task named in the link (from search)", async () => {
+    const db = new MemoryDatabase();
+    const task = newTask(crypto.randomUUID(), new Date(), { title: "Renew licence" });
+    await db.transaction((tx) => tx.put("task", task as never, "synced"));
+    renderTasks(db, `/tasks?task=${task.id}`);
+    const panel = await screen.findByRole("dialog");
+    expect((within(panel).getByLabelText("Title") as HTMLInputElement).value).toBe("Renew licence");
   });
 });
