@@ -24,6 +24,8 @@ import { useTheme, type ColorModeSetting } from "@/contexts/ThemeProvider";
 import { SearchPalette } from "@/shared/search/SearchPalette";
 import { ReminderAlerts } from "@/shared/reminders/ReminderAlerts";
 import { ReminderBell } from "@/shared/reminders/ReminderBell";
+import { FocusPill } from "@/shared/focus/FocusPill";
+import { FocusWatcher } from "@/shared/focus/FocusWatcher";
 
 const SIDER_WIDTH = 232;
 const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
@@ -88,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {isMobile ? (
               <>
                 <Button type="text" icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setDrawerOpen(true)} />
-                <span className="pp-label pp-label-brand">Productivity</span>
+                <span className="pp-label pp-label-brand pp-brand-mobile">Productivity</span>
               </>
             ) : (
               <button type="button" className="pp-search-trigger pp-glass" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
@@ -100,6 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* marginLeft auto, not space-between: antd's Flex renders nothing for an empty group. */}
             <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
               {isMobile ? <Button type="text" icon={<SearchOutlined />} aria-label="Search" onClick={() => setSearchOpen(true)} /> : null}
+              <FocusPill />
               <ReminderBell />
               <SyncPill />
               {/* On phones the colour switch lives in the navigation drawer, so the header fits. */}
@@ -121,6 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Layout>
       <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <ReminderAlerts />
+      <FocusWatcher />
     </Layout>
   );
 }

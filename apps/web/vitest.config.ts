@@ -10,5 +10,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+    // The first test in a file also pays for importing antd and the pages; with
+    // every file running in parallel that alone can pass the 5 s default.
+    testTimeout: 15_000,
   },
 });

@@ -33,6 +33,11 @@ model User {
   reminders       Reminder[]
   events          CalendarEvent[]
   eventExceptions CalendarEventException[]
+  habits          Habit[]
+  habitLogs       HabitLog[]
+  focusSessions   FocusSession[]
+  goals           Goal[]
+  goalMilestones  GoalMilestone[]
 
   @@map("users")
 }
@@ -82,15 +87,18 @@ model Project {
   status      String    @default("active")
   startDate   DateTime? @map("start_date") @db.Date
   dueDate     DateTime? @map("due_date") @db.Date
+  goalId      String?   @map("goal_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
   version     BigInt    @default(1)
 
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks  Task[]
-  notes  Note[]
-  events CalendarEvent[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal          Goal?           @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  tasks         Task[]
+  notes         Note[]
+  events        CalendarEvent[]
+  focusSessions FocusSession[]
 
   @@index([userId, updatedAt])
   @@map("projects")
@@ -117,12 +125,13 @@ model Task {
   deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
   version            BigInt    @default(1)
 
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  parent    Task?           @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subtasks  Task[]          @relation("Subtasks")
-  events    CalendarEvent[]
-  reminders Reminder[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent        Task?           @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks      Task[]          @relation("Subtasks")
+  events        CalendarEvent[]
+  focusSessions FocusSession[]
+  reminders     Reminder[]
 
   @@index([userId, updatedAt])
   @@index([userId, dueDate])
@@ -247,4 +256,119 @@ model CalendarEventException {
   @@unique([eventId, originalOccurrence])
   @@index([userId, updatedAt])
   @@map("calendar_event_exceptions")
+}
+
+/// Phase 5. Daily habits may be limited to some ISO weekdays (1 = Monday);
+/// weekly ones count completions per week against target_count.
+model Habit {
+  id          String    @id @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  goalId      String?   @map("goal_id") @db.Uuid
+  title       String
+  description String?
+  cadence     String    @default("daily") // daily | weekly
+  /// Empty = every day.
+  daysOfWeek  Int[]     @map("days_of_week") @db.SmallInt
+  targetCount Int       @default(1) @map("target_count") @db.SmallInt
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  version     BigInt    @default(1)
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal?      @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  logs HabitLog[]
+
+  @@index([userId, updatedAt])
+  @@map("habits")
+}
+
+/// Append-only (plan §7.3): added or tombstoned, never edited.
+model HabitLog {
+  id        String    @id @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  habitId   String    @map("habit_id") @db.Uuid
+  date      DateTime  @db.Date
+  count     Int       @default(1) @db.SmallInt
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  version   BigInt    @default(1)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([habitId, date])
+  @@map("habit_logs")
+}
+
+/// Append-only: one row per finished focus or break session.
+model FocusSession {
+  id              String    @id @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  taskId          String?   @map("task_id") @db.Uuid
+  projectId       String?   @map("project_id") @db.Uuid
+  kind            String    @default("focus") // focus | break
+  startedAt       DateTime  @map("started_at") @db.Timestamptz
+  endedAt         DateTime  @map("ended_at") @db.Timestamptz
+  plannedMinutes  Int       @map("planned_minutes") @db.SmallInt
+  durationSeconds Int       @map("duration_seconds")
+  completed       Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  version         BigInt    @default(1)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, updatedAt])
+  @@index([userId, startedAt])
+  @@map("focus_sessions")
+}
+
+model Goal {
+  id             String    @id @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  title          String
+  description    String?
+  status         String    @default("active") // active | achieved | dropped
+  targetDate     DateTime? @map("target_date") @db.Date
+  reviewCadence  String?   @map("review_cadence") // weekly | monthly
+  lastReviewedAt DateTime? @map("last_reviewed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  version        BigInt    @default(1)
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones GoalMilestone[]
+  projects   Project[]
+  habits     Habit[]
+
+  @@index([userId, updatedAt])
+  @@map("goals")
+}
+
+model GoalMilestone {
+  id        String    @id @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  goalId    String    @map("goal_id") @db.Uuid
+  title     String
+  dueDate   DateTime? @map("due_date") @db.Date
+  doneAt    DateTime? @map("done_at") @db.Timestamptz
+  position  Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  version   BigInt    @default(1)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("goal_milestones")
 }

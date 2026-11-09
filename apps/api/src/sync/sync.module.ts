@@ -14,6 +14,9 @@ import { projectsSyncHandler } from "../modules/projects/projects.sync-handler";
 import { remindersSyncHandler } from "../modules/reminders/reminders.sync-handler";
 import { eventExceptionsSyncHandler, eventsSyncHandler } from "../modules/calendar/calendar.sync-handlers";
 import { tasksSyncHandler } from "../modules/tasks/tasks.sync-handler";
+import { habitLogsSyncHandler, habitsSyncHandler } from "../modules/habits/habits.sync-handlers";
+import { focusSessionsSyncHandler } from "../modules/focus/focus.sync-handler";
+import { goalMilestonesSyncHandler, goalsSyncHandler } from "../modules/goals/goals.sync-handlers";
 import { SYNC_HANDLERS } from "./sync-handler";
 import { SyncService } from "./sync.service";
 
@@ -46,7 +49,22 @@ class SyncController {
   controllers: [SyncController],
   providers: [
     SyncService,
-    { provide: SYNC_HANDLERS, useValue: [projectsSyncHandler, notesSyncHandler, tasksSyncHandler, remindersSyncHandler, eventsSyncHandler, eventExceptionsSyncHandler] },
+    {
+      provide: SYNC_HANDLERS,
+      useValue: [
+        projectsSyncHandler,
+        notesSyncHandler,
+        tasksSyncHandler,
+        remindersSyncHandler,
+        eventsSyncHandler,
+        eventExceptionsSyncHandler,
+        habitsSyncHandler,
+        habitLogsSyncHandler,
+        focusSessionsSyncHandler,
+        goalsSyncHandler,
+        goalMilestonesSyncHandler,
+      ],
+    },
   ],
 })
 export class SyncModule {}

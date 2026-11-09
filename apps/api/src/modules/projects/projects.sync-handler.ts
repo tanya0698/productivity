@@ -1,5 +1,5 @@
 import { project } from "@productivity/contracts";
-import { dateOnly, instant, versionedHandler } from "../../sync/sync-handler";
+import { dateOnly, instant, ownGoalOrNull, versionedHandler } from "../../sync/sync-handler";
 
 const editable = project.omit({ id: true, userId: true, createdAt: true, updatedAt: true, version: true, deletedAt: true });
 
@@ -14,8 +14,10 @@ export const projectsSyncHandler = versionedHandler({
       status: p.status,
       startDate: dateOnly.toDb(p.startDate),
       dueDate: dateOnly.toDb(p.dueDate),
+      goalId: p.goalId,
     };
   },
+  prepare: ownGoalOrNull,
   toRecord: (r) => ({
     id: r.id,
     userId: r.userId,
@@ -24,6 +26,7 @@ export const projectsSyncHandler = versionedHandler({
     status: r.status,
     startDate: dateOnly.fromDb(r.startDate),
     dueDate: dateOnly.fromDb(r.dueDate),
+    goalId: r.goalId,
     createdAt: instant.fromDb(r.createdAt),
     updatedAt: instant.fromDb(r.updatedAt),
     deletedAt: instant.fromDb(r.deletedAt),

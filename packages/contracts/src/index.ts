@@ -66,6 +66,8 @@ export const project = z.object({
   status: z.enum(["active", "paused", "done", "archived"]),
   startDate: z.iso.date().nullable(),
   dueDate: z.iso.date().nullable(),
+  /** The goal this project works towards. Absent from records made before goals. */
+  goalId: z.uuid().nullable().default(null),
 });
 export type Project = z.infer<typeof project>;
 
@@ -158,8 +160,88 @@ export const eventExceptionObject = z.object({
 });
 export type EventException = z.infer<typeof eventExceptionObject>;
 
+// ─── Habits, focus, goals (Phase 5) ──────────────────────────────────────────
+
+/**
+ * A habit (plan §7, Phase 5). Daily habits can be limited to some weekdays
+ * (1 = Monday … 7 = Sunday); weekly ones count completions per week. The
+ * target is how many completions make the day (or week) "done".
+ */
+export const habit = z.object({
+  ...syncFields,
+  goalId: z.uuid().nullable(),
+  title: z.string().min(1).max(200),
+  description: z.string().nullable(),
+  cadence: z.enum(["daily", "weekly"]),
+  /** Daily only; null = every day. */
+  daysOfWeek: z.array(z.number().int().min(1).max(7)).min(1).max(7).nullable(),
+  targetCount: z.number().int().min(1).max(100),
+  archivedAt: z.iso.datetime().nullable(),
+});
+export type Habit = z.infer<typeof habit>;
+
+/** One completion (or several, with `count`) on a local date. Append-only: added or removed, never edited. */
+export const habitLog = z.object({
+  ...syncFields,
+  habitId: z.uuid(),
+  date: z.iso.date(),
+  count: z.number().int().min(1).max(100),
+});
+export type HabitLog = z.infer<typeof habitLog>;
+
+/** A finished focus (or break) session. Append-only; the running timer lives on the device. */
+export const focusSession = z.object({
+  ...syncFields,
+  taskId: z.uuid().nullable(),
+  projectId: z.uuid().nullable(),
+  kind: z.enum(["focus", "break"]),
+  startedAt: z.iso.datetime(),
+  endedAt: z.iso.datetime(),
+  plannedMinutes: z.number().int().min(1).max(600),
+  /** Time actually spent, pauses excluded. */
+  durationSeconds: z.number().int().min(0).max(600 * 60),
+  /** Ran to the end, rather than stopped early. */
+  completed: z.boolean(),
+});
+export type FocusSession = z.infer<typeof focusSession>;
+
+export const goal = z.object({
+  ...syncFields,
+  title: z.string().min(1).max(200),
+  /** Why it matters; shown when reviewing. */
+  description: z.string().nullable(),
+  status: z.enum(["active", "achieved", "dropped"]),
+  targetDate: z.iso.date().nullable(),
+  reviewCadence: z.enum(["weekly", "monthly"]).nullable(),
+  lastReviewedAt: z.iso.datetime().nullable(),
+});
+export type Goal = z.infer<typeof goal>;
+
+export const goalMilestone = z.object({
+  ...syncFields,
+  goalId: z.uuid(),
+  title: z.string().min(1).max(200),
+  dueDate: z.iso.date().nullable(),
+  doneAt: z.iso.datetime().nullable(),
+  /** Order within the goal. */
+  position: z.number().int().min(0),
+});
+export type GoalMilestone = z.infer<typeof goalMilestone>;
+
 /** Every entity type sync knows about. Modules register theirs here. */
-export const entityType = z.enum(["task", "note", "project", "reminder", "event", "event_exception"]);
+export const entityType = z.enum([
+  "task",
+  "note",
+  "project",
+  "reminder",
+  "event",
+  "event_exception",
+  "habit",
+  "habit_log",
+  "focus_session",
+  "goal",
+  "goal_milestone",
+]);
 export type EntityType = z.infer<typeof entityType>;
 
 // ─── Sync protocol (plan §6.4) ───────────────────────────────────────────────

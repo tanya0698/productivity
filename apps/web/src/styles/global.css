@@ -82,6 +82,15 @@ h3.ant-typography {
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
+/* Narrow phones: the header needs the room for search, timer, bell and sync. The drawer still shows the name. */
+@media (max-width: 430px) {
+  .pp-brand-mobile {
+    display: none;
+  }
+}
+.pp-tile-value.pp-tile-value-small {
+  font-size: 28px;
+}
 /* Half-width tiles on a phone: a short date like "Dec 19" stays on one line. */
 @media (max-width: 575px) {
   .pp-tile-value {
@@ -343,6 +352,188 @@ h3.ant-typography {
 .pp-priority-urgent {
   color: var(--pp-heading);
   font-weight: 600;
+}
+
+/* ─── Habits ────────────────────────────────────────────────────────────── */
+.pp-habit {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 4px;
+}
+.pp-habit + .pp-habit {
+  border-top: 1px solid var(--pp-border);
+}
+.pp-habit-off {
+  opacity: 0.7;
+}
+.pp-habit-check {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--pp-border);
+  background: transparent;
+  color: var(--pp-page);
+  font-size: 15px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pp-habit-check:hover {
+  border-color: var(--pp-primary);
+}
+.pp-habit-check-on {
+  background: var(--pp-primary);
+  border-color: var(--pp-primary);
+}
+.pp-habit-check:focus-visible,
+.pp-habit-main:focus-visible {
+  outline: 2px solid var(--pp-primary);
+  outline-offset: 2px;
+}
+.pp-habit-counter {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pp-habit-count {
+  min-width: 38px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--pp-heading);
+}
+.pp-habit-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.pp-habit-main:disabled {
+  cursor: default;
+}
+.pp-habit-done .pp-task-title {
+  color: var(--pp-text-secondary);
+}
+.pp-habit-days {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+/* Each day's state shows as fill and as text in its tooltip and label, not colour alone. */
+.pp-habit-day {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-family: var(--pp-font-mono);
+  color: var(--pp-text-muted);
+  border: 1px solid var(--pp-border);
+}
+.pp-day-done {
+  background: var(--pp-primary);
+  border-color: var(--pp-primary);
+  color: var(--pp-page);
+}
+.pp-day-partial {
+  background: var(--pp-primary-soft);
+  border-color: var(--pp-primary);
+  color: var(--pp-heading);
+}
+.pp-day-missed {
+  border-style: dashed;
+  border-color: var(--pp-error-text);
+  color: var(--pp-error-text);
+}
+.pp-day-pending {
+  border-color: var(--pp-primary);
+  color: var(--pp-primary);
+}
+@media (max-width: 575px) {
+  .pp-habit {
+    flex-wrap: wrap;
+  }
+  .pp-habit-days {
+    width: 100%;
+    padding-left: 46px;
+  }
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────────────── */
+.pp-focus-card .ant-card-body {
+  padding: 32px 24px;
+}
+.pp-focus-ring {
+  position: relative;
+  width: 240px;
+  height: 240px;
+}
+.pp-focus-arc {
+  transition: stroke-dashoffset 0.9s linear;
+}
+.pp-focus-ring-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.pp-focus-clock {
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pp-heading);
+  line-height: 1;
+}
+.pp-focus-sub {
+  font-size: 13px;
+  color: var(--pp-text-secondary);
+}
+.pp-focus-pill {
+  color: var(--pp-primary);
+  font-weight: 600;
+}
+.pp-focus-session {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pp-focus-session-time {
+  font-size: 12px;
+  color: var(--pp-text-secondary);
+  width: 120px;
+  flex: none;
+}
+
+/* ─── Goals ─────────────────────────────────────────────────────────────── */
+.pp-goal-finished {
+  opacity: 0.75;
+}
+.pp-milestone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pp-milestone .ant-checkbox-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+.pp-milestone-done {
+  color: var(--pp-text-muted);
+  text-decoration: line-through;
 }
 
 /* ─── Calendar ──────────────────────────────────────────────────────────── */

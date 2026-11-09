@@ -16,6 +16,7 @@ export interface ProjectFields {
   title: string;
   description?: string | null;
   dueDate?: string | null;
+  goalId?: string | null;
 }
 
 export function newProject(id: string, now: Date, fields: ProjectFields): LocalProject {
@@ -31,12 +32,13 @@ export function newProject(id: string, now: Date, fields: ProjectFields): LocalP
     status: "active",
     startDate: null,
     dueDate: fields.dueDate ?? null,
+    goalId: fields.goalId ?? null,
   };
 }
 
 export function editProject<T extends LocalProject>(
   project: T,
-  changes: Partial<Pick<LocalProject, "title" | "description" | "dueDate" | "status">>,
+  changes: Partial<Pick<LocalProject, "title" | "description" | "dueDate" | "status" | "goalId">>,
   now: Date,
 ): T {
   return {

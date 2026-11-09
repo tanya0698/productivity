@@ -132,6 +132,14 @@ export async function ownLinksOrNull(tx: Tx, userId: string, data: Record<string
   return out;
 }
 
+/** Keeps `goalId` only if it's one of the user's own goals; otherwise no goal. */
+export async function ownGoalOrNull(tx: Tx, userId: string, data: Record<string, unknown>) {
+  const goalId = data.goalId;
+  if (typeof goalId !== "string") return data;
+  const goal = await tx.goal.findFirst({ where: { id: goalId, userId }, select: { id: true } });
+  return goal ? data : { ...data, goalId: null };
+}
+
 /** `"2026-10-21"` ↔ a Date at UTC midnight, for `@db.Date` columns. */
 export const dateOnly = {
   toDb: (v: string | null | undefined) => (v ? new Date(`${v}T00:00:00.000Z`) : null),

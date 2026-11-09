@@ -13,3 +13,6 @@ export * from "./time.ts";
 export * from "./reminders.ts";
 export * from "./taskReminders.ts";
 export * from "./calendar.ts";
+export * from "./habits.ts";
+export * from "./focus.ts";
+export * from "./goals.ts";
