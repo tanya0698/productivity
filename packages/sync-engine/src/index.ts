@@ -15,6 +15,7 @@
  *    same base version and the second would conflict with the first.
  *  - A pull never overwrites a record that still has pending operations: the
  *    local copy is newer, and the push decides whether it really conflicts.
+ *    Nor one with an open conflict: that waits for resolveConflict().
  *
  * Conflict *resolution* UI is not here: the engine records conflicts and the
  * app shows them (§6.5).
@@ -96,6 +97,62 @@ export class SyncEngine {
       };
       await tx.put(entityType, stored, "pending");
       await tx.enqueue(operation);
+    });
+  }
+
+  /**
+   * Settle a recorded conflict (plan §6.5):
+   *  - "mine":   this device's version wins. It's resent on top of the server's
+   *              current version, so it applies cleanly instead of conflicting again.
+   *  - "theirs": the server's version replaces this device's, and any queued
+   *              edits to it are dropped.
+   *  - "both":   the server's version stays, and this device's is saved as a new
+   *              separate record (titled "… (copy from this device)").
+   * Returns the id of the copy for "both". A no-op if the conflict is already gone.
+   */
+  async resolveConflict(entityType: EntityType, entityId: string, choice: "mine" | "theirs" | "both"): Promise<string | null> {
+    const clientTimestamp = this.o.now().toISOString();
+    return this.o.db.transaction(async (tx) => {
+      const conflict = (await this.o.db.conflicts()).find((c) => c.entityType === entityType && c.entityId === entityId);
+      if (!conflict) return null;
+      const server = conflict.server;
+      // Anything edited since the conflict was found counts as "mine" too.
+      const mine = (await tx.get(entityType, entityId)) ?? conflict.local;
+      const queued = await tx.pendingFor(entityId);
+      await tx.dequeue(queued.map((o) => o.operationId));
+      await tx.clearConflict(entityType, entityId);
+
+      const enqueue = async (record: LocalRecord, op: "upsert" | "delete", baseVersion: number | null) => {
+        await tx.put(entityType, record, "pending");
+        await tx.enqueue({
+          operationId: this.o.newId(),
+          entityType,
+          entityId: record.id,
+          op,
+          baseVersion,
+          payload: op === "delete" ? null : record,
+          deviceId: this.o.deviceId,
+          clientTimestamp,
+        });
+      };
+
+      if (choice === "mine") {
+        const record: LocalRecord = { ...mine, version: server.version };
+        await enqueue(record, mine.deletedAt ? "delete" : "upsert", server.version);
+        return null;
+      }
+
+      await tx.put(entityType, server, "synced");
+      if (choice === "theirs") return null;
+
+      const copyId = this.o.newId();
+      const title = typeof mine.title === "string" && mine.title.trim() ? mine.title : "Untitled";
+      await enqueue(
+        { ...mine, id: copyId, version: 0, deletedAt: null, title: `${title} (copy from this device)`, createdAt: clientTimestamp, updatedAt: clientTimestamp },
+        "upsert",
+        null,
+      );
+      return copyId;
     });
   }
 
@@ -195,9 +252,17 @@ export class SyncEngine {
     let cursor = await this.o.db.cursor();
     for (;;) {
       const res = await this.o.transport.pull(cursor);
+      const conflicts = new Map((await this.o.db.conflicts()).map((c) => [`${c.entityType}:${c.entityId}`, c]));
       await this.o.db.transaction(async (tx) => {
         for (const c of res.changes) {
           if ((await tx.pendingFor(c.entityId)).length) continue;
+          // A conflicted record keeps this device's copy until the user decides;
+          // only the server side of the conflict moves on.
+          const open = conflicts.get(`${c.entityType}:${c.entityId}`);
+          if (open) {
+            if (c.record) await tx.recordConflict({ ...open, server: c.record as LocalRecord });
+            continue;
+          }
           const local = await tx.get(c.entityType, c.entityId);
           if (c.op === "delete") {
             const record = (c.record as LocalRecord | null) ?? local;

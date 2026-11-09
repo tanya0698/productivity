@@ -192,21 +192,32 @@ function syncLabel(status: SyncStatus): { icon: ReactNode; text: string } {
   }
 }
 
+/** The sync state, always visible; clicking it opens the sync & conflicts page. */
 function SyncPill() {
-  const { icon, text } = syncLabel(useSyncStatus());
+  const status = useSyncStatus();
+  const { icon, text: full } = syncLabel(status);
+  // Phones get the short form, so the pill stays on one line beside the menu button.
+  const compact = !Grid.useBreakpoint().md;
+  const text = compact && status.state === "needs_attention" ? (status.reason === "conflict" ? "Conflict" : status.reason === "auth" ? "Sign in" : "Sync stopped")
+    : compact && status.state === "offline" ? "Offline"
+    : compact && status.state === "pending" ? "Saved"
+    : full;
+  const navigate = useNavigate();
   return (
-    <Flex
-      align="center"
-      gap={6}
-      className="pp-glass"
-      style={{ borderRadius: 999, padding: "4px 12px", fontSize: 12 }}
-      role="status"
+    <button
+      type="button"
+      className="pp-glass pp-sync-pill"
+      onClick={() => navigate("/sync")}
+      title="Sync details"
+      aria-label={`${full}. Open sync details`}
     >
-      {icon}
-      <span className="pp-label" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
-        {text}
+      <span role="status" style={{ display: "contents" }}>
+        {icon}
+        <span className="pp-label" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
+          {text}
+        </span>
       </span>
-    </Flex>
+    </button>
   );
 }
 

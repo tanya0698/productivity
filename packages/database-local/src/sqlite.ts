@@ -107,6 +107,8 @@ export class SqliteDatabase implements LocalDatabase {
              ON CONFLICT (entity, id) DO UPDATE SET conflict = excluded.conflict`,
             [c.entityType, c.entityId, JSON.stringify(c)],
           ),
+        clearConflict: (entityType, entityId) =>
+          db.run("DELETE FROM conflicts WHERE entity = ? AND id = ?", [entityType, entityId]),
         setCursor: (c) => db.run(SET_META, [CURSOR_KEY, String(c)]),
       };
       return fn(tx);

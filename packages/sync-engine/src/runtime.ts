@@ -58,8 +58,13 @@ export class SyncRuntime {
     return () => void this.listeners.delete(listener);
   };
 
+  /** When a sync last finished cleanly in this session, whatever the status says now. */
+  getLastSyncedAt = (): string | null => this.lastSyncedAt;
+  private lastSyncedAt: string | null = null;
+
   private setStatus(status: SyncStatus) {
     this.status = status;
+    if (status.state === "idle" && status.lastSyncedAt) this.lastSyncedAt = status.lastSyncedAt;
     this.listeners.forEach((l) => l());
   }
 
@@ -95,6 +100,14 @@ export class SyncRuntime {
       this.debounceTimer = null;
       void this.syncNow();
     }, this.debounceMs);
+  }
+
+  /** Settle a conflict, then sync the result straight away. See SyncEngine.resolveConflict. */
+  async resolveConflict(entity: EntityType, id: string, choice: "mine" | "theirs" | "both"): Promise<string | null> {
+    const copyId = await this.engine.resolveConflict(entity, id, choice);
+    this.setStatus({ state: "pending", pending: (await this.db.pendingOperations(Number.MAX_SAFE_INTEGER)).length });
+    void this.syncNow();
+    return copyId;
   }
 
   /** Never rejects: failures become status, and network ones schedule a retry. */

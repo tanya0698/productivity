@@ -77,6 +77,7 @@ export class DexieDatabase implements LocalDatabase {
         replaceOperation: async (operation: SyncOperation) =>
           void (await outbox.where("operationId").equals(operation.operationId).modify({ operation })),
         recordConflict: async (c) => void (await conflicts.put(c)),
+        clearConflict: async (entityType, entityId) => void (await conflicts.delete([entityType, entityId])),
         setCursor: async (c) => void (await meta.put({ key: CURSOR_KEY, value: String(c) })),
       };
       return fn(tx);

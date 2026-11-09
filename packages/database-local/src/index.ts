@@ -42,6 +42,8 @@ export interface LocalTx {
   replaceOperation(operation: SyncOperation): Promise<void>;
   /** One conflict per record: a newer one replaces the older. */
   recordConflict(conflict: ConflictEntry): Promise<void>;
+  /** Forget a record's conflict once it has been resolved. */
+  clearConflict(entityType: EntityType, entityId: string): Promise<void>;
   setCursor(cursor: number): Promise<void>;
 }
 
@@ -120,6 +122,7 @@ export class MemoryDatabase implements LocalDatabase {
         );
       },
       recordConflict: async (c) => void draft.conflicts.set(recordKey(c.entityType, c.entityId), c),
+      clearConflict: async (entityType, entityId) => void draft.conflicts.delete(recordKey(entityType, entityId)),
       setCursor: async (c) => void (draft.cursor = c),
     };
 

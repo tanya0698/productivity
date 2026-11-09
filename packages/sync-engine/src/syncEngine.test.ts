@@ -213,6 +213,46 @@ describe.each(openBackends)("SyncEngine on %s", (_name, open) => {
     expect(server.records.get(id)).toMatchObject({ title: "from phone" });
   });
 
+  describe.each(["mine", "theirs", "both"] as const)("resolving a conflict: keep %s", (choice) => {
+    it("settles it on both devices", async () => {
+      const server = fakeServer();
+      const [phone, laptop] = [await open(), await open()];
+      const a = device(phone, server.transport);
+      const b = device(laptop, server.transport);
+      const id = newId();
+
+      await a.write("note", note(id, "original"));
+      await a.sync();
+      await b.sync();
+      await a.write("note", { ...(await phone.get("note", id))!, title: "from phone" });
+      await b.write("note", { ...(await laptop.get("note", id))!, title: "from laptop" });
+      await a.sync();
+      await b.sync();
+      expect(await laptop.conflicts()).toHaveLength(1);
+
+      const copyId = await b.resolveConflict("note", id, choice);
+      expect(await laptop.conflicts()).toHaveLength(0);
+      await b.sync();
+      await a.sync();
+
+      // No new conflict on either side, and both devices agree with the server.
+      expect(await laptop.conflicts()).toHaveLength(0);
+      expect(await phone.conflicts()).toHaveLength(0);
+      const expected = choice === "mine" ? "from laptop" : "from phone";
+      expect(server.records.get(id)).toMatchObject({ title: expected });
+      expect((await laptop.get("note", id))?.title).toBe(expected);
+      expect((await phone.get("note", id))?.title).toBe(expected);
+
+      if (choice === "both") {
+        expect(copyId).toBeTruthy();
+        expect(server.records.get(copyId!)).toMatchObject({ title: "from laptop (copy from this device)" });
+        expect((await phone.get("note", copyId!))?.title).toBe("from laptop (copy from this device)");
+      } else {
+        expect(copyId).toBeNull();
+      }
+    });
+  });
+
   it("a delete reaches the other device and stays deleted", async () => {
     const server = fakeServer();
     const [phone, laptop] = [await open(), await open()];

@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import type { EntityType } from "@productivity/contracts";
-import type { LocalRecord } from "@productivity/database-local";
+import type { ConflictEntry, LocalRecord, OutboxEntry } from "@productivity/database-local";
 import type { SyncStatus } from "./index.ts";
 import type { SyncRuntime } from "./runtime.ts";
 
@@ -67,6 +67,38 @@ export function useSyncRuntime(): SyncRuntime {
 export function useSyncStatus(): SyncStatus {
   const runtime = useSyncRuntime();
   return useSyncExternalStore(runtime.subscribe, runtime.getStatus);
+}
+
+export interface SyncDetails {
+  conflicts: ConflictEntry[];
+  /** Changes saved on this device that the server hasn't accepted yet. */
+  queued: OutboxEntry[];
+  loading: boolean;
+}
+
+/** Open conflicts and the outbox, re-read whenever the sync status changes. */
+export function useSyncDetails(): SyncDetails {
+  const runtime = useSyncRuntime();
+  const [state, setState] = useState<SyncDetails>({ conflicts: [], queued: [], loading: true });
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      void Promise.all([runtime.db.conflicts(), runtime.db.pendingOperations(Number.MAX_SAFE_INTEGER)]).then(
+        ([conflicts, queued]) => {
+          if (!cancelled) setState({ conflicts, queued, loading: false });
+        },
+      );
+    };
+    load();
+    const stop = runtime.subscribe(load);
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [runtime]);
+
+  return state;
 }
 
 /** Live records of one type from the local database, re-read whenever they change. */

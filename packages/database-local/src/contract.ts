@@ -141,6 +141,8 @@ export function describeLocalDatabase(name: string, open: () => Promise<Harness>
       const all = await db.conflicts();
       expect(all).toHaveLength(1);
       expect(all[0]!.detectedAt).toBe("2026-11-05T11:00:00.000Z");
+      await db.transaction((tx) => tx.clearConflict("note", r.id));
+      expect(await db.conflicts()).toHaveLength(0);
     });
 
     it("tracks the cursor and metadata", async () => {
