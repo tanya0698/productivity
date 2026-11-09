@@ -8,12 +8,13 @@ export const remindersSyncHandler = versionedHandler({
   delegate: (tx) => tx.reminder as never,
   toData: (payload) => {
     const r = editable.parse(payload);
-    if (r.taskId && r.noteId) throw new Error("link a task or a note, not both");
+    if ([r.taskId, r.noteId, r.eventId].filter(Boolean).length > 1) throw new Error("link one task, note or event at most");
     // Throws RangeError for a zone the runtime doesn't know.
     new Intl.DateTimeFormat("en-US", { timeZone: r.timezone });
     return {
       taskId: r.taskId,
       noteId: r.noteId,
+      eventId: r.eventId,
       title: r.title,
       remindAt: instant.toDb(r.remindAt),
       timezone: r.timezone,
@@ -29,6 +30,7 @@ export const remindersSyncHandler = versionedHandler({
     userId: r.userId,
     taskId: r.taskId,
     noteId: r.noteId,
+    eventId: r.eventId,
     title: r.title,
     remindAt: instant.fromDb(r.remindAt),
     timezone: r.timezone,

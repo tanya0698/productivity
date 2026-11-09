@@ -12,10 +12,9 @@ import {
   rescheduleReminder,
   scheduledReminders,
   snoozeReminder,
-  zonedParts,
-  zonedTime,
   type LocalReminder,
 } from "./reminders.ts";
+import { zonedParts, zonedTime } from "./time.ts";
 
 const id = () => crypto.randomUUID();
 const at = (iso: string) => new Date(iso);

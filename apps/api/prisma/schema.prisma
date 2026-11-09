@@ -25,12 +25,14 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  devices   Device[]
-  changes   SyncChange[]
-  projects  Project[]
-  tasks     Task[]
-  notes     Note[]
-  reminders Reminder[]
+  devices         Device[]
+  changes         SyncChange[]
+  projects        Project[]
+  tasks           Task[]
+  notes           Note[]
+  reminders       Reminder[]
+  events          CalendarEvent[]
+  eventExceptions CalendarEventException[]
 
   @@map("users")
 }
@@ -85,9 +87,10 @@ model Project {
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
   version     BigInt    @default(1)
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks Task[]
-  notes Note[]
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+  notes  Note[]
+  events CalendarEvent[]
 
   @@index([userId, updatedAt])
   @@map("projects")
@@ -114,10 +117,11 @@ model Task {
   deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
   version            BigInt    @default(1)
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  parent    Task?      @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subtasks  Task[]     @relation("Subtasks")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent    Task?           @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks  Task[]          @relation("Subtasks")
+  events    CalendarEvent[]
   reminders Reminder[]
 
   @@index([userId, updatedAt])
@@ -157,12 +161,13 @@ model Note {
 /// `remindAt` is the first occurrence; repeats keep the same wall-clock time in
 /// `timezone`. `lastHandledAt` is the occurrence most recently dismissed, so a
 /// repeating reminder moves on without rewriting its start. `eventId` arrives
-/// with the calendar (Phase 3b).
+/// is set for a one-off calendar event's reminder.
 model Reminder {
   id             String    @id @db.Uuid
   userId         String    @map("user_id") @db.Uuid
   taskId         String?   @map("task_id") @db.Uuid
   noteId         String?   @map("note_id") @db.Uuid
+  eventId        String?   @map("event_id") @db.Uuid
   title          String?
   remindAt       DateTime  @map("remind_at") @db.Timestamptz
   timezone       String
@@ -175,11 +180,71 @@ model Reminder {
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
   version        BigInt    @default(1)
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  note Note? @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task  Task?          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  note  Note?          @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  event CalendarEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([userId, updatedAt])
   @@index([userId, remindAt])
   @@map("reminders")
+}
+
+/// Plan §7.2. Timed: wall-clock local_start/local_end + IANA timezone, with
+/// starts_at/ends_at the first occurrence as instants. All-day: start_date and
+/// end_date (exclusive). The CHECK enforcing one shape is in the migration.
+model CalendarEvent {
+  id             String    @id @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  taskId         String?   @map("task_id") @db.Uuid
+  title          String
+  description    String?
+  allDay         Boolean   @default(false) @map("all_day")
+  localStart     DateTime? @map("local_start") @db.Timestamp(0)
+  localEnd       DateTime? @map("local_end") @db.Timestamp(0)
+  timezone       String?
+  startsAt       DateTime? @map("starts_at") @db.Timestamptz
+  endsAt         DateTime? @map("ends_at") @db.Timestamptz
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  recurrenceRule String?   @map("recurrence_rule")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  version        BigInt    @default(1)
+
+  user       User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task       Task?                    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  exceptions CalendarEventException[]
+  reminders  Reminder[]
+
+  @@index([userId, updatedAt])
+  @@index([userId, startsAt])
+  @@index([userId, startDate])
+  @@map("calendar_events")
+}
+
+/// "Move or cancel just this occurrence" of a repeating event (plan §7.2).
+model CalendarEventException {
+  id                 String    @id @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  eventId            String    @map("event_id") @db.Uuid
+  originalOccurrence DateTime  @map("original_occurrence") @db.Timestamp(0)
+  cancelled          Boolean   @default(false)
+  overrideLocalStart DateTime? @map("override_local_start") @db.Timestamp(0)
+  overrideLocalEnd   DateTime? @map("override_local_end") @db.Timestamp(0)
+  overrideTitle      String?   @map("override_title")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
+  version            BigInt    @default(1)
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, originalOccurrence])
+  @@index([userId, updatedAt])
+  @@map("calendar_event_exceptions")
 }

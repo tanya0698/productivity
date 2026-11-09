@@ -90,7 +90,9 @@ export const reminderObject = z.object({
     ...syncFields,
     taskId: z.uuid().nullable(),
     noteId: z.uuid().nullable(),
-    /** Shown for standalone reminders; linked ones show the task or note. */
+    /** A one-off calendar event's reminder. Absent from records made before the calendar. */
+    eventId: z.uuid().nullable().default(null),
+    /** Shown for standalone reminders; linked ones show the task, note or event. */
     title: z.string().max(500).nullable(),
     /** The first occurrence. Repeats keep its wall-clock time in `timezone`. */
     remindAt: z.iso.datetime(),
@@ -102,13 +104,62 @@ export const reminderObject = z.object({
     /** The occurrence most recently dismissed (repeating reminders). */
     lastHandledAt: z.iso.datetime().nullable(),
 });
-export const reminder = reminderObject.refine((r) => !(r.taskId && r.noteId), {
-  message: "link a task or a note, not both",
+export const reminder = reminderObject.refine((r) => [r.taskId, r.noteId, r.eventId].filter(Boolean).length <= 1, {
+  message: "link one task, note or event at most",
 });
 export type Reminder = z.infer<typeof reminder>;
 
+/** A wall-clock time with no zone, "2026-11-09T09:00:00" (Postgres TIMESTAMP). */
+export const localDateTime = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/, "expected YYYY-MM-DDTHH:mm:ss");
+
+/**
+ * Plan §7.2. Timed events keep a wall-clock start/end plus an IANA zone, so a
+ * repeating 09:00 stays at 09:00 across DST; `startsAt`/`endsAt` are the first
+ * occurrence as instants, for querying. All-day events are dates (end
+ * exclusive), so they don't shift when travelling.
+ */
+export const calendarEventObject = z.object({
+  ...syncFields,
+  projectId: z.uuid().nullable(),
+  /** A scheduled block of time for this task. */
+  taskId: z.uuid().nullable(),
+  title: z.string().min(1).max(500),
+  description: z.string().nullable(),
+  allDay: z.boolean(),
+  localStart: localDateTime.nullable(),
+  localEnd: localDateTime.nullable(),
+  timezone: z.string().min(1).max(64).nullable(),
+  startsAt: z.iso.datetime().nullable(),
+  endsAt: z.iso.datetime().nullable(),
+  startDate: z.iso.date().nullable(),
+  /** Exclusive: a one-day event on the 9th ends on the 10th. */
+  endDate: z.iso.date().nullable(),
+  recurrenceRule: reminderRepeat.nullable(),
+});
+export const calendarEventShape = (e: z.infer<typeof calendarEventObject>) =>
+  e.allDay
+    ? !!e.startDate && !!e.endDate && e.endDate > e.startDate
+    : !!e.localStart && !!e.localEnd && !!e.timezone && !!e.startsAt && !!e.endsAt && e.endsAt > e.startsAt;
+export const calendarEvent = calendarEventObject.refine(calendarEventShape, {
+  message: "all-day needs startDate < endDate; timed needs localStart, localEnd, timezone and startsAt < endsAt",
+});
+export type CalendarEvent = z.infer<typeof calendarEvent>;
+
+/** "Move or cancel just this occurrence" of a repeating event (plan §7.2). */
+export const eventExceptionObject = z.object({
+  ...syncFields,
+  eventId: z.uuid(),
+  /** Wall-clock start of the occurrence this replaces (00:00 for all-day). */
+  originalOccurrence: localDateTime,
+  cancelled: z.boolean(),
+  overrideLocalStart: localDateTime.nullable(),
+  overrideLocalEnd: localDateTime.nullable(),
+  overrideTitle: z.string().max(500).nullable(),
+});
+export type EventException = z.infer<typeof eventExceptionObject>;
+
 /** Every entity type sync knows about. Modules register theirs here. */
-export const entityType = z.enum(["task", "note", "project", "reminder"]);
+export const entityType = z.enum(["task", "note", "project", "reminder", "event", "event_exception"]);
 export type EntityType = z.infer<typeof entityType>;
 
 // ─── Sync protocol (plan §6.4) ───────────────────────────────────────────────

@@ -17,6 +17,9 @@ export interface SyncHandler {
 
 export const SYNC_HANDLERS = Symbol("SYNC_HANDLERS");
 
+/** Thrown from `prepare` to reject one operation (with a reason) without failing the push. */
+export class RejectOperation extends Error {}
+
 /** Minimal surface of a Prisma model delegate used by `versionedHandler`. */
 interface Delegate {
   findUnique(args: { where: { id: string } }): Promise<Row | null>;
@@ -44,7 +47,7 @@ export function versionedHandler(opts: {
    * reference: a database error would fail the whole push and the client
    * would retry it forever.
    */
-  prepare?: (tx: Tx, userId: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  prepare?: (tx: Tx, userId: string, data: Record<string, unknown>, op: SyncOperation) => Promise<Record<string, unknown>>;
 }): SyncHandler {
   return {
     entityType: opts.entityType,
@@ -80,7 +83,14 @@ export function versionedHandler(opts: {
       } catch (err) {
         return { operationId: op.operationId, status: "rejected", reason: `invalid: ${String(err)}` };
       }
-      if (opts.prepare) data = await opts.prepare(tx, userId, data);
+      if (opts.prepare) {
+        try {
+          data = await opts.prepare(tx, userId, data, op);
+        } catch (err) {
+          if (err instanceof RejectOperation) return { operationId: op.operationId, status: "rejected", reason: err.message };
+          throw err;
+        }
+      }
 
       const row = existing
         ? await d.update({ where: { id: op.entityId }, data: { ...data, version: existing.version + 1n } })
@@ -116,6 +126,9 @@ export async function ownLinksOrNull(tx: Tx, userId: string, data: Record<string
   if (typeof out.noteId === "string" && !(await tx.note.findFirst({ where: { id: out.noteId, userId }, select: { id: true } }))) {
     out.noteId = null;
   }
+  if (typeof out.eventId === "string" && !(await tx.calendarEvent.findFirst({ where: { id: out.eventId, userId }, select: { id: true } }))) {
+    out.eventId = null;
+  }
   return out;
 }
 
@@ -123,6 +136,11 @@ export async function ownLinksOrNull(tx: Tx, userId: string, data: Record<string
 export const dateOnly = {
   toDb: (v: string | null | undefined) => (v ? new Date(`${v}T00:00:00.000Z`) : null),
   fromDb: (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : null),
+};
+/** "2026-11-09T09:00:00" (wall clock, no zone) ↔ a Date at that UTC reading, for `@db.Timestamp` columns. */
+export const wallClock = {
+  toDb: (v: string | null | undefined) => (v ? new Date(`${v}Z`) : null),
+  fromDb: (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 19) : null),
 };
 export const instant = {
   toDb: (v: string | null | undefined) => (v ? new Date(v) : null),

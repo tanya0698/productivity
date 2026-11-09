@@ -55,7 +55,9 @@ export function ReminderAlerts() {
       const close = () => notification.destroy(key);
       const open = () => {
         close();
-        navigate(item.task ? `/tasks?task=${item.task.id}` : item.note ? `/notes?note=${item.note.id}` : "/reminders");
+        navigate(
+          item.task ? `/tasks?task=${item.task.id}` : item.note ? `/notes?note=${item.note.id}` : item.event ? `/calendar?event=${item.event.id}` : "/reminders",
+        );
       };
       notification.open({
         key,

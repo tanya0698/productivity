@@ -12,6 +12,7 @@ import { CurrentUser } from "../common/current-user";
 import { notesSyncHandler } from "../modules/notes/notes.sync-handler";
 import { projectsSyncHandler } from "../modules/projects/projects.sync-handler";
 import { remindersSyncHandler } from "../modules/reminders/reminders.sync-handler";
+import { eventExceptionsSyncHandler, eventsSyncHandler } from "../modules/calendar/calendar.sync-handlers";
 import { tasksSyncHandler } from "../modules/tasks/tasks.sync-handler";
 import { SYNC_HANDLERS } from "./sync-handler";
 import { SyncService } from "./sync.service";
@@ -45,7 +46,7 @@ class SyncController {
   controllers: [SyncController],
   providers: [
     SyncService,
-    { provide: SYNC_HANDLERS, useValue: [projectsSyncHandler, notesSyncHandler, tasksSyncHandler, remindersSyncHandler] },
+    { provide: SYNC_HANDLERS, useValue: [projectsSyncHandler, notesSyncHandler, tasksSyncHandler, remindersSyncHandler, eventsSyncHandler, eventExceptionsSyncHandler] },
   ],
 })
 export class SyncModule {}

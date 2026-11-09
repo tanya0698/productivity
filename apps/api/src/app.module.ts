@@ -8,6 +8,7 @@ import { NotesModule } from "./modules/notes/notes.module";
 import { TasksModule } from "./modules/tasks/tasks.module";
 import { ProjectsModule } from "./modules/projects/projects.module";
 import { RemindersModule } from "./modules/reminders/reminders.module";
+import { CalendarModule } from "./modules/calendar/calendar.module";
 
 /**
  * One NestJS module per feature key, matching apps/web/src/features/<key> and
@@ -17,7 +18,7 @@ import { RemindersModule } from "./modules/reminders/reminders.module";
  * AuthGuard runs on every route; mark open routes with @Public().
  */
 @Module({
-  imports: [PrismaModule, HealthModule, SyncModule, NotesModule, TasksModule, ProjectsModule, RemindersModule],
+  imports: [PrismaModule, HealthModule, SyncModule, NotesModule, TasksModule, ProjectsModule, RemindersModule, CalendarModule],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

@@ -2,7 +2,7 @@ import type { LocalTask } from "./tasks.ts";
 import { newReminder, rescheduleReminder, type LocalReminder } from "./reminders.ts";
 
 /**
- * A task's reminder, chosen relative to when it's due. A task with a due time
+ * A task's (or a one-off event's) reminder, chosen relative to when it's due. A task with a due time
  * offers "at the time / 10 min / 1 hour / 1 day before"; one due on a day
  * offers "that morning / the morning before". A reminder set some other way
  * (on the Reminders page) shows as "custom" and is left alone.
@@ -66,6 +66,8 @@ export function planTaskReminder(
   choice: TaskReminderChoice,
   existing: readonly LocalReminder[],
   ctx: { now: Date; timezone: string; newId: () => string },
+  /** What a new reminder links to: the task by default, or a calendar event. */
+  link: { taskId: string } | { eventId: string } = { taskId: task.id },
 ): { put: LocalReminder[]; remove: LocalReminder[] } {
   const live = existing.filter((r) => !r.deletedAt);
   if (choice === "custom") return { put: [], remove: [] };
@@ -74,7 +76,7 @@ export function planTaskReminder(
   const [keep, ...extra] = live;
   const put = keep
     ? rescheduleReminder(keep, { remindAt: at, recurrenceRule: null, timezone: ctx.timezone }, ctx.now)
-    : newReminder(ctx.newId(), ctx.now, { remindAt: at, timezone: ctx.timezone, taskId: task.id });
+    : newReminder(ctx.newId(), ctx.now, { remindAt: at, timezone: ctx.timezone, ...link });
   // Unchanged: nothing to write.
   if (keep && keep.remindAt === put.remindAt && keep.status === "scheduled" && !keep.lastHandledAt && !keep.recurrenceRule) {
     return { put: [], remove: extra };

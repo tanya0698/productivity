@@ -1,4 +1,5 @@
 import type { Reminder, ReminderRepeat } from "@productivity/contracts";
+import { repeatDates, zonedParts, zonedTime } from "./time.ts";
 
 /**
  * Reminder rules (plan §8.2), shared by every client and later the worker, so
@@ -25,77 +26,7 @@ export const repeatLabel: Record<ReminderRepeat, string> = {
   "FREQ=YEARLY": "Every year",
 };
 
-// ─── Wall-clock time in a zone, without a library ─────────────────────────────
-
-interface Parts {
-  year: number;
-  month: number; // 1–12
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-  weekday: number; // 0 = Sunday
-}
-
-const formatters = new Map<string, Intl.DateTimeFormat>();
-function formatter(timeZone: string) {
-  let f = formatters.get(timeZone);
-  if (!f) {
-    f = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hourCycle: "h23",
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      weekday: "short",
-    });
-    formatters.set(timeZone, f);
-  }
-  return f;
-}
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** The wall-clock reading of `date` in `timeZone`. */
-export function zonedParts(date: Date, timeZone: string): Parts {
-  const p: Record<string, string> = {};
-  for (const { type, value } of formatter(timeZone).formatToParts(date)) p[type] = value;
-  return {
-    year: Number(p.year),
-    month: Number(p.month),
-    day: Number(p.day),
-    hour: Number(p.hour) % 24,
-    minute: Number(p.minute),
-    second: Number(p.second),
-    weekday: WEEKDAYS.indexOf(p.weekday ?? "Sun"),
-  };
-}
-
-const offsetAt = (t: number, timeZone: string) => {
-  const p = zonedParts(new Date(t), timeZone);
-  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
-};
-
-/**
- * The instant when the clock in `timeZone` reads this wall-clock time. In a
- * spring-forward gap (02:30 that never happens) it lands just after the jump.
- */
-export function zonedTime(
-  { year, month, day, hour, minute, second = 0 }: Omit<Parts, "weekday" | "second"> & { second?: number },
-  timeZone: string,
-): Date {
-  const guess = Date.UTC(year, month - 1, day, hour, minute, second);
-  const first = guess - offsetAt(guess, timeZone);
-  const second2 = guess - offsetAt(first, timeZone);
-  return new Date(second2);
-}
-
-const daysIn = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate();
-
-/** Occurrences from the first one onwards, in order. */
+/** Occurrences from the first one onwards, in order, at the first one's wall-clock time. */
 export function* occurrences(r: Pick<LocalReminder, "remindAt" | "timezone" | "recurrenceRule">): Generator<Date> {
   const first = new Date(r.remindAt);
   if (!r.recurrenceRule) {
@@ -103,34 +34,8 @@ export function* occurrences(r: Pick<LocalReminder, "remindAt" | "timezone" | "r
     return;
   }
   const a = zonedParts(first, r.timezone);
-  const at = (year: number, month: number, day: number) =>
-    zonedTime({ year, month, day, hour: a.hour, minute: a.minute, second: a.second }, r.timezone);
-
-  for (let k = 0; k < 100_000; k++) {
-    switch (r.recurrenceRule) {
-      case "FREQ=DAILY":
-      case "FREQ=WEEKLY":
-      case "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR": {
-        const step = r.recurrenceRule === "FREQ=WEEKLY" ? 7 : 1;
-        // Date.UTC normalises day overflow into the next month/year.
-        const d = new Date(Date.UTC(a.year, a.month - 1, a.day + k * step));
-        if (r.recurrenceRule.includes("BYDAY") && (d.getUTCDay() === 0 || d.getUTCDay() === 6)) continue;
-        yield at(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
-        break;
-      }
-      case "FREQ=MONTHLY": {
-        const total = a.month - 1 + k;
-        const year = a.year + Math.floor(total / 12);
-        const month = (total % 12) + 1;
-        yield at(year, month, Math.min(a.day, daysIn(year, month)));
-        break;
-      }
-      case "FREQ=YEARLY": {
-        const year = a.year + k;
-        yield at(year, a.month, Math.min(a.day, daysIn(year, a.month)));
-        break;
-      }
-    }
+  for (const d of repeatDates(a, r.recurrenceRule)) {
+    yield zonedTime({ ...d, hour: a.hour, minute: a.minute, second: a.second }, r.timezone);
   }
 }
 
@@ -186,6 +91,7 @@ export interface ReminderFields {
   title?: string | null;
   taskId?: string | null;
   noteId?: string | null;
+  eventId?: string | null;
   recurrenceRule?: ReminderRepeat | null;
 }
 
@@ -197,8 +103,10 @@ export function newReminder(id: string, now: Date, f: ReminderFields): LocalRemi
     updatedAt: at,
     version: 0,
     deletedAt: null,
+    // One link at most: a task wins over a note, a note over an event.
     taskId: f.taskId ?? null,
     noteId: f.taskId ? null : (f.noteId ?? null),
+    eventId: f.taskId || f.noteId ? null : (f.eventId ?? null),
     title: f.title?.trim() || null,
     remindAt: f.remindAt.toISOString(),
     timezone: f.timezone,

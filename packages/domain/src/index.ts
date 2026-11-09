@@ -9,5 +9,7 @@ export * from "./tasks.ts";
 export * from "./notes.ts";
 export * from "./projects.ts";
 export * from "./search.ts";
+export * from "./time.ts";
 export * from "./reminders.ts";
 export * from "./taskReminders.ts";
+export * from "./calendar.ts";

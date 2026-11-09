@@ -160,12 +160,13 @@ function ReminderRow({
 }) {
   const runtime = useSyncRuntime();
   const navigate = useNavigate();
-  const { reminder, at, title, task, note } = item;
+  const { reminder, at, title, task, note, event } = item;
   const repeating = !!reminder.recurrenceRule;
   const snoozed = reminder.status === "snoozed";
 
   const open = () => {
     if (task) navigate(`/tasks?task=${task.id}`);
+    else if (event) navigate(`/calendar?event=${event.id}`);
     else onEdit({ reminder, isNew: false, linkedTitle: note ? title : undefined });
   };
 
@@ -184,7 +185,7 @@ function ReminderRow({
               <RetweetOutlined /> {repeatLabel[reminder.recurrenceRule!]}
             </span>
           ) : null}
-          {task ? <span className="pp-priority">Task</span> : note ? <span className="pp-priority">Note</span> : null}
+          {task ? <span className="pp-priority">Task</span> : note ? <span className="pp-priority">Note</span> : event ? <span className="pp-priority">Event</span> : null}
         </span>
       </button>
       <Flex gap={6} wrap justify="flex-end" className="pp-reminder-actions">

@@ -345,6 +345,319 @@ h3.ant-typography {
   font-weight: 600;
 }
 
+/* ─── Calendar ──────────────────────────────────────────────────────────── */
+.pp-cal-toolbar {
+  margin-bottom: -4px;
+}
+.pp-cal-card {
+  overflow: hidden;
+}
+/* Events in teal, tasks in the indigo accent: also told apart by shape (tasks are outlined) and label. */
+.pp-cal-event,
+.pp-cal-chip {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-kind-event {
+  background: var(--pp-primary-soft);
+  border: 1px solid color-mix(in srgb, var(--pp-primary) 55%, transparent);
+  border-left: 3px solid var(--pp-primary);
+  color: var(--pp-heading);
+}
+.pp-kind-task {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--pp-accent) 70%, transparent);
+  color: var(--pp-accent-text);
+}
+.pp-cal-chip {
+  display: block;
+  width: 100%;
+  padding: 1px 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.pp-cal-chip-time {
+  color: var(--pp-text-secondary);
+  margin-right: 4px;
+}
+.pp-cal-chip:focus-visible,
+.pp-cal-event:focus-visible,
+.pp-cal-agenda-item:focus-visible,
+.pp-cal-dayname:focus-visible,
+.pp-cal-cell-date:focus-visible,
+.pp-cal-more:focus-visible {
+  outline: 2px solid var(--pp-primary);
+  outline-offset: 1px;
+}
+
+/* Week and day grid */
+.pp-cal-grid {
+  display: flex;
+  flex-direction: column;
+}
+.pp-cal-row {
+  display: grid;
+}
+.pp-cal-head {
+  border-bottom: 1px solid var(--pp-border);
+}
+.pp-cal-dayname {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 8px;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--pp-text);
+  cursor: pointer;
+}
+.pp-cal-dayname:disabled {
+  cursor: default;
+}
+.pp-cal-daynum {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pp-heading);
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  border-radius: 999px;
+}
+.pp-cal-today .pp-cal-daynum {
+  background: var(--pp-primary);
+  color: var(--pp-page);
+}
+.pp-cal-allday {
+  border-bottom: 1px solid var(--pp-border);
+  min-height: 34px;
+}
+.pp-cal-allday-cell {
+  padding: 2px 3px 4px;
+  border-left: 1px solid var(--pp-border);
+  min-width: 0;
+  cursor: copy;
+}
+.pp-cal-hourlabel {
+  font-size: 9px;
+  align-self: center;
+  text-align: right;
+  padding-right: 8px;
+}
+.pp-cal-scroll {
+  overflow-y: auto;
+  height: clamp(420px, calc(100vh - 330px), 900px);
+}
+.pp-cal-hours {
+  position: relative;
+}
+.pp-cal-hours span {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--pp-text-muted);
+}
+.pp-cal-col {
+  position: relative;
+  border-left: 1px solid var(--pp-border);
+  background-image: linear-gradient(to bottom, var(--pp-border) 1px, transparent 1px);
+  cursor: copy;
+  min-width: 0;
+}
+.pp-cal-event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 16px;
+  touch-action: none;
+  z-index: 1;
+}
+.pp-cal-event.pp-kind-task {
+  background: var(--pp-surface);
+}
+/* Under half an hour: one line, title only. */
+.pp-cal-short {
+  padding-top: 0;
+  padding-bottom: 0;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+}
+.pp-cal-event-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-cal-event-time {
+  color: var(--pp-text-secondary);
+  font-size: 11px;
+}
+.pp-cal-dragging {
+  z-index: 3;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  cursor: grabbing;
+  opacity: 0.92;
+}
+.pp-cal-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--pp-error);
+  z-index: 2;
+  pointer-events: none;
+}
+.pp-cal-now::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pp-error);
+}
+
+/* Month */
+.pp-cal-month-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.pp-cal-month-names span {
+  padding: 10px 8px 6px;
+  font-size: 10px;
+}
+.pp-cal-cell {
+  min-height: 112px;
+  padding: 4px 6px 6px;
+  border-top: 1px solid var(--pp-border);
+  border-left: 1px solid var(--pp-border);
+  min-width: 0;
+  cursor: copy;
+}
+.pp-cal-month-row > .pp-cal-cell:first-child,
+.pp-cal-month-names span {
+  border-left: none;
+}
+.pp-cal-outside {
+  background: color-mix(in srgb, var(--pp-muted) 45%, transparent);
+}
+.pp-cal-outside .pp-cal-cell-date {
+  color: var(--pp-text-muted);
+}
+.pp-cal-cell-date {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pp-heading);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pp-cal-cell.pp-cal-today .pp-cal-cell-date {
+  background: var(--pp-primary);
+  color: var(--pp-page);
+}
+.pp-cal-more {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--pp-text-secondary);
+  cursor: pointer;
+}
+.pp-cal-more:hover {
+  color: var(--pp-primary);
+}
+
+/* Agenda */
+.pp-cal-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.pp-cal-agenda-day h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+}
+.pp-cal-agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 6px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pp-cal-agenda-item:hover {
+  background: var(--pp-muted);
+}
+.pp-cal-agenda-time {
+  width: 96px;
+  flex: none;
+  font-size: 12px;
+  color: var(--pp-text-secondary);
+}
+.pp-cal-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  padding: 0;
+}
+.pp-cal-dot.pp-kind-event {
+  background: var(--pp-primary);
+}
+.pp-cal-dot.pp-kind-task {
+  border: 1.5px solid var(--pp-accent);
+}
+.pp-cal-agenda-item .pp-task-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-cal-agenda-icon {
+  color: var(--pp-text-muted);
+}
+
+@media (max-width: 575px) {
+  .pp-cal-cell {
+    min-height: 72px;
+    padding: 2px;
+  }
+  .pp-cal-chip {
+    font-size: 10px;
+    padding: 0 3px;
+  }
+  .pp-cal-chip-time {
+    display: none;
+  }
+  .pp-cal-toolbar .ant-segmented {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+}
+
 /* ─── Reminders ─────────────────────────────────────────────────────────── */
 .pp-reminder {
   display: flex;
