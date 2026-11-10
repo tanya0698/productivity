@@ -164,7 +164,7 @@ function ReminderRow({
 }) {
   const runtime = useSyncRuntime();
   const navigate = useNavigate();
-  const { reminder, at, title, task, note, event } = item;
+  const { reminder, at, title, task, note, event, series } = item;
   const repeating = !!reminder.recurrenceRule;
   const snoozed = reminder.status === "snoozed";
 
@@ -186,7 +186,7 @@ function ReminderRow({
           {snoozed ? <span className="pp-badge">Snoozed</span> : null}
           {repeating ? (
             <span className="pp-priority">
-              <RetweetOutlined /> {repeatLabel[reminder.recurrenceRule!]}
+              <RetweetOutlined /> {series ? "Each time" : repeatLabel[reminder.recurrenceRule!]}
             </span>
           ) : null}
           {task ? <span className="pp-priority">Task</span> : note ? <span className="pp-priority">Note</span> : event ? <span className="pp-priority">Event</span> : null}
@@ -215,13 +215,13 @@ function ReminderRow({
                 onClick={() => {
                   const t = new Date();
                   void runtime.write("task", { ...setTaskStatus(task, "done", t), updatedAt: t.toISOString() });
-                  void runtime.write("reminder", dismissReminder(reminder, t));
+                  void runtime.write("reminder", dismissReminder(reminder, t, series));
                 }}
               >
                 Done
               </Button>
             ) : null}
-            <Button size="small" type="primary" onClick={() => void runtime.write("reminder", dismissReminder(reminder, new Date()))}>
+            <Button size="small" type="primary" onClick={() => void runtime.write("reminder", dismissReminder(reminder, new Date(), series))}>
               Dismiss
             </Button>
           </>
@@ -235,7 +235,7 @@ function ReminderRow({
               ],
               onClick: ({ key }) => {
                 const t = new Date();
-                void runtime.write("reminder", key === "skip" ? dismissReminder(reminder, t) : endReminder(reminder, t));
+                void runtime.write("reminder", key === "skip" ? dismissReminder(reminder, t, series) : endReminder(reminder, t));
               },
             }}
           >

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, Col, Flex, Input, List, Popconfirm, Row, Typography } from "antd";
+import { Button, Card, Col, Flex, Input, Popconfirm, Row, Typography } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
@@ -60,30 +60,25 @@ export default function HomePage() {
             {!notes.length && !ready ? (
               <RowsSkeleton rows={5} check={false} />
             ) : notes.length ? (
-              <List
-                dataSource={notes}
-                renderItem={(note) => (
-                  <List.Item
-                    onClick={() => setSelectedId(note.id)}
-                    style={{
-                      cursor: "pointer",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: note.id === selectedId ? "var(--pp-primary-soft)" : undefined,
-                    }}
-                  >
-                    <List.Item.Meta
-                      title={<Typography.Text strong={note.id === selectedId}>{noteDisplayTitle(note)}</Typography.Text>}
-                      description={
-                        <Flex gap={8} align="center" wrap>
+              <ul className="pp-note-list" aria-label="Notes">
+                {notes.map((note) => {
+                  const active = note.id === selectedId;
+                  const project = note.projectId ? byId.get(note.projectId) : undefined;
+                  return (
+                    <li key={note.id}>
+                      <button type="button" className="pp-note-row" aria-current={active || undefined} onClick={() => setSelectedId(note.id)}>
+                        <Typography.Text strong={active} ellipsis>
+                          {noteDisplayTitle(note)}
+                        </Typography.Text>
+                        <Flex gap={8} align="center" wrap className="pp-note-row-meta">
                           {new Date(note.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                          {note.projectId && byId.get(note.projectId) ? <ProjectTag title={byId.get(note.projectId)!.title} /> : null}
+                          {project ? <ProjectTag title={project.title} /> : null}
                         </Flex>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             ) : (
               <EmptyState text="No notes yet. Notes are saved on this device first and sync when you are online." />
             )}

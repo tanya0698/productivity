@@ -1,11 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { isDone, noteDisplayTitle, scheduledReminders, type LocalEvent, type LocalNote, type ReminderAt } from "@productivity/domain";
+import {
+  eventReminderSeries,
+  isDone,
+  noteDisplayTitle,
+  scheduledReminders,
+  type LocalEvent,
+  type LocalEventException,
+  type LocalNote,
+  type ReminderAt,
+} from "@productivity/domain";
 import { useLocalRecords } from "@productivity/sync-engine/react";
 import type { Task } from "../tasks/TaskRow";
 import { useReminders, type Reminder } from "./useReminders";
 
 type Note = LocalNote & { deletedAt: string | null };
 type Event = LocalEvent & { deletedAt: string | null };
+type Exception = LocalEventException & { deletedAt: string | null };
 
 export interface ActiveReminder extends ReminderAt<Reminder> {
   /** What it's about: the task's or note's title, or its own. */
@@ -34,20 +44,27 @@ export function useNow(ms = 15_000): Date {
 /**
  * Live reminders with their next alert time and what they're about, soonest
  * first. A reminder on a task that's done or deleted, or a note or event that's gone,
- * is left out: it shouldn't alert.
+ * is left out: it shouldn't alert. A reminder on a repeating event follows
+ * the event's real occurrences (moved ones move, cancelled ones never alert);
+ * its `series` goes along, for dismissing and alert keys.
  */
 export function useActiveReminders(now: Date): { items: ActiveReminder[]; loading: boolean } {
   const { records: reminders, loading } = useReminders();
   const { records: tasks } = useLocalRecords<Task>("task");
   const { records: notes } = useLocalRecords<Note>("note");
   const { records: events } = useLocalRecords<Event>("event");
+  const { records: exceptions } = useLocalRecords<Exception>("event_exception");
 
   const items = useMemo(() => {
     const taskById = new Map(tasks.map((t) => [t.id, t]));
     const noteById = new Map(notes.map((n) => [n.id, n]));
     const eventById = new Map(events.map((e) => [e.id, e]));
     const out: ActiveReminder[] = [];
-    for (const item of scheduledReminders(reminders, now)) {
+    const seriesOf = (r: Reminder) => {
+      const event = r.eventId && r.recurrenceRule ? eventById.get(r.eventId) : undefined;
+      return event ? eventReminderSeries(r, event, exceptions) : undefined;
+    };
+    for (const item of scheduledReminders(reminders, now, seriesOf)) {
       const { taskId, noteId, eventId, title } = item.reminder;
       if (taskId) {
         const task = taskById.get(taskId);
@@ -66,7 +83,7 @@ export function useActiveReminders(now: Date): { items: ActiveReminder[]; loadin
       }
     }
     return out;
-  }, [reminders, tasks, notes, events, now]);
+  }, [reminders, tasks, notes, events, exceptions, now]);
 
   return { items, loading };
 }

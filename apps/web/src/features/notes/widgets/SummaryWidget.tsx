@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Flex, List, Typography } from "antd";
+import { Flex, Typography } from "antd";
 import { Link } from "react-router-dom";
 import { noteDisplayTitle, sortNotes, type LocalNote } from "@productivity/domain";
 import { useLocalRecords, useDataReady } from "@/shared";
@@ -14,22 +14,19 @@ export default function SummaryWidget() {
 
   if (!recent.length) return ready ? <EmptyState compact text="No notes yet. Capture one and it shows up here." /> : <RowsSkeleton rows={3} check={false} />;
   return (
-    <List
-      size="small"
-      split={false}
-      dataSource={recent}
-      renderItem={(note) => (
-        <List.Item style={{ paddingInline: 0 }}>
-          <Flex justify="space-between" align="baseline" gap={12} style={{ width: "100%" }}>
-            <Link to="/notes" style={{ minWidth: 0 }}>
+    <ul className="pp-plain-list">
+      {recent.map((note) => (
+        <li key={note.id}>
+          <Flex justify="space-between" align="baseline" gap={12}>
+            <Link to={`/notes?note=${note.id}`} style={{ minWidth: 0 }}>
               <Typography.Text ellipsis>{noteDisplayTitle(note)}</Typography.Text>
             </Link>
             <span className="pp-label pp-num" style={{ fontSize: 11, flex: "none" }}>
               {new Date(note.updatedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
             </span>
           </Flex>
-        </List.Item>
-      )}
-    />
+        </li>
+      ))}
+    </ul>
   );
 }

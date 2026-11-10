@@ -90,6 +90,29 @@ describe("Calendar", () => {
     expect(await db.get("event", ev.id)).toMatchObject({ deletedAt: null });
   }, 15000);
 
+  it("gives a repeating event a reminder before every occurrence", async () => {
+    const db = new MemoryDatabase();
+    const ev = newEvent(crypto.randomUUID(), new Date(), { title: "Stand-up", recurrenceRule: "FREQ=DAILY" }, { allDay: false, start: at(9, 9), end: at(9, 9, 15), timezone: tz });
+    await put(db, "event", ev);
+    renderAt(db, `/calendar?view=week&date=${MONDAY}`);
+
+    fireEvent.click((await screen.findAllByRole("button", { name: /Stand-up/ }))[0]!);
+    const panel = await screen.findByRole("dialog");
+    fireEvent.click(within(panel).getByText("All events"));
+    const select = await within(panel).findByLabelText("Event reminder");
+    expect(within(panel).getByText(/Before every occurrence/)).toBeTruthy();
+    fireEvent.mouseDown(select);
+    fireEvent.click(await screen.findByText("10 minutes before"));
+    fireEvent.click(within(panel).getByRole("button", { name: "Save" }));
+
+    await waitFor(async () => expect(await db.list("reminder")).toHaveLength(1));
+    expect((await db.list("reminder"))[0]).toMatchObject({
+      eventId: ev.id,
+      recurrenceRule: "FREQ=DAILY",
+      remindAt: new Date(at(9, 9).getTime() - 10 * 60_000).toISOString(),
+    });
+  }, 15000);
+
   it("moves a one-off event by dragging it down an hour", async () => {
     const db = new MemoryDatabase();
     const ev = newEvent(crypto.randomUUID(), new Date(), { title: "Review" }, { allDay: false, start: at(10, 14), end: at(10, 15), timezone: tz });

@@ -46,7 +46,7 @@ export function ReminderAlerts() {
     const already = seen();
     for (const item of items) {
       if (item.at.getTime() > now.getTime()) break; // sorted: the rest are later
-      const key = alertKey(item.reminder, now);
+      const key = alertKey(item.reminder, now, item.series);
       if (!key || shown.current.has(key) || already.has(key)) continue;
       shown.current.add(key);
       markSeen(key);
@@ -88,7 +88,7 @@ export function ReminderAlerts() {
               size="small"
               type="primary"
               onClick={() => {
-                void runtime.write("reminder", dismissReminder(item.reminder, new Date()));
+                void runtime.write("reminder", dismissReminder(item.reminder, new Date(), item.series));
                 close();
               }}
             >

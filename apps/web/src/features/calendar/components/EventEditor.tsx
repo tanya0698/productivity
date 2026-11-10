@@ -5,13 +5,13 @@ import dayjs, { type Dayjs } from "dayjs";
 import {
   cancelOccurrence,
   editEvent,
+  eventReminderChoice,
   isDone,
   newEvent,
   overrideOccurrence,
-  planTaskReminder,
+  planEventReminder,
   repeatLabel,
   seriesWhen,
-  taskReminderChoice,
   taskReminderChoices,
   type EventWhen,
   type LocalEvent,
@@ -68,8 +68,9 @@ const dueOf = (when: EventWhen) =>
 
 /**
  * Add or change an event: title, all-day or times, repeat, project, the task
- * it makes time for, a reminder (one-off events), and notes. For a repeating
- * event, changes and deletes apply to this occurrence or to all of them.
+ * it makes time for, a reminder, and notes. For a repeating event, changes
+ * and deletes apply to this occurrence or to all of them; its reminder comes
+ * before every occurrence and follows ones moved or cancelled on their own.
  */
 export function EventEditor({
   target,
@@ -129,14 +130,8 @@ export function EventEditor({
   // showing "No reminder" early and saving would delete the event's reminder.
   useEffect(() => {
     if (!target || remindersLoading) return;
-    const when = occurrence
-      ? occurrence.allDay
-        ? ({ allDay: true, startDate: occurrence.startDate!, endDate: occurrence.endDate! } as const)
-        : ({ allDay: false, start: occurrence.start, end: occurrence.end, timezone: deviceTimezone() } as const)
-      : target.kind === "new"
-        ? target.when
-        : null;
-    form.setFieldValue("remind", when ? taskReminderChoice(dueOf(when), live[0]) : "none");
+    // Measured from the event itself: for a series, from its first occurrence.
+    form.setFieldValue("remind", event ? eventReminderChoice(event, live[0]) : "none");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetKey, remindersLoading, form]);
 
@@ -153,14 +148,8 @@ export function EventEditor({
     if (remind && remind !== "custom" && choiceKey && !allowed.includes(remind)) form.setFieldValue("remind", "none");
   }, [remind, choiceKey, form]);
 
-  const writeReminder = (ev: LocalEvent, when: EventWhen, choice: TaskReminderChoice, repeatsNow: boolean) => {
-    // Reminders on repeating events aren't offered yet: one moved or cancelled
-    // occurrence would still alert at its old time (plan: cancelled never fire).
-    const plan = planTaskReminder({ id: ev.id, title: ev.title, ...dueOf(when) }, repeatsNow ? "none" : choice, live, {
-      now: new Date(),
-      timezone: deviceTimezone(),
-      newId: () => runtime.newId(),
-    }, { eventId: ev.id });
+  const writeReminder = (ev: LocalEvent, choice: TaskReminderChoice) => {
+    const plan = planEventReminder(ev, choice, live, { now: new Date(), timezone: deviceTimezone(), newId: () => runtime.newId() });
     for (const r of plan.put) void runtime.write("reminder", r);
     for (const r of plan.remove) void runtime.write("reminder", r, "delete");
   };
@@ -180,7 +169,7 @@ export function EventEditor({
     if (target.kind === "new") {
       const ev = newEvent(runtime.newId(), now, fields, when);
       void runtime.write("event", ev);
-      writeReminder(ev, when, v.remind, !!fields.recurrenceRule);
+      writeReminder(ev, v.remind);
       void message.success("Event added");
     } else if (recurring && v.scope === "this") {
       const titleChanged = v.title.trim() !== event!.title;
@@ -190,7 +179,7 @@ export function EventEditor({
     } else {
       const ev = editEvent(event!, fields, recurring && fields.recurrenceRule ? seriesWhen(event!, occurrence!, when) : when, now);
       void runtime.write("event", ev);
-      writeReminder(ev, when, v.remind, !!fields.recurrenceRule);
+      writeReminder(ev, v.remind);
       void message.success(recurring ? "All events changed" : "Event saved");
     }
     onClose();
@@ -281,9 +270,9 @@ export function EventEditor({
           <Form.Item
             name="remind"
             label="Reminder"
-            extra={repeats ? "Reminders on repeating events are coming; add a repeating reminder on the Reminders page for now." : undefined}
+            extra={repeats ? "Before every occurrence. One you move or delete on its own takes its reminder with it." : undefined}
           >
-            <Select options={reminderOptions} suffixIcon={<BellOutlined />} disabled={!!repeats} aria-label="Event reminder" />
+            <Select options={reminderOptions} suffixIcon={<BellOutlined />} aria-label="Event reminder" />
           </Form.Item>
         )}
         {thisOnly ? null : (
@@ -303,7 +292,7 @@ export function EventEditor({
         )}
         {thisOnly ? (
           <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
-            Only this occurrence changes; the rest of the series stays as it is.
+            Only this occurrence changes; the rest of the series stays as it is. Its reminder moves with it.
           </Typography.Paragraph>
         ) : null}
         <Flex gap={8} justify="flex-end">
