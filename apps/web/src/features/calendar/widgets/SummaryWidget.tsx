@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Flex } from "antd";
 import dayjs from "dayjs";
-import { useNow } from "@/shared";
+import { useNow, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { timeRange, useCalendarItems, ymd } from "../components/items";
 
 /** Today's events and timed tasks, in order; past ones dimmed. */
@@ -11,9 +12,10 @@ export default function SummaryWidget() {
   const now = useNow(60_000);
   const today = ymd(now);
   const { items } = useCalendarItems(today, ymd(dayjs(today).add(1, "day")));
+  const ready = useDataReady();
   const events = items.filter((i) => i.kind === "event" || !i.allDay);
 
-  if (!events.length) return <EmptyState compact text="Nothing on the calendar today." />;
+  if (!events.length) return ready ? <EmptyState compact text="Nothing on the calendar today." /> : <RowsSkeleton rows={3} check={false} />;
   return (
     <Flex vertical gap={8}>
       {events.slice(0, 6).map((i) => {

@@ -1,18 +1,20 @@
 import { Link } from "react-router-dom";
 import { Flex } from "antd";
 import { BellOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import { useActiveReminders, useNow, whenText } from "@/shared";
+import { useActiveReminders, useNow, whenText, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 
 /** Today's view: reminders due now, then the next few in the coming day. */
 export default function SummaryWidget() {
   const now = useNow(30_000);
   const { items } = useActiveReminders(now);
+  const ready = useDataReady();
   const dayAhead = now.getTime() + 24 * 60 * 60_000;
   const shown = items.filter((i) => i.at.getTime() <= dayAhead).slice(0, 5);
 
   if (!shown.length) {
-    return <EmptyState compact text="No reminders in the next 24 hours." />;
+    return ready ? <EmptyState compact text="No reminders in the next 24 hours." /> : <RowsSkeleton rows={3} check={false} />;
   }
   return (
     <Flex vertical gap={10}>

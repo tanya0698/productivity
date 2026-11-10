@@ -29,6 +29,8 @@ async function setup() {
     await tx.put("task", task as unknown as LocalRecord, "synced");
     await tx.put("note", note as unknown as LocalRecord, "synced");
   });
+  // A device that has its data already: empty means empty, not "still downloading".
+  void db.setMeta("syncedOnce", "test");
   const runtime = new SyncRuntime({ db, transport: unused, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   const onClose = vi.fn();

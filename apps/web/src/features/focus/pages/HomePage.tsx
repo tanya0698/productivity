@@ -12,9 +12,10 @@ import {
   remainingMs,
   type LocalFocusSession,
 } from "@productivity/domain";
-import { ModulePage, useFocus, useLocalRecords, useNow, useTicking, type Task } from "@/shared";
+import { ModulePage, useFocus, useLocalRecords, useNow, useTicking, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatTile } from "@/components/ui/StatTile";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 
 type Session = LocalFocusSession & { deletedAt: string | null };
 const PRESET_KEY = "productivity:focus-preset";
@@ -37,7 +38,8 @@ export default function HomePage() {
   const { timer, finished, start, pause, resume, stop, dismissFinished } = useFocus();
   const now = useTicking(!!timer?.runningSince);
   const today = useNow(60_000);
-  const { records: sessions } = useLocalRecords<Session>("focus_session");
+  const { records: sessions, loading: sessionsLoading } = useLocalRecords<Session>("focus_session");
+  const ready = useDataReady(sessionsLoading);
   const { records: tasks } = useLocalRecords<Task>("task");
   const [preset, setPreset] = useState(savedPreset);
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -177,7 +179,9 @@ export default function HomePage() {
               </Col>
             </Row>
             <Card className="pp-card" title="Recent sessions">
-              {recent.length ? (
+              {!ready && !recent.length ? (
+                <RowsSkeleton rows={4} check={false} />
+              ) : recent.length ? (
                 <ul className="pp-note-list">
                   {recent.map((s) => (
                     <li key={s.id} className="pp-focus-session">

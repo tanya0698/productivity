@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Flex } from "antd";
 import { isScheduled, localDate } from "@productivity/domain";
-import { useNow } from "@/shared";
+import { useNow, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { HabitRow } from "../components/HabitRow";
 import { useHabits } from "../components/useHabits";
 
@@ -10,8 +11,9 @@ import { useHabits } from "../components/useHabits";
 export default function SummaryWidget() {
   const today = localDate(useNow(60_000));
   const { habits, index, tick, untick } = useHabits();
+  const ready = useDataReady();
   const due = habits.filter((h) => isScheduled(h, today));
-  if (!due.length) return <EmptyState compact text={habits.length ? "No habits due today." : "No habits yet."} />;
+  if (!due.length) return ready || habits.length ? <EmptyState compact text={habits.length ? "No habits due today." : "No habits yet."} /> : <RowsSkeleton rows={3} check={false} />;
   return (
     <Flex vertical>
       {due.slice(0, 6).map((h) => (

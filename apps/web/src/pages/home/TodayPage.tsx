@@ -1,19 +1,40 @@
 import { Suspense, lazy, useMemo, useState } from "react";
-import { App as AntApp, Card, Col, Input, Row, Segmented, Skeleton, Space } from "antd";
+import {
+  App as AntApp,
+  Card,
+  Col,
+  Input,
+  Row,
+  Segmented,
+  Space,
+} from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { groupTasks, localDate, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
-import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
+import {
+  groupTasks,
+  localDate,
+  newNote,
+  newTask,
+  type LocalNote,
+  type LocalTask,
+} from "@productivity/domain";
+import {
+  useLocalRecords,
+  useSyncRuntime,
+} from "@productivity/sync-engine/react";
 import { getLiveModules } from "@/shared/modules/registry";
 import { ModulePage } from "@/shared/page/ModulePage";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton, TileRowSkeleton } from "@/components/ui/Skeletons";
+import { useDataReady } from "@/shared/data/useDataReady";
 import { useOptionalAuth } from "@/shared/auth/AuthProvider";
 import { firstName } from "@/shared/auth/profile";
 
 /** "Good morning, Elton." by the hour on this device; just "Good morning." without a name. */
 function greeting(now: Date, name: string): string {
   const h = now.getHours();
-  const part = h < 5 ? "evening" : h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
+  const part =
+    h < 5 ? "evening" : h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
   return `Good ${part}${name ? `, ${name}` : ""}.`;
 }
 
@@ -50,9 +71,15 @@ function QuickCapture() {
     const text = value.trim();
     if (!text) return;
     if (kind === "task") {
-      await runtime.write("task", newTask(runtime.newId(), new Date(), { title: text }));
+      await runtime.write(
+        "task",
+        newTask(runtime.newId(), new Date(), { title: text }),
+      );
     } else {
-      await runtime.write("note", newNote(runtime.newId(), new Date(), { text }));
+      await runtime.write(
+        "note",
+        newNote(runtime.newId(), new Date(), { text }),
+      );
     }
     setValue("");
     void message.success(kind === "task" ? "Added to Tasks" : "Saved to Notes");
@@ -72,7 +99,14 @@ function QuickCapture() {
       />
       <Input
         prefix={<PlusOutlined />}
-        suffix={<span className="pp-label" style={{ fontSize: 10, letterSpacing: "0.08em" }}>Enter to save</span>}
+        suffix={
+          <span
+            className="pp-label"
+            style={{ fontSize: 10, letterSpacing: "0.08em" }}
+          >
+            Enter to save
+          </span>
+        }
         placeholder={kind === "task" ? "Capture a task" : "Capture a note"}
         aria-label="Quick capture"
         maxLength={2000}
@@ -92,8 +126,13 @@ function QuickCapture() {
 export default function TodayPage() {
   const now = new Date();
   const name = firstName(useOptionalAuth()?.session?.user);
-  const { records: tasks } = useLocalRecords<LocalTask & { deletedAt: string | null }>("task");
-  const { records: notes } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
+  const { records: tasks, loading } = useLocalRecords<
+    LocalTask & { deletedAt: string | null }
+  >("task");
+  const ready = useDataReady(loading) || tasks.length > 0;
+  const { records: notes } = useLocalRecords<
+    LocalNote & { deletedAt: string | null }
+  >("note");
 
   const groups = groupTasks(tasks, now, localDate(now));
   const dueToday = groups.today.length;
@@ -102,33 +141,54 @@ export default function TodayPage() {
   const widgets = useMemo(
     () =>
       getLiveModules().flatMap((m) =>
-        (m.widgets ?? []).map((w) => ({ ...w, key: `${m.key}:${w.id}`, Component: lazy(w.load) })),
+        (m.widgets ?? []).map((w) => ({
+          ...w,
+          key: `${m.key}:${w.id}`,
+          Component: lazy(w.load),
+        })),
       ),
     [],
   );
 
   return (
     <ModulePage
-      eyebrow={now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+      eyebrow={now.toLocaleDateString(undefined, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })}
       title="Today"
       description={`${greeting(now, name)} Here's what needs you today, and everything you captured recently.`}
     >
-      <Row gutter={[16, 16]}>
-        <Col xs={12} md={8}>
-          <StatTile label="Due today" value={dueToday} hint={dueToday === 1 ? "task" : "tasks"} />
-        </Col>
-        <Col xs={12} md={8}>
-          <StatTile
-            label="Overdue"
-            value={overdue}
-            hint={overdue ? "need attention" : "all clear"}
-            tone={overdue ? "error" : "neutral"}
-          />
-        </Col>
-        <Col xs={24} md={8}>
-          <StatTile label="Notes" value={notes.length} hint="saved on this device" tone="neutral" />
-        </Col>
-      </Row>
+      {!ready ? (
+        <TileRowSkeleton />
+      ) : (
+        <Row gutter={[16, 16]}>
+          <Col xs={12} md={8}>
+            <StatTile
+              label="Due today"
+              value={dueToday}
+              hint={dueToday === 1 ? "task" : "tasks"}
+            />
+          </Col>
+          <Col xs={12} md={8}>
+            <StatTile
+              label="Overdue"
+              value={overdue}
+              hint={overdue ? "need attention" : "all clear"}
+              tone={overdue ? "error" : "neutral"}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <StatTile
+              label="Notes"
+              value={notes.length}
+              hint="saved on this device"
+              tone="neutral"
+            />
+          </Col>
+        </Row>
+      )}
 
       <QuickCapture />
 
@@ -137,7 +197,7 @@ export default function TodayPage() {
           {widgets.map(({ key, title, span, Component }) => (
             <Col key={key} xs={24} lg={span ?? 12}>
               <Card title={title} className="pp-card">
-                <Suspense fallback={<Skeleton active />}>
+                <Suspense fallback={<RowsSkeleton rows={3} check={false} />}>
                   <Component />
                 </Suspense>
               </Card>

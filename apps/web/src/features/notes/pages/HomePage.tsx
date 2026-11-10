@@ -3,8 +3,9 @@ import { Button, Card, Col, Flex, Input, List, Popconfirm, Row, Typography } fro
 import { useSearchParams } from "react-router-dom";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
-import { ModulePage, ProjectSelect, ProjectTag, useLocalRecords, useProjects, useSyncRuntime, type Project } from "@/shared";
+import { ModulePage, useDataReady, ProjectSelect, ProjectTag, useLocalRecords, useProjects, useSyncRuntime, type Project } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { IconButton } from "@/components/ui/IconButton";
 
 const SAVE_DELAY_MS = 500;
@@ -16,6 +17,7 @@ const SAVE_DELAY_MS = 500;
 export default function HomePage() {
   const runtime = useSyncRuntime();
   const { records, loading } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
+  const ready = useDataReady(loading);
   const notes = useMemo(() => sortNotes(records), [records]);
   const { projects, byId } = useProjects();
   // Links from elsewhere: ?note=<id> opens a note; ?new=1&project=<id> starts one in a project.
@@ -54,8 +56,10 @@ export default function HomePage() {
     >
       <Row gutter={[16, 16]}>
         <Col xs={24} md={9}>
-          <Card styles={{ body: { padding: notes.length ? 8 : 24 } }} loading={loading}>
-            {notes.length ? (
+          <Card styles={{ body: { padding: notes.length || !ready ? 8 : 24 } }}>
+            {!notes.length && !ready ? (
+              <RowsSkeleton rows={5} check={false} />
+            ) : notes.length ? (
               <List
                 dataSource={notes}
                 renderItem={(note) => (

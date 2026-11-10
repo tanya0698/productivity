@@ -17,6 +17,8 @@ const offline: SyncTransport = {
 };
 
 function renderPage(db: MemoryDatabase, path = "/notes") {
+  // A device that has its data already: empty means empty, not "still downloading".
+  void db.setMeta("syncedOnce", "test");
   const runtime = new SyncRuntime({ db, transport: offline, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {

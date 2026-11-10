@@ -51,7 +51,7 @@ export default function MfaChallengePage() {
         </>
       }
     >
-      {error ? <Alert type="error" showIcon message={error} /> : null}
+      {error ? <Alert type="error" showIcon title={error} /> : null}
       <Form layout="vertical" requiredMark={false} size="large" onFinish={(v) => void verify(v)} disabled={busy || !factorId}>
         <Form.Item
           name="code"

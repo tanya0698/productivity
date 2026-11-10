@@ -2,8 +2,9 @@ import { useState } from "react";
 import { App as AntApp, Button, Card, Col, Collapse, Flex, Row } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { habitProgress, isScheduled, localDate, newHabit, streak } from "@productivity/domain";
-import { ModulePage, useNow, useSyncRuntime } from "@/shared";
+import { ModulePage, useNow, useSyncRuntime, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ListCardSkeleton, TileRowSkeleton } from "@/components/ui/Skeletons";
 import { StatTile } from "@/components/ui/StatTile";
 import { HabitEditor } from "../components/HabitEditor";
 import { HabitRow } from "../components/HabitRow";
@@ -19,6 +20,7 @@ export default function HomePage() {
   const now = useNow(60_000);
   const today = localDate(now);
   const { habits, archived, logs, index, loading, tick, untick } = useHabits();
+  const ready = useDataReady(loading);
   const [editing, setEditing] = useState<{ habit: Habit; isNew: boolean } | null>(null);
 
   const dueToday = habits.filter((h) => isScheduled(h, today));
@@ -63,7 +65,14 @@ export default function HomePage() {
         </Row>
       ) : null}
 
-      {!loading && !habits.length ? (
+      {!ready && !habits.length ? (
+        <>
+          <TileRowSkeleton />
+          <ListCardSkeleton rows={4} />
+        </>
+      ) : null}
+
+      {ready && !habits.length ? (
         <Card className="pp-card">
           <EmptyState text="No habits yet. Start with one small thing you want to do most days." />
         </Card>

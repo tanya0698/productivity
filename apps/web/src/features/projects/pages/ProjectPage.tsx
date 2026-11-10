@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { App as AntApp, Button, Card, Col, Collapse, Flex, Popconfirm, Row, Select, Skeleton, Typography } from "antd";
+import { App as AntApp, Button, Card, Col, Collapse, Flex, Popconfirm, Row, Select, Typography } from "antd";
 import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   editProject,
@@ -24,8 +24,10 @@ import {
   useProjects,
   useSyncRuntime,
   type Task,
+  useDataReady,
 } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/Skeletons";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProjectEditor } from "../components/ProjectEditor";
 import { ProjectProgress } from "../components/ProjectProgress";
@@ -41,6 +43,7 @@ export default function ProjectPage() {
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
   const { projects, byId, loading } = useProjects();
+  const ready = useDataReady(loading);
   const { records: allTasks } = useLocalRecords<Task>("task");
   const { records: allNotes } = useLocalRecords<Note>("note");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -54,7 +57,8 @@ export default function ProjectPage() {
   const groups = useMemo(() => groupTasks(tasks, new Date(), localDate(new Date())), [tasks]);
   const openTasks = [...groups.overdue, ...groups.today, ...groups.upcoming, ...groups.someday];
 
-  if (loading) return <Skeleton active />;
+  // Not here yet may only mean not downloaded yet: wait for the first sync before saying "not found".
+  if (!project && !ready) return <PageSkeleton />;
   if (!project) {
     return (
       <ModulePage eyebrow="Project" title="Project not found">

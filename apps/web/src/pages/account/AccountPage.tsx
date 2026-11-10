@@ -49,7 +49,7 @@ function ChangePassword() {
 
   return (
     <Card title="Password" className="pp-card">
-      {error ? <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} /> : null}
+      {error ? <Alert type="error" showIcon title={error} style={{ marginBottom: 16 }} /> : null}
       <Form form={form} layout="vertical" requiredMark={false} onFinish={(v) => void save(v)} disabled={busy}>
         <Form.Item name="password" label="New password" rules={[{ required: true, min: 8, message: "Use at least 8 characters." }]}>
           <Input.Password autoComplete="new-password" />
@@ -150,7 +150,7 @@ function TwoFactor() {
       extra={factors ? <Tag color={on ? "green" : "default"}>{on ? "On" : "Off"}</Tag> : null}
       loading={!factors}
     >
-      {error ? <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} /> : null}
+      {error ? <Alert type="error" showIcon title={error} style={{ marginBottom: 16 }} /> : null}
 
       {on ? (
         <Flex vertical gap={12}>

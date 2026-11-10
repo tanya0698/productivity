@@ -2,6 +2,8 @@ import type { EntityType } from "@productivity/contracts";
 import type { LocalDatabase, LocalRecord } from "@productivity/database-local";
 import { SyncEngine, TransientSyncError, backoffDelay, type SyncStatus, type SyncTransport } from "./index.ts";
 
+const SYNCED_ONCE = "syncedOnce";
+
 export interface SyncRuntimeOptions {
   db: LocalDatabase;
   transport: SyncTransport;
@@ -45,7 +47,22 @@ export class SyncRuntime {
       newId: o.newId,
       onStatus: (s) => this.setStatus(s),
     });
+    // Remembered per device, so only the very first visit waits for a sync.
+    void o.db.getMeta(SYNCED_ONCE).then((v) => {
+      if (v && !this.syncedOnce) {
+        this.syncedOnce = true;
+        this.listeners.forEach((l) => l());
+      }
+    });
   }
+
+  /**
+   * Whether this device has ever finished a sync. Until it has, an empty local
+   * database may just mean "not downloaded yet", so screens show a skeleton
+   * rather than "nothing here".
+   */
+  hasSyncedOnce = (): boolean => this.syncedOnce;
+  private syncedOnce = false;
 
   newId(): string {
     return this.newIdFn();
@@ -117,6 +134,11 @@ export class SyncRuntime {
     try {
       await this.engine.sync();
       this.failures = 0;
+      if (!this.syncedOnce) {
+        this.syncedOnce = true;
+        await this.db.setMeta(SYNCED_ONCE, new Date().toISOString());
+        this.listeners.forEach((l) => l());
+      }
       // Edits made while that sync was running still need to go out.
       if (this.started && (await this.db.pendingOperations(1)).length) this.scheduleSoon();
     } catch (err) {

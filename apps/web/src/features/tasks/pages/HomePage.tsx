@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { App as AntApp, Card, Collapse } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { groupTasks, localDate, taskGroupTitle, toggleDone, type TaskGroupKey } from "@productivity/domain";
-import { ModulePage, QuickAdd, TaskEditor, TaskRow, useLocalRecords, useProjects, useSyncRuntime, type Task } from "@/shared";
+import { ModulePage, QuickAdd, TaskEditor, TaskRow, useDataReady, useLocalRecords, useProjects, useSyncRuntime, type Task } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ListCardSkeleton } from "@/components/ui/Skeletons";
 
 const OPEN_GROUPS: TaskGroupKey[] = ["overdue", "today", "upcoming", "someday"];
 
@@ -16,6 +17,7 @@ export default function HomePage() {
   const runtime = useSyncRuntime();
   const { message } = AntApp.useApp();
   const { records, loading } = useLocalRecords<Task>("task");
+  const ready = useDataReady(loading);
   const [editing, setEditing] = useState<Task | null>(null);
   // ?task=<id> (from search) opens that task once it has loaded.
   const [params, setParams] = useSearchParams();
@@ -51,10 +53,17 @@ export default function HomePage() {
     >
       <QuickAdd projects={projects} />
 
-      {!loading && !records.length ? (
-        <Card className="pp-card">
-          <EmptyState text="No tasks yet. Add one above: type it, pick a date if it has one, press Enter." />
-        </Card>
+      {!records.length ? (
+        ready ? (
+          <Card className="pp-card">
+            <EmptyState text="No tasks yet. Add one above: type it, pick a date if it has one, press Enter." />
+          </Card>
+        ) : (
+          <>
+            <ListCardSkeleton rows={3} />
+            <ListCardSkeleton rows={4} />
+          </>
+        )
       ) : null}
 
       {OPEN_GROUPS.filter((k) => groups[k].length).map((key) => (

@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { App as AntApp, Button, Card, Col, Flex, Row, Segmented, Typography } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { byProject, isOpenProject, localDate, newProject, projectProgress } from "@productivity/domain";
-import { ModulePage, formatDue, useLocalRecords, useProjects, useSyncRuntime, type Project, type Task } from "@/shared";
+import { ModulePage, formatDue, useLocalRecords, useProjects, useSyncRuntime, type Project, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CardGridSkeleton } from "@/components/ui/Skeletons";
 import { ProjectEditor } from "../components/ProjectEditor";
 import { ProjectProgress } from "../components/ProjectProgress";
 import { StatusBadge } from "../components/StatusBadge";
@@ -17,6 +18,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
   const { projects, loading } = useProjects();
+  const ready = useDataReady(loading);
   const { records: tasks } = useLocalRecords<Task>("task");
   const [view, setView] = useState<View>("open");
   const [creating, setCreating] = useState<Project | null>(null);
@@ -50,7 +52,9 @@ export default function HomePage() {
         />
       ) : null}
 
-      {!loading && !shown.length ? (
+      {!ready && !projects.length ? <CardGridSkeleton count={3} /> : null}
+
+      {ready && !shown.length ? (
         <Card className="pp-card">
           <EmptyState
             text={

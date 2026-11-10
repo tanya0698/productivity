@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Alert, App as AntApp, Button, Card, Checkbox, Col, DatePicker, Flex, Input, Popconfirm, Row, Select, Skeleton, Typography } from "antd";
+import { Alert, App as AntApp, Button, Card, Checkbox, Col, DatePicker, Flex, Input, Popconfirm, Row, Select, Typography } from "antd";
 import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, FireOutlined, PlusOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import {
@@ -20,8 +20,9 @@ import {
   type LocalHabit,
   type LocalHabitLog,
 } from "@productivity/domain";
-import { ModulePage, formatDue, useLocalRecords, useNow, useProjects, useSyncRuntime, type Task } from "@/shared";
+import { ModulePage, formatDue, useLocalRecords, useNow, useProjects, useSyncRuntime, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/Skeletons";
 import { StatTile } from "@/components/ui/StatTile";
 import { GoalEditor } from "../components/GoalEditor";
 import { useGoals } from "../components/useGoals";
@@ -39,6 +40,7 @@ export default function GoalPage() {
   const now = useNow(60_000);
   const today = localDate(now);
   const { byId, milestonesOf, loading } = useGoals();
+  const ready = useDataReady(loading);
   const { projects } = useProjects();
   const { records: tasks } = useLocalRecords<Task>("task");
   const { records: habits } = useLocalRecords<Habit>("habit");
@@ -47,7 +49,7 @@ export default function GoalPage() {
   const index = useMemo(() => indexLogs(logs), [logs]);
 
   const goal = byId.get(goalId);
-  if (loading) return <Skeleton active />;
+  if (!goal && !ready) return <PageSkeleton />;
   if (!goal) {
     return (
       <ModulePage eyebrow="Goal" title="Goal not found">

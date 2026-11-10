@@ -33,7 +33,7 @@ export default function SetNewPasswordPage() {
         </>
       }
     >
-      {error ? <Alert type="error" showIcon message={error} /> : null}
+      {error ? <Alert type="error" showIcon title={error} /> : null}
       <Form layout="vertical" requiredMark={false} size="large" onFinish={(v) => void save(v)} disabled={busy}>
         <Form.Item
           name="password"

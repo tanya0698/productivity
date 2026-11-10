@@ -2,15 +2,17 @@ import { useMemo } from "react";
 import { Flex, List, Typography } from "antd";
 import { Link } from "react-router-dom";
 import { noteDisplayTitle, sortNotes, type LocalNote } from "@productivity/domain";
-import { useLocalRecords } from "@/shared";
+import { useLocalRecords, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 
 /** The Today page's "Recent notes" panel. */
 export default function SummaryWidget() {
   const { records } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
+  const ready = useDataReady();
   const recent = useMemo(() => sortNotes(records).slice(0, 5), [records]);
 
-  if (!recent.length) return <EmptyState compact text="No notes yet. Capture one and it shows up here." />;
+  if (!recent.length) return ready ? <EmptyState compact text="No notes yet. Capture one and it shows up here." /> : <RowsSkeleton rows={3} check={false} />;
   return (
     <List
       size="small"

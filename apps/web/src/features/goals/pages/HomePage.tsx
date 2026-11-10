@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { App as AntApp, Button, Card, Col, Flex, Row, Typography } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { goalProgress, goalStatusLabel, localDate, newGoal, reviewDue } from "@productivity/domain";
-import { ModulePage, formatDue, useNow, useProjects, useSyncRuntime } from "@/shared";
+import { ModulePage, formatDue, useNow, useProjects, useSyncRuntime, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CardGridSkeleton } from "@/components/ui/Skeletons";
 import { GoalEditor } from "../components/GoalEditor";
 import { useGoals, type Goal } from "../components/useGoals";
 
@@ -15,6 +16,7 @@ export default function HomePage() {
   const { message } = AntApp.useApp();
   const now = useNow(60_000);
   const { goals, milestonesOf, loading } = useGoals();
+  const ready = useDataReady(loading);
   const { projects } = useProjects();
   const [creating, setCreating] = useState<Goal | null>(null);
   const today = localDate(now);
@@ -30,7 +32,8 @@ export default function HomePage() {
         </Button>
       }
     >
-      {!loading && !goals.length ? (
+      {!ready && !goals.length ? <CardGridSkeleton count={2} /> : null}
+      {ready && !goals.length ? (
         <Card className="pp-card">
           <EmptyState text="No goals yet. Pick one outcome that matters this year, then break it into milestones." />
         </Card>

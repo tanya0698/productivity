@@ -69,6 +69,18 @@ export function useSyncStatus(): SyncStatus {
   return useSyncExternalStore(runtime.subscribe, runtime.getStatus);
 }
 
+/**
+ * Whether screens can trust that "empty" means empty: this device has synced
+ * at least once, or it can't sync right now (offline, signed out, an error),
+ * in which case what's on the device is all there is to show.
+ */
+export function useInitialSyncDone(): boolean {
+  const runtime = useSyncRuntime();
+  const status = useSyncStatus();
+  const synced = useSyncExternalStore(runtime.subscribe, runtime.hasSyncedOnce);
+  return synced || status.state === "offline" || status.state === "needs_attention";
+}
+
 export interface SyncDetails {
   conflicts: ConflictEntry[];
   /** Changes saved on this device that the server hasn't accepted yet. */

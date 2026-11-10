@@ -1,19 +1,21 @@
 import { Link } from "react-router-dom";
 import { Flex } from "antd";
 import { byProject, projectProgress } from "@productivity/domain";
-import { useLocalRecords, useProjects, type Task } from "@/shared";
+import { useLocalRecords, useProjects, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { ProjectProgress } from "../components/ProjectProgress";
 
 /** Today's view of active projects and how far along each is. */
 export default function SummaryWidget() {
   const { projects } = useProjects();
+  const ready = useDataReady();
   const { records: tasks } = useLocalRecords<Task>("task");
   const active = projects.filter((p) => p.status === "active").slice(0, 4);
   const grouped = byProject(tasks, projects);
 
   if (!active.length) {
-    return <EmptyState compact text="No active projects. Group a bigger piece of work under one." />;
+    return ready ? <EmptyState compact text="No active projects. Group a bigger piece of work under one." /> : <RowsSkeleton rows={3} check={false} />;
   }
   return (
     <Flex vertical gap={14}>

@@ -4,8 +4,9 @@ import { App as AntApp, Button, Card, Flex, Grid, Segmented, Typography } from "
 import { LeftOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { editEvent, movedWhen, overrideOccurrence, rescheduleReminder } from "@productivity/domain";
-import { ModulePage, deviceTimezone, useNow, useProjects, useReminders, useSyncRuntime } from "@/shared";
+import { ModulePage, deviceTimezone, useNow, useProjects, useReminders, useSyncRuntime, useDataReady } from "@/shared";
 import { AgendaView } from "../components/AgendaView";
+import { CalendarSkeleton, RowsSkeleton } from "@/components/ui/Skeletons";
 import { EventEditor, type EditorTarget } from "../components/EventEditor";
 import { MonthView } from "../components/MonthView";
 import { TimeGrid } from "../components/TimeGrid";
@@ -72,7 +73,8 @@ export default function CalendarPage() {
   const date = params.get("date") ? dayjs(params.get("date")) : dayjs(today);
   const { from, days, title } = rangeOf(view, date);
   const dayList = daysFrom(from, days);
-  const { items, events } = useCalendarItems(dayList[0]!, ymd(from.add(days, "day")));
+  const { items, events, loading } = useCalendarItems(dayList[0]!, ymd(from.add(days, "day")));
+  const ready = useDataReady(loading);
   const [target, setTarget] = useState<EditorTarget | null>(null);
 
   const go = (next: { view?: View; date?: Dayjs }) => {
@@ -163,7 +165,9 @@ export default function CalendarPage() {
       </Flex>
 
       <Card className="pp-card pp-cal-card" styles={{ body: { padding: view === "agenda" ? 16 : 0 } }}>
-        {view === "month" ? (
+        {!ready && !events.length ? (
+          view === "agenda" ? <RowsSkeleton rows={6} check={false} /> : <CalendarSkeleton cells={view === "month" ? 35 : view === "week" ? 7 : 1} />
+        ) : view === "month" ? (
           <MonthView
             month={date}
             items={items}

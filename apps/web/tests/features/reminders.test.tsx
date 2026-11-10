@@ -16,6 +16,8 @@ const unused: SyncTransport = {
 };
 
 function renderWith(db: MemoryDatabase, ui: React.ReactNode) {
+  // A device that has its data already: empty means empty, not "still downloading".
+  void db.setMeta("syncedOnce", "test");
   const runtime = new SyncRuntime({ db, transport: unused, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {

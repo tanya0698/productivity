@@ -28,6 +28,9 @@ import { NotificationBell } from "@/shared/notifications/NotificationBell";
 import { SyncNotices } from "@/shared/notifications/SyncNotices";
 import { FocusPill } from "@/shared/focus/FocusPill";
 import { FocusWatcher } from "@/shared/focus/FocusWatcher";
+import { ScrollReveal } from "./ScrollReveal";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { PendingAvatarUpload } from "@/shared/auth/PendingAvatarUpload";
 
 const SIDER_WIDTH = 232;
 const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
@@ -135,6 +138,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ReminderAlerts />
       <FocusWatcher />
       <SyncNotices />
+      <ScrollReveal />
+      <PendingAvatarUpload />
     </Layout>
   );
 }
@@ -194,7 +199,9 @@ function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
         Signed in as
       </span>
       <Tooltip title={session?.user.email} placement="right" mouseEnterDelay={0.4}>
-        <Flex vertical style={{ minWidth: 0 }}>
+        <Flex align="center" gap={10} style={{ minWidth: 0 }}>
+          <UserAvatar user={session?.user} size={34} />
+          <Flex vertical style={{ minWidth: 0 }}>
           {name ? (
             <Typography.Text strong ellipsis style={{ fontSize: 13 }}>
               {name}
@@ -203,6 +210,7 @@ function AccountFooter({ onNavigate }: { onNavigate: () => void }) {
           <Typography.Text ellipsis type={name ? "secondary" : undefined} style={{ fontSize: name ? 12 : 13 }}>
             {session?.user.email ?? "Unknown account"}
           </Typography.Text>
+          </Flex>
         </Flex>
       </Tooltip>
       <Flex gap={8} wrap>

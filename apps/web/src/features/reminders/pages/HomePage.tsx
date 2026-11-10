@@ -24,9 +24,9 @@ import {
   whenText,
   type ActiveReminder,
   type Reminder,
-  type Task,
-} from "@/shared";
+  type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { ReminderEditor } from "../components/ReminderEditor";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -40,6 +40,7 @@ export default function HomePage() {
   const { message } = AntApp.useApp();
   const now = useNow(15_000);
   const { items, loading } = useActiveReminders(now);
+  const ready = useDataReady(loading);
   const { records: all } = useReminders();
   const { records: tasks } = useLocalRecords<Task>("task");
   const { records: notes } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
@@ -91,7 +92,9 @@ export default function HomePage() {
       ) : null}
 
       <Card className="pp-card" title="Coming up" extra={<span className="pp-label pp-num">{upcoming.length}</span>}>
-        {loading ? null : upcoming.length ? (
+        {!ready && !items.length ? (
+          <RowsSkeleton rows={3} check={false} />
+        ) : upcoming.length ? (
           <Flex vertical>
             {upcoming.map((item) => (
               <ReminderRow key={item.reminder.id} item={item} now={now} onEdit={setEditing} />

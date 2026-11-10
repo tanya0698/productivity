@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
-import { Skeleton } from "antd";
+import { PageSkeleton } from "@/components/ui/Skeletons";
 import { getLiveModules } from "@/shared/modules/registry";
 import { AppShell } from "@/components/layout/AppShell";
 import TodayPage from "@/pages/home/TodayPage";
@@ -18,7 +18,7 @@ export function AppRoutes() {
   const { pathname } = useLocation();
   return (
     <AppShell>
-      <Suspense fallback={<Skeleton active className="pp-page" />}>
+      <Suspense fallback={<PageSkeleton />}>
         {/* Keyed by section, so each page fades and rises in when you arrive (global.css .pp-page). */}
         <div className="pp-page" key={section(pathname)}>
           <Routes>

@@ -12,6 +12,7 @@ import { CalendarModule } from "./modules/calendar/calendar.module";
 import { HabitsModule } from "./modules/habits/habits.module";
 import { FocusModule } from "./modules/focus/focus.module";
 import { GoalsModule } from "./modules/goals/goals.module";
+import { ProfileModule } from "./modules/profile/profile.module";
 
 /**
  * One NestJS module per feature key, matching apps/web/src/features/<key> and
@@ -33,6 +34,7 @@ import { GoalsModule } from "./modules/goals/goals.module";
     HabitsModule,
     FocusModule,
     GoalsModule,
+    ProfileModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
