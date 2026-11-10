@@ -1,5 +1,5 @@
 import { pullResponse, pushResponse } from "@productivity/contracts";
-import { AuthSyncError, TransientSyncError, type SyncTransport } from "./index.ts";
+import { AuthSyncError, TransientSyncError, type SyncTransport } from "./engine.ts";
 
 /**
  * The transport to /api/sync. Sorts failures into the kinds the engine treats

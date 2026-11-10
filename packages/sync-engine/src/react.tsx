@@ -13,7 +13,7 @@ import {
 } from "react";
 import type { EntityType } from "@productivity/contracts";
 import type { ConflictEntry, LocalRecord, OutboxEntry } from "@productivity/database-local";
-import type { SyncStatus } from "./index.ts";
+import type { SyncStatus } from "./engine.ts";
 import type { SyncRuntime } from "./runtime.ts";
 
 const RuntimeContext = createContext<SyncRuntime | null>(null);

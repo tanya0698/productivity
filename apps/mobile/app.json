@@ -3,11 +3,6 @@
     "name": "Creedence",
     "slug": "creedence",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0b0f14"
-    },
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -34,7 +29,22 @@
         {
           "color": "#2dd4bf"
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0b0f14"
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5630832a-a28d-4861-8248-43c3409eee96"
+      }
+    },
+    "owner": "creed0698"
   }
 }

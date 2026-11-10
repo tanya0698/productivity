@@ -1,6 +1,6 @@
 import type { EntityType } from "@productivity/contracts";
 import type { LocalDatabase, LocalRecord } from "@productivity/database-local";
-import { SyncEngine, TransientSyncError, backoffDelay, type SyncStatus, type SyncTransport } from "./index.ts";
+import { SyncEngine, TransientSyncError, backoffDelay, type SyncStatus, type SyncTransport } from "./engine.ts";
 
 const SYNCED_ONCE = "syncedOnce";
 
