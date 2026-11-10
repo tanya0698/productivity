@@ -5,8 +5,8 @@ import {
   CloudOutlined,
   DisconnectOutlined,
   MenuOutlined,
-  MoonOutlined,
-  SunOutlined,
+  
+  
   HomeOutlined,
   LogoutOutlined,
   UserOutlined,
@@ -19,7 +19,6 @@ import type { SyncStatus } from "@productivity/sync-engine";
 import { useSyncStatus } from "@productivity/sync-engine/react";
 import { getModules, findModuleByPath } from "@/shared/modules/registry";
 import { useAuth } from "@/shared/auth/AuthProvider";
-import { useTheme } from "@/contexts/ThemeProvider";
 import { SearchPalette } from "@/shared/search/SearchPalette";
 import { APP_NAME, brandImages } from "@/shared/brand";
 import { displayName } from "@/shared/auth/profile";
@@ -29,6 +28,7 @@ import { SyncNotices } from "@/shared/notifications/SyncNotices";
 import { FocusPill } from "@/shared/focus/FocusPill";
 import { FocusWatcher } from "@/shared/focus/FocusWatcher";
 import { ScrollReveal } from "./ScrollReveal";
+import { ColorModeToggle } from "@/components/ui/ColorModeToggle";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { PendingAvatarUpload } from "@/shared/auth/PendingAvatarUpload";
 
@@ -286,19 +286,3 @@ function SyncPill() {
   );
 }
 
-/** One button: light ↔ dark. The icon shows where it takes you, and turns as it switches. */
-function ColorModeToggle() {
-  const { mode, toggle } = useTheme();
-  const next = mode === "dark" ? "light" : "dark";
-  return (
-    <Tooltip title={`Switch to ${next} mode`}>
-      <Button
-        type="text"
-        className="pp-mode-toggle"
-        icon={<span key={mode} className="pp-mode-icon">{next === "light" ? <SunOutlined /> : <MoonOutlined />}</span>}
-        aria-label={`Switch to ${next} mode`}
-        onClick={toggle}
-      />
-    </Tooltip>
-  );
-}

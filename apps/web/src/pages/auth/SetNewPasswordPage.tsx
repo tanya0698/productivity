@@ -22,6 +22,7 @@ export default function SetNewPasswordPage() {
 
   return (
     <AuthCard
+      scene="reset"
       title="Choose a new password"
       subtitle="You followed a reset link. Set a new password to finish signing in."
       footer={

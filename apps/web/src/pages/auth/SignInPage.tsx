@@ -130,7 +130,7 @@ export default function SignInPage() {
     );
 
   return (
-    <AuthCard title={copy.title} subtitle={copy.subtitle} footer={footer}>
+    <AuthCard title={copy.title} subtitle={copy.subtitle} footer={footer} scene={mode === "sign-up" ? "sign-up" : mode === "reset" ? "reset" : "sign-in"}>
       {error ? <Alert type="error" showIcon title={error} /> : null}
       {notice ? <Alert type="success" showIcon title={notice} /> : null}
 

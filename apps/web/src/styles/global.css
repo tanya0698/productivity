@@ -152,111 +152,274 @@ h3.ant-typography {
   min-height: 100vh;
 }
 
-/* Always ink, in both themes, so the brand side reads the same. */
+/* Ink in dark mode; a light version of the scene follows light mode (below). */
 .pp-auth-brand {
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 56px 56px 44px;
+  padding: 36px 44px 36px;
   background: #0b0f14;
   color: #e2e8f0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  isolation: isolate;
+  /* Stays on screen while a long form (registration) scrolls. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: start;
 }
 
-.pp-auth-brand-glow {
+/* The illustrated scene (pages/auth/AuthScene.tsx). */
+.pp-scene-backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(45, 212, 191, 0.28), transparent 50%),
-    radial-gradient(circle at 95% 30%, rgba(129, 140, 248, 0.22), transparent 50%),
-    radial-gradient(circle at 30% 100%, rgba(45, 212, 191, 0.1), transparent 45%);
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
 }
-
-.pp-auth-brand-body,
-.pp-auth-brand-foot {
-  position: relative;
+.pp-scene-orbit {
+  transform-box: view-box;
+  transform-origin: 300px 460px;
+  animation: pp-orbit 48s linear infinite;
 }
+.pp-scene-orbit-b { animation-duration: 80s; animation-direction: reverse; }
+.pp-scene-orbit-c { animation-duration: 30s; }
+.pp-scene-spark { filter: drop-shadow(0 0 6px currentColor); }
+.pp-scene-orb {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pp-orb-in 1.1s var(--pp-ease-out) both, pp-bob 9s ease-in-out 1.1s infinite;
+}
+.pp-scene-orb-2 { animation-delay: 0.1s, 1.2s; animation-duration: 1.1s, 11s; }
+.pp-scene-orb-3 { animation-delay: 0.2s, 1.3s; animation-duration: 1.1s, 8s; }
+.pp-scene-orb-4 { animation-delay: 0.35s, 1.4s; animation-duration: 1.1s, 6s; }
+.pp-scene-orb-5 { animation-delay: 0.25s, 1.5s; animation-duration: 1.1s, 10s; }
+@keyframes pp-orbit { to { transform: rotate(360deg); } }
+@keyframes pp-orb-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes pp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes pp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
-.pp-auth-logo {
-  display: block;
-  width: 220px;
-  height: 220px;
-  margin: -24px 0 -12px -22px;
+.pp-scene-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--pp-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #5eead4;
   animation: pp-fade 0.6s ease-out both;
 }
 
-/* Centred in the panel; the footer stays pinned to the bottom. */
-.pp-auth-brand-body {
-  margin: auto 0;
+.pp-scene-stage {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  margin: 8px 0;
 }
 
-.pp-auth-headline {
+.pp-scene-card {
+  position: relative;
+  width: min(360px, 78%);
+  padding: 36px 32px 34px;
+  border-radius: 26px;
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  animation: pp-rise 0.8s var(--pp-ease-out) 0.15s both;
+}
+.pp-scene-kicker {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  font-family: var(--pp-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #99f6e4;
+}
+.pp-scene-rule {
+  display: block;
+  width: 36px;
+  height: 2px;
+  margin: 22px 0 18px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #2dd4bf, #818cf8);
+}
+.pp-scene-statement {
   margin: 0;
-  font-size: 46px;
-  line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #f8fafc;
-  max-width: 12ch;
-}
-
-.pp-auth-pitch {
-  margin: 16px 0 0;
-  font-size: 17px;
-  line-height: 1.5;
-  color: #94a3b8;
-  max-width: 36ch;
-}
-
-.pp-auth-points {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  font-size: 15px;
-  color: #cbd5e1;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #f8fafc;
+}
+.pp-scene-statement span {
+  animation: pp-rise 0.7s var(--pp-ease-out) both;
+}
+.pp-scene-statement span:nth-child(1) { animation-delay: 0.3s; }
+.pp-scene-statement span:nth-child(2) { animation-delay: 0.4s; }
+.pp-scene-statement span:nth-child(3) { animation-delay: 0.5s; }
+.pp-scene-accent {
+  background: linear-gradient(90deg, #2dd4bf, #a5b4fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pp-scene-sub {
+  margin: 18px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #94a3b8;
 }
 
-.pp-auth-points li {
+.pp-scene-chip {
+  position: absolute;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 13px;
+  color: #e2e8f0;
+  white-space: nowrap;
+  animation: pp-chip-in 0.6s var(--pp-ease-spring) both, pp-float 7s ease-in-out infinite;
 }
+.pp-scene-chip > span:last-child { display: flex; flex-direction: column; line-height: 1.25; }
+.pp-scene-chip b { font-weight: 650; color: #f8fafc; }
+.pp-scene-chip s { color: #94a3b8; text-decoration-color: #2dd4bf; text-decoration-thickness: 2px; }
+.pp-scene-chip small { font-size: 11.5px; color: #94a3b8; }
 
-.pp-auth-tick {
+.pp-scene-chip-task   { top: 7%;  left: 2%;   animation-delay: 0.7s, 1.3s; }
+.pp-scene-chip-streak { top: 12%; right: 0;   animation-delay: 0.85s, 2.1s; animation-duration: 0.6s, 8s; }
+.pp-scene-chip-focus  { bottom: 13%; right: 2%; animation-delay: 1s, 1.7s; animation-duration: 0.6s, 6.5s; }
+.pp-scene-chip-event  { bottom: 4%; left: 4%;  animation-delay: 1.15s, 2.6s; animation-duration: 0.6s, 7.5s; }
+.pp-scene-chip-sync {
+  top: 0;
+  right: 0;
+  position: absolute;
+  padding: 7px 12px;
+  border-radius: 999px;
+  gap: 8px;
+  color: #5eead4;
+  animation-delay: 1.3s, 3s;
+}
+.pp-scene-chip-sync small { color: #cbd5e1; }
+
+.pp-scene-check,
+.pp-scene-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(45, 212, 191, 0.16);
-  color: #2dd4bf;
-  font-size: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
 }
+.pp-scene-check { background: #2dd4bf; color: #0b0f14; font-size: 13px; }
+.pp-scene-icon-amber { background: rgba(251, 191, 36, 0.16); color: #fbbf24; font-size: 15px; }
+.pp-scene-bar { flex: none; width: 4px; height: 32px; border-radius: 4px; background: linear-gradient(#818cf8, #2dd4bf); }
+.pp-scene-ring-arc { stroke-dashoffset: 0; animation: pp-scene-draw 1.4s var(--pp-ease-out) 1.2s both; }
+@keyframes pp-scene-draw { from { stroke-dashoffset: 68; } }
+@keyframes pp-chip-in { from { opacity: 0; scale: 0.7; } }
 
-.pp-auth-brand-foot {
+/* A glass strip, so it reads over whichever sphere lands behind it at this window size. */
+.pp-scene-foot {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(11, 15, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   font-size: 13px;
   color: #94a3b8;
 }
+.pp-scene-foot strong { color: #f8fafc; font-size: 15px; }
 
-.pp-auth-brand-foot strong {
-  color: #f8fafc;
-  font-size: 16px;
+/* Light version of the scene: a pale mint-to-lavender sky, white glass, ink text. */
+:root[data-theme="light"] .pp-auth-brand {
+  background: linear-gradient(165deg, #e6fbf5 0%, #eef2ff 52%, #f8fafc 100%);
+  color: #0f172a;
+}
+:root[data-theme="light"] .pp-scene-track { stroke: rgba(15, 23, 42, 0.12); }
+:root[data-theme="light"] .pp-scene-track-faint { stroke: rgba(15, 23, 42, 0.14); }
+:root[data-theme="light"] .pp-scene-track-teal { stroke: rgba(13, 148, 136, 0.22); }
+:root[data-theme="light"] .pp-orb-ink-a { stop-color: #ffffff; }
+:root[data-theme="light"] .pp-orb-ink-b { stop-color: #c7d2fe; }
+:root[data-theme="light"] .pp-orb-ink-rim { stroke: rgba(99, 102, 241, 0.18); }
+:root[data-theme="light"] .pp-scene-top { color: #0f766e; }
+:root[data-theme="light"] .pp-scene-card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 30px 70px -24px rgba(15, 23, 42, 0.28), inset 0 1px 0 #ffffff;
+}
+:root[data-theme="light"] .pp-scene-kicker {
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.28);
+  color: #0f766e;
+}
+:root[data-theme="light"] .pp-scene-statement { color: #0f172a; }
+:root[data-theme="light"] .pp-scene-accent { background-image: linear-gradient(90deg, #0d9488, #6366f1); }
+:root[data-theme="light"] .pp-scene-sub { color: #475569; }
+:root[data-theme="light"] .pp-scene-chip {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(15, 23, 42, 0.07);
+  box-shadow: 0 16px 36px -14px rgba(15, 23, 42, 0.3);
+  color: #0f172a;
+}
+:root[data-theme="light"] .pp-scene-chip b { color: #0f172a; }
+:root[data-theme="light"] .pp-scene-chip s { color: #64748b; text-decoration-color: #0d9488; }
+:root[data-theme="light"] .pp-scene-chip small { color: #64748b; }
+:root[data-theme="light"] .pp-scene-chip-sync { color: #0f766e; }
+:root[data-theme="light"] .pp-scene-chip-sync small { color: #334155; }
+:root[data-theme="light"] .pp-scene-check { background: #0d9488; color: #ffffff; }
+:root[data-theme="light"] .pp-scene-icon-amber { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+:root[data-theme="light"] .pp-scene-ring-track { stroke: rgba(15, 23, 42, 0.1); }
+:root[data-theme="light"] .pp-scene-foot { background: rgba(255, 255, 255, 0.62); border-color: rgba(255, 255, 255, 0.9); color: #475569; }
+:root[data-theme="light"] .pp-scene-foot strong { color: #0f172a; }
+/* Switching modes fades the panel between versions instead of snapping. */
+.pp-auth-brand, .pp-scene-card, .pp-scene-chip, .pp-scene-statement, .pp-scene-sub, .pp-scene-foot {
+  transition: background 0.45s ease, color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+}
+.pp-scene-track, .pp-scene-ring-track { transition: stroke 0.45s ease; }
+.pp-orb-ink-a, .pp-orb-ink-b { transition: stop-color 0.45s ease; }
+
+@media (max-width: 1240px) {
+  .pp-auth-brand { padding: 32px 28px; }
+  .pp-scene-chip { font-size: 12px; padding: 8px 12px 8px 8px; }
+  .pp-scene-chip small { font-size: 10.5px; }
+  .pp-scene-chip-streak, .pp-scene-chip-focus { right: -6px; }
+}
+
+/* Light/dark switch, top right of the form side. */
+.pp-auth-mode {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
 }
 
 .pp-auth-form {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1784,6 +1947,9 @@ kbd {
 [data-reveal="pending"] {
   opacity: 0;
   transform: translateY(26px) scale(0.985);
+}
+[data-reveal="pending"][data-reveal-from="above"] {
+  transform: translateY(-26px) scale(0.985);
 }
 [data-reveal="in"] {
   opacity: 1;

@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Flex, Typography } from "antd";
-import { CheckOutlined } from "@ant-design/icons";
-import { APP_NAME, APP_TAGLINE, brandImages } from "@/shared/brand";
+import { APP_NAME, brandImages } from "@/shared/brand";
+import { AuthScene, type AuthSceneVariant } from "./AuthScene";
+import { ColorModeToggle } from "@/components/ui/ColorModeToggle";
 
 /**
  * The layout every signed-out and in-between screen uses (sign in, create
- * account, reset, code, new password): a brand panel on the left that says
- * what the product is, and the form on the right with one clear path through
+ * account, reset, code, new password): an illustrated brand panel on the
+ * left that makes one statement for the screen (AuthScene), and the form on the right with one clear path through
  * it — title, message, fields, one primary action, then the way out at the
  * bottom. On narrow screens the panel gives way to a small brand row.
  *
@@ -17,43 +18,26 @@ export function AuthCard({
   subtitle,
   children,
   footer,
+  scene = "sign-in",
 }: {
   title: string;
   subtitle: string;
   children: ReactNode;
   /** The way out, centred under the form: "New here? Create an account". */
   footer?: ReactNode;
+  /** Which statement the illustrated panel makes. */
+  scene?: AuthSceneVariant;
 }) {
   return (
     <div className="pp-auth">
       <aside className="pp-auth-brand" aria-hidden>
-        <div className="pp-auth-brand-glow" />
-        <Flex vertical gap={28} className="pp-auth-brand-body">
-          <img src={brandImages.logoOnDark} alt="" width={220} height={220} className="pp-auth-logo" />
-          <div>
-            <h2 className="pp-auth-headline">Your day, in one place.</h2>
-            <p className="pp-auth-pitch">Tasks, notes, calendar, habits and goals that keep working offline and sync to every device.</p>
-          </div>
-          <ul className="pp-auth-points">
-            {["Capture a note in one keystroke", "Works offline, syncs when you're back", "Two-step verification built in"].map(
-              (point) => (
-                <li key={point}>
-                  <span className="pp-auth-tick">
-                    <CheckOutlined />
-                  </span>
-                  {point}
-                </li>
-              ),
-            )}
-          </ul>
-        </Flex>
-        <div className="pp-auth-brand-foot">
-          <strong>{APP_NAME}</strong>
-          <span>{APP_TAGLINE}</span>
-        </div>
+        <AuthScene variant={scene} />
       </aside>
 
       <main className="pp-auth-form">
+        <div className="pp-auth-mode">
+          <ColorModeToggle />
+        </div>
         <div className="pp-auth-form-inner">
           <Flex align="center" gap={10} className="pp-auth-compact-brand">
             <img src={brandImages.mark} alt="" width={32} height={32} />

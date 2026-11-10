@@ -40,6 +40,7 @@ export default function MfaChallengePage() {
 
   return (
     <AuthCard
+      scene="secure"
       title="Two-step verification"
       subtitle="Enter the 6-digit code from your authenticator app to finish signing in."
       footer={

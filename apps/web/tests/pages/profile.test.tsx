@@ -26,6 +26,7 @@ vi.mock("@/shared/auth/supabase", () => ({
 }));
 
 const { AuthProvider } = await import("@/shared/auth/AuthProvider");
+const { ThemeProvider } = await import("@/contexts/ThemeProvider");
 const { default: SignInPage } = await import("@/pages/auth/SignInPage");
 const { ProfileCard } = await import("@/pages/account/ProfileCard");
 
@@ -56,11 +57,13 @@ function fakeClient(session: Session, signUpSession: Session = null) {
 
 const renderWith = (client: ReturnType<typeof fakeClient>, ui: ReactNode) =>
   render(
-    <AuthProvider client={client as never}>
-      <AntApp>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </AntApp>
-    </AuthProvider>,
+    <ThemeProvider>
+      <AuthProvider client={client as never}>
+        <AntApp>
+          <MemoryRouter>{ui}</MemoryRouter>
+        </AntApp>
+      </AuthProvider>
+    </ThemeProvider>,
   );
 
 const type = (label: string | RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
