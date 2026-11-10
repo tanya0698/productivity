@@ -25,19 +25,21 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  devices         Device[]
-  changes         SyncChange[]
-  projects        Project[]
-  tasks           Task[]
-  notes           Note[]
-  reminders       Reminder[]
-  events          CalendarEvent[]
-  eventExceptions CalendarEventException[]
-  habits          Habit[]
-  habitLogs       HabitLog[]
-  focusSessions   FocusSession[]
-  goals           Goal[]
-  goalMilestones  GoalMilestone[]
+  devices           Device[]
+  changes           SyncChange[]
+  projects          Project[]
+  tasks             Task[]
+  notes             Note[]
+  reminders         Reminder[]
+  events            CalendarEvent[]
+  eventExceptions   CalendarEventException[]
+  habits            Habit[]
+  habitLogs         HabitLog[]
+  focusSessions     FocusSession[]
+  goals             Goal[]
+  goalMilestones    GoalMilestone[]
+  pushSubscriptions PushSubscription[]
+  pushDeliveries    PushDelivery[]
 
   @@map("users")
 }
@@ -371,4 +373,37 @@ model GoalMilestone {
 
   @@index([userId, updatedAt])
   @@map("goal_milestones")
+}
+
+/// A browser that gets web push for its user (plan §8.1): one row per browser
+/// profile, keyed by the push service's endpoint. Not synced; the worker reads
+/// it to send due reminders, and drops rows the push service says are gone.
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// One row per reminder alert pushed, keyed by the domain's alertKey
+/// (reminder + occurrence + snooze), so the same alert is never sent twice.
+model PushDelivery {
+  alertKey   String   @id @map("alert_key")
+  userId     String   @map("user_id") @db.Uuid
+  reminderId String   @map("reminder_id") @db.Uuid
+  sentAt     DateTime @default(now()) @map("sent_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sentAt])
+  @@map("push_deliveries")
 }

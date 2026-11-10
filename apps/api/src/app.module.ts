@@ -13,6 +13,7 @@ import { HabitsModule } from "./modules/habits/habits.module";
 import { FocusModule } from "./modules/focus/focus.module";
 import { GoalsModule } from "./modules/goals/goals.module";
 import { ProfileModule } from "./modules/profile/profile.module";
+import { PushModule } from "./modules/push/push.module";
 
 /**
  * One NestJS module per feature key, matching apps/web/src/features/<key> and
@@ -35,6 +36,7 @@ import { ProfileModule } from "./modules/profile/profile.module";
     FocusModule,
     GoalsModule,
     ProfileModule,
+    PushModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })

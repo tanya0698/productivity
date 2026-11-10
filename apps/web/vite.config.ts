@@ -28,6 +28,8 @@ export default defineConfig({
           { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
+      // Web push: the push and notification-click handlers (public/push-sw.js).
+      workbox: { importScripts: ["push-sw.js"] },
       devOptions: { enabled: true },
     }),
   ],

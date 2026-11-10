@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, App as AntApp, Button, Card, Collapse, Dropdown, Flex, Typography } from "antd";
 import { BellOutlined, CheckOutlined, ClockCircleOutlined, EllipsisOutlined, PlusOutlined, RetweetOutlined } from "@ant-design/icons";
@@ -28,6 +28,8 @@ import {
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RowsSkeleton } from "@/components/ui/Skeletons";
 import { ReminderEditor } from "../components/ReminderEditor";
+import { useOptionalAuth } from "@/shared/auth/AuthProvider";
+import { currentPushState, enablePush, type PushState } from "@/shared/push/push";
 import { IconButton } from "@/components/ui/IconButton";
 
 /**
@@ -249,10 +251,23 @@ function ReminderRow({
 
 const HIDE_KEY = "productivity:hide-notification-tip";
 
-/** Browser notifications are optional: alerts always show inside the app while it's open. */
+/**
+ * Notifications are optional: alerts always show inside the app while it's
+ * open. Where the browser can, this offers web push, so they arrive with the
+ * app closed too; otherwise plain browser notifications for other tabs.
+ */
 function NotificationPermission() {
   const supported = typeof window !== "undefined" && "Notification" in window;
+  const auth = useOptionalAuth();
   const [permission, setPermission] = useState(() => (supported ? Notification.permission : "denied"));
+  const [push, setPush] = useState<PushState | null>(null);
+  useEffect(() => {
+    let live = true;
+    void currentPushState().then((s) => live && setPush(s));
+    return () => {
+      live = false;
+    };
+  }, []);
   const [hidden, setHidden] = useState(() => {
     try {
       return localStorage.getItem(HIDE_KEY) === "1";
@@ -268,7 +283,37 @@ function NotificationPermission() {
       /* fine: hidden for this visit */
     }
   };
-  if (!supported || permission === "granted" || hidden) return null;
+  if (!supported || hidden || push === null || push === "on") return null;
+  if (push !== "unsupported" && permission !== "denied") {
+    return (
+      <Alert
+        type="info"
+        showIcon
+        icon={<BellOutlined />}
+        closable={{ onClose: hide, "aria-label": "Not now" }}
+        title="Get reminders even when Creedence is closed"
+        description="Alerts always show inside the app while it's open. Turn on notifications for this browser to get them with the app closed too. You can change this any time under Account."
+        action={
+          <Button
+            size="small"
+            type="primary"
+            onClick={() =>
+              void (auth?.getAccessToken() ?? Promise.resolve(null))
+                .then(enablePush)
+                .catch(() => "off" as const)
+                .then(async () => {
+                  setPermission(Notification.permission);
+                  setPush(await currentPushState());
+                })
+            }
+          >
+            Turn on
+          </Button>
+        }
+      />
+    );
+  }
+  if (permission === "granted") return null;
   if (permission === "denied") {
     return (
       <Alert

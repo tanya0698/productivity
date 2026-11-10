@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import { disablePush } from "../push/push";
 
 export interface AuthState {
   /** False while the stored session (and its two-factor level) is being read. */
@@ -130,6 +131,9 @@ export function AuthProvider({
       finishRecovery: () => setRecovering(false),
       getAccessToken: async () => (await client.auth.getSession()).data.session?.access_token ?? null,
       signOut: async () => {
+        // Stop push here first, so the next person on this browser does not get these reminders.
+        const token = (await client.auth.getSession()).data.session?.access_token ?? null;
+        await Promise.race([disablePush(token).catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
         await client.auth.signOut();
       },
     }),

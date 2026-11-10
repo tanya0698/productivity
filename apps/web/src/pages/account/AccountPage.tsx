@@ -6,6 +6,7 @@ import { useAuth } from "@/shared/auth/AuthProvider";
 import { friendlyAuthError } from "@/pages/auth/authErrors";
 import { DataCard } from "./DataCard";
 import { ProfileCard } from "./ProfileCard";
+import { NotificationsCard } from "./NotificationsCard";
 
 /** Account: profile, password, two-step verification, and your data (backup). */
 export default function AccountPage() {
@@ -20,6 +21,7 @@ export default function AccountPage() {
           <Flex vertical gap={16}>
             <ChangePassword />
             <TwoFactor />
+            <NotificationsCard />
           </Flex>
         </Col>
         <Col xs={24}>
