@@ -5,20 +5,20 @@ import Text from "../../../components/Text";
 import { usePalette } from "../../../theme";
 
 /** A thin teal bar with "3 of 5 done" beside it; the words carry the number, not the bar alone. */
-export default function ProjectProgress({ progress }: { progress: Progress }) {
+export default function ProjectProgress({ progress, label = "Tasks done", empty = "No tasks yet" }: { progress: Progress; label?: string; empty?: string }) {
   const p = usePalette();
   return (
     <View style={styles.row}>
       <View
         accessibilityRole="progressbar"
-        accessibilityLabel="Tasks done"
+        accessibilityLabel={label}
         accessibilityValue={{ min: 0, max: 100, now: progress.percent }}
         style={[styles.track, { backgroundColor: p.muted }]}
       >
         <View style={[styles.fill, { width: `${progress.percent}%`, backgroundColor: p.primary }]} />
       </View>
       <Text tone="secondary" style={{ fontSize: 12 }}>
-        {progress.total ? `${progress.done} of ${progress.total} done` : "No tasks yet"}
+        {progress.total ? `${progress.done} of ${progress.total} done` : empty}
       </Text>
     </View>
   );

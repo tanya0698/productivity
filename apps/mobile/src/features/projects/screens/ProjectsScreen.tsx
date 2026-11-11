@@ -184,7 +184,7 @@ function StatusBadge({ status }: { status: ProjectStatus }) {
   const done = status === "done";
   return (
     <View style={[styles.badge, { backgroundColor: done ? p.successSoft : p.muted }]}>
-      <Text style={{ fontSize: 11, color: done ? p.success : p.textSecondary }}>{projectStatusLabel[status]}</Text>
+      <Text style={{ fontSize: 11, color: done ? p.successText : p.textSecondary }}>{projectStatusLabel[status]}</Text>
     </View>
   );
 }

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { groupTasks, localDate, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Card } from "../components/ListCard";
+import { StatRow, StatTile } from "../components/StatTile";
 import ScreenFrame from "../components/ScreenFrame";
 import Text from "../components/Text";
 import { modules } from "../features/registry";
@@ -62,23 +63,6 @@ function QuickCapture() {
   );
 }
 
-function Stat({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "error" }) {
-  const p = usePalette();
-  return (
-    <View style={[styles.stat, { backgroundColor: p.surface, borderColor: p.border }]}>
-      <Text label style={{ fontSize: 10, letterSpacing: 1.2 }}>
-        {label}
-      </Text>
-      <Text weight="extraBold" style={{ fontSize: 28, letterSpacing: -0.8, color: tone === "error" ? p.errorText : p.heading }}>
-        {value}
-      </Text>
-      <Text tone="secondary" style={{ fontSize: 11 }} numberOfLines={1}>
-        {hint}
-      </Text>
-    </View>
-  );
-}
-
 /**
  * Today — the home screen, like the web app's Today page: the day's numbers,
  * quick capture, then the panels each module contributes through `widgets`.
@@ -104,16 +88,16 @@ export default function TodayScreen() {
       <Text tone="secondary" style={{ paddingHorizontal: 4 }}>
         {greeting(now, firstNameOf(session?.user))}
       </Text>
-      <View style={styles.stats}>
-        <Stat label="Due today" value={groups.today.length} hint={groups.today.length === 1 ? "task" : "tasks"} />
-        <Stat
+      <StatRow>
+        <StatTile label="Due today" value={groups.today.length} hint={groups.today.length === 1 ? "task" : "tasks"} />
+        <StatTile
           label="Overdue"
           value={groups.overdue.length}
           hint={groups.overdue.length ? "need attention" : "all clear"}
           tone={groups.overdue.length ? "error" : undefined}
         />
-        <Stat label="Notes" value={notes.length} hint="on this phone" />
-      </View>
+        <StatTile label="Notes" value={notes.length} hint="on this phone" />
+      </StatRow>
       {widgets.map(({ key, title, component: Widget }) => (
         <Card key={key} title={title}>
           <Widget />
@@ -127,6 +111,4 @@ const styles = StyleSheet.create({
   capture: { flexDirection: "row", alignItems: "center", gap: 8 },
   kind: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 7 },
   input: { flex: 1, fontSize: 15, fontFamily: fonts.native.regular, paddingVertical: 6 },
-  stats: { flexDirection: "row", gap: 8 },
-  stat: { flex: 1, borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: 12, paddingVertical: 10, gap: 2 },
 });

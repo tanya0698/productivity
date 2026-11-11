@@ -21,6 +21,7 @@ import { AuthProvider, useAuth } from "./src/shared/auth/AuthProvider";
 import { supabase } from "./src/shared/auth/supabase";
 import { openRuntime } from "./src/shared/data/openRuntime";
 import { SyncTriggers } from "./src/shared/data/SyncTriggers";
+import { FocusProvider } from "./src/shared/focus/FocusProvider";
 import { ReminderNotifications } from "./src/shared/reminders/ReminderNotifications";
 import { navigationRef } from "./src/navigation/ref";
 import { ThemeProvider, usePalette } from "./src/theme";
@@ -105,7 +106,9 @@ function SignedIn() {
     >
       <SyncTriggers />
       <ReminderNotifications />
-      <Root />
+      <FocusProvider>
+        <Root />
+      </FocusProvider>
     </SyncProvider>
   );
 }

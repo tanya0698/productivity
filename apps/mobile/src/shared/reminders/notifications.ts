@@ -100,6 +100,9 @@ function content(item: ActiveReminder): Notifications.NotificationContentInput {
   };
 }
 
+/** The one scheduled alert for the end of a running focus timer (see shared/focus). */
+export const FOCUS_NOTIFICATION = "focus-timer";
+
 /**
  * Bring the phone's scheduled and shown notifications in line with the
  * reminders. Safe to call often; calls are queued, never overlapping.
@@ -134,7 +137,10 @@ async function reconcileNow(runtime: SyncRuntime, items: ActiveReminder[]) {
 
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const have = new Set(scheduled.map((s) => s.identifier));
-  for (const s of scheduled) if (!ahead.has(s.identifier)) await Notifications.cancelScheduledNotificationAsync(s.identifier);
+  for (const s of scheduled) {
+    // The focus timer's alert isn't a reminder; it's managed by the focus timer.
+    if (!ahead.has(s.identifier) && s.identifier !== FOCUS_NOTIFICATION) await Notifications.cancelScheduledNotificationAsync(s.identifier);
+  }
   for (const [key, item] of ahead) {
     if (have.has(key)) continue;
     await Notifications.scheduleNotificationAsync({
@@ -171,6 +177,10 @@ async function seriesFor(runtime: SyncRuntime, r: Reminder): Promise<Series | un
 
 /** A tap on a reminder notification, or one of its buttons. */
 export async function handleResponse(runtime: SyncRuntime, response: Notifications.NotificationResponse) {
+  if (response.notification.request.identifier === FOCUS_NOTIFICATION) {
+    await Notifications.dismissNotificationAsync(FOCUS_NOTIFICATION).catch(() => undefined);
+    return navigateWhenReady("focus");
+  }
   const id = response.notification.request.content.data?.reminderId;
   if (typeof id !== "string") return;
   const reminder = (await runtime.db.get("reminder", id)) as Reminder | undefined;
