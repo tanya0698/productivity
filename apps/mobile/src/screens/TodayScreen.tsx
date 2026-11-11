@@ -4,7 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { groupTasks, localDate, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Card } from "../components/ListCard";
+import { RowsSkeleton, TileRowSkeleton } from "../components/Skeleton";
 import { StatRow, StatTile } from "../components/StatTile";
+import { useDataReady } from "../shared/data/useDataReady";
 import ScreenFrame from "../components/ScreenFrame";
 import Text from "../components/Text";
 import { modules } from "../features/registry";
@@ -70,7 +72,8 @@ function QuickCapture() {
 export default function TodayScreen() {
   const now = new Date();
   const { session } = useAuth();
-  const { records: tasks } = useLocalRecords<LocalTask & { deletedAt: string | null }>("task");
+  const { records: tasks, loading } = useLocalRecords<LocalTask & { deletedAt: string | null }>("task");
+  const ready = useDataReady(loading);
   const { records: notes } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
   const groups = groupTasks(tasks, now, localDate(now));
   const widgets = useMemo(
@@ -88,6 +91,8 @@ export default function TodayScreen() {
       <Text tone="secondary" style={{ paddingHorizontal: 4 }}>
         {greeting(now, firstNameOf(session?.user))}
       </Text>
+      {!ready ? <TileRowSkeleton /> : null}
+      {ready ? (
       <StatRow>
         <StatTile label="Due today" value={groups.today.length} hint={groups.today.length === 1 ? "task" : "tasks"} />
         <StatTile
@@ -98,9 +103,10 @@ export default function TodayScreen() {
         />
         <StatTile label="Notes" value={notes.length} hint="on this phone" />
       </StatRow>
+      ) : null}
       {widgets.map(({ key, title, component: Widget }) => (
         <Card key={key} title={title}>
-          <Widget />
+          {ready ? <Widget /> : <RowsSkeleton rows={3} check={false} />}
         </Card>
       ))}
     </ScreenFrame>

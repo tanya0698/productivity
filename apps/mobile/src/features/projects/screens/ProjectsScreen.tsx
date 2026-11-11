@@ -20,6 +20,8 @@ import {
 } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import { CardsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import { Button, Chips } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
 import ScreenFrame from "../../../components/ScreenFrame";
@@ -47,7 +49,8 @@ const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export default function ProjectsScreen() {
   const runtime = useSyncRuntime();
   const navigation = useNavigation<Nav>();
-  const { projects, byId, loading } = useProjects();
+  const { projects, byId, loading: projectsLoading } = useProjects();
+  const loading = !useDataReady(projectsLoading);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState<Project | null>(null);
 
@@ -142,6 +145,7 @@ function ProjectList({
           ]}
         />
       ) : null}
+      {loading && !projects.length ? <CardsSkeleton /> : null}
       {!loading && !shown.length ? (
         <EmptyState
           title={view === "open" ? "No open projects" : "Nothing finished yet"}

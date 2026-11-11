@@ -19,6 +19,8 @@ import {
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Button } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { RowsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { deviceTimezone, useActiveReminders, useNow, whenText, type ActiveReminder, type Reminder } from "../../../shared/reminders/active";
@@ -50,7 +52,8 @@ function choose(title: string, options: { label: string; destructive?: boolean; 
 export default function RemindersScreen() {
   const runtime = useSyncRuntime();
   const now = useNow(15_000);
-  const { items, reminders } = useActiveReminders(now);
+  const { items, reminders, loading } = useActiveReminders(now);
+  const ready = useDataReady(loading);
   const { records: tasks } = useLocalRecords<LocalTask & { deletedAt: string | null }>("task");
   const { records: notes } = useLocalRecords<LocalNote & { deletedAt: string | null }>("note");
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -91,6 +94,8 @@ export default function RemindersScreen() {
       <Card title="Coming up" right={String(upcoming.length)}>
         {upcoming.length ? (
           upcoming.map((item, i) => <ReminderRow key={item.reminder.id} item={item} now={now} first={i === 0} onEdit={setEditing} />)
+        ) : !ready ? (
+          <RowsSkeleton rows={3} check={false} />
         ) : (
           <Text tone="secondary" style={{ paddingBottom: 12 }}>
             Nothing coming up. Add a reminder, or give a task a due time and a reminder.

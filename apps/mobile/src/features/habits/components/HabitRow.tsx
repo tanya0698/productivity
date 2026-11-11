@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { habitProgress, recentDays, scheduleLabel, streak, type DayMark, type LogIndex } from "@productivity/domain";
+import { Pop } from "../../../components/Motion";
 import Text from "../../../components/Text";
 import { radii, usePalette } from "../../../theme";
 import { dateOf } from "../../calendar/components/items";
@@ -69,7 +70,9 @@ export default function HabitRow({
           >
             <Ionicons name="remove" size={16} color={p.text} />
           </Pressable>
-          <Text weight="semiBold" style={{ minWidth: 34, textAlign: "center", fontSize: 13 }}>{`${prog.count}/${prog.target}`}</Text>
+          <Pop on={prog.done}>
+            <Text weight="semiBold" style={{ minWidth: 34, textAlign: "center", fontSize: 13, color: prog.done ? p.primary : p.text }}>{`${prog.count}/${prog.target}`}</Text>
+          </Pop>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Add one to ${habit.title}`}
@@ -88,7 +91,9 @@ export default function HabitRow({
           hitSlop={10}
           onPress={() => (prog.done ? onUntick(habit) : onTick(habit))}
         >
-          <Ionicons name={prog.done ? "checkmark-circle" : "ellipse-outline"} size={28} color={prog.done ? p.primary : p.borderStrong} />
+          <Pop on={prog.done}>
+            <Ionicons name={prog.done ? "checkmark-circle" : "ellipse-outline"} size={28} color={prog.done ? p.primary : p.borderStrong} />
+          </Pop>
         </Pressable>
       )}
 

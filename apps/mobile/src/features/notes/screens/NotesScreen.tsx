@@ -4,6 +4,8 @@ import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNot
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import { CardsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { fonts, radii, usePalette } from "../../../theme";
@@ -19,7 +21,8 @@ const SAVE_DELAY_MS = 500;
 export default function NotesScreen() {
   const runtime = useSyncRuntime();
   const p = usePalette();
-  const { records } = useLocalRecords<Note>("note");
+  const { records, loading } = useLocalRecords<Note>("note");
+  const ready = useDataReady(loading);
   const notes = useMemo(() => sortNotes(records), [records]);
   const [openId, setOpenId] = useState<string | null>(null);
   // A new note lives here, unsaved, until something is typed into it.
@@ -100,6 +103,8 @@ export default function NotesScreen() {
             </Text>
           </Pressable>
         ))
+      ) : !ready ? (
+        <CardsSkeleton count={4} />
       ) : (
         <EmptyState
           title="No notes yet"

@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Button } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { RowsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { deviceTimezone, useNow } from "../../../shared/reminders/active";
@@ -33,7 +35,8 @@ export default function CalendarScreen() {
   const days = useMemo(() => Array.from({ length: 42 }, (_, i) => plusDays(gridStart, i)), [gridStart.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
   const from = ymd(days[0]!);
   const to = ymd(plusDays(days[41]!, 1));
-  const { items } = useCalendarItems(from, to);
+  const { items, loading } = useCalendarItems(from, to);
+  const ready = useDataReady(loading);
   // A selected day outside the grid (after "Today" from another month) still lists.
   const { items: dayItemsAll } = useCalendarItems(selected, ymd(plusDays(dateOf(selected), 1)));
   const dayItems = itemsOn(dayItemsAll, selected);
@@ -192,6 +195,8 @@ export default function CalendarScreen() {
               </Pressable>
             );
           })
+        ) : !ready ? (
+          <RowsSkeleton rows={2} check={false} />
         ) : (
           <Text tone="secondary" style={{ paddingBottom: 12 }}>
             Nothing on this day.

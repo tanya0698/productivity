@@ -15,6 +15,8 @@ import {
 import { useLocalRecords } from "@productivity/sync-engine/react";
 import { Button, Chips, DateTimeButton } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { ListCardSkeleton, TileRowSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { radii, usePalette } from "../../../theme";
@@ -75,7 +77,9 @@ export default function ReportsScreen() {
   const [customFrom, setCustomFrom] = useState(() => plusDays(dateOf(today), -13));
   const [customTo, setCustomTo] = useState(() => dateOf(today));
   const [views, setViews] = useState<Record<string, View_>>({});
-  const { input, loading } = useReportInput();
+  const { input, loading: inputLoading } = useReportInput();
+  // Before the first sync every figure would read 0, which looks like a real (bad) result.
+  const loading = !(useDataReady(inputLoading) || input.tasks.length > 0);
 
   const range: ReportRange =
     preset === "custom"
@@ -128,7 +132,13 @@ export default function ReportsScreen() {
         {`${rangeText}, compared with the ${report.days} days before.`}
       </Text>
 
-      {loading ? null : (
+      {loading ? (
+        <>
+          <TileRowSkeleton count={2} />
+          <TileRowSkeleton count={2} />
+          <ListCardSkeleton rows={3} check={false} />
+        </>
+      ) : (
         <>
           <View style={styles.kpis}>
             <Kpi label="Tasks completed" value={report.tasks.completed.toLocaleString()} hint={<Delta value={change(report.tasks.completed, before.tasks.completed)} period={period} />} />

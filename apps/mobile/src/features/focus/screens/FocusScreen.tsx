@@ -15,6 +15,8 @@ import {
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Button, Chips, Input } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { RowsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Sheet from "../../../components/Sheet";
 import { StatRow, StatTile } from "../../../components/StatTile";
@@ -38,7 +40,8 @@ export default function FocusScreen() {
   const { timer, finished, start, pause, resume, stop, dismissFinished } = useFocus();
   const now = useTicking(!!timer?.runningSince);
   const today = useNow(60_000);
-  const { records: sessions } = useLocalRecords<Session>("focus_session");
+  const { records: sessions, loading: sessionsLoading } = useLocalRecords<Session>("focus_session");
+  const ready = useDataReady(sessionsLoading);
   const { records: tasks } = useLocalRecords<Task>("task");
   const [preset, setPreset] = useState(0);
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -175,6 +178,8 @@ export default function FocusScreen() {
               </View>
             </View>
           ))
+        ) : !ready ? (
+          <RowsSkeleton rows={3} check={false} />
         ) : (
           <Text tone="secondary" style={{ paddingBottom: 12 }}>
             No sessions yet. Your finished sessions show up here.

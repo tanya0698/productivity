@@ -22,8 +22,11 @@ import {
 } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import { CardsSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import { Button, DateTimeButton } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { Pop } from "../../../components/Motion";
 import PickSheet from "../../../components/PickSheet";
 import ScreenFrame from "../../../components/ScreenFrame";
 import { StatRow, StatTile } from "../../../components/StatTile";
@@ -47,7 +50,8 @@ const toast = (m: string) => Platform.OS === "android" && ToastAndroid.show(m, T
 export default function GoalsScreen() {
   const runtime = useSyncRuntime();
   const navigation = useNavigation<Nav>();
-  const { goals, byId, milestonesOf, loading } = useGoals();
+  const { goals, byId, milestonesOf, loading: goalsLoading } = useGoals();
+  const loading = !useDataReady(goalsLoading);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState<Goal | null>(null);
 
@@ -118,6 +122,7 @@ function GoalList({
   return (
     <ScreenFrame eyebrow="Grow" title="Goals">
       <Button kind="primary" label="New goal" onPress={onCreate} />
+      {loading && !goals.length ? <CardsSkeleton count={2} /> : null}
       {!loading && !goals.length ? <EmptyState title="No goals yet" body="Pick one outcome that matters this year, then break it into milestones." /> : null}
       {goals.map((g) => {
         const progress = goalProgress(milestonesOf(g.id));
@@ -296,7 +301,9 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
                   hitSlop={10}
                   onPress={() => void runtime.write("goal_milestone", toggleMilestone(m, new Date()))}
                 >
-                  <Ionicons name={m.doneAt ? "checkmark-circle" : "ellipse-outline"} size={24} color={m.doneAt ? p.success : p.borderStrong} />
+                  <Pop on={!!m.doneAt}>
+                    <Ionicons name={m.doneAt ? "checkmark-circle" : "ellipse-outline"} size={24} color={m.doneAt ? p.success : p.borderStrong} />
+                  </Pop>
                 </Pressable>
                 <Text style={[{ flex: 1 }, m.doneAt ? { color: p.textMuted, textDecorationLine: "line-through" } : null]}>{m.title}</Text>
                 {m.dueDate ? (

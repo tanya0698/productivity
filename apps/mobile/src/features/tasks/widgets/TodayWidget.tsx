@@ -7,7 +7,8 @@ import TaskRow, { type Task } from "../components/TaskRow";
 import { go } from "../../../navigation/ref";
 
 /** Overdue and today's tasks, tickable from the Today screen. */
-export default function TodayWidget() {  const { records } = useLocalRecords<Task>("task");
+export default function TodayWidget() {
+  const { records } = useLocalRecords<Task>("task");
   const now = new Date();
   const today = localDate(now);
   const groups = groupTasks(records, now, today);

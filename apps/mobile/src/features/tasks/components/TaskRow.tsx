@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { addDays, dueState, isDone, priorityLabel, taskDay, toggleDone, type LocalTask } from "@productivity/domain";
 import { useSyncRuntime } from "@productivity/sync-engine/react";
+import { Pop } from "../../../components/Motion";
 import Text from "../../../components/Text";
 import { radii, usePalette } from "../../../theme";
 
@@ -43,7 +44,9 @@ export default function TaskRow({
         hitSlop={10}
         onPress={() => void runtime.write("task", toggleDone(task, new Date()))}
       >
-        <Ionicons name={done ? "checkmark-circle" : "ellipse-outline"} size={24} color={done ? p.success : p.borderStrong} />
+        <Pop on={done}>
+          <Ionicons name={done ? "checkmark-circle" : "ellipse-outline"} size={24} color={done ? p.success : p.borderStrong} />
+        </Pop>
       </Pressable>
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={done ? { color: p.textMuted, textDecorationLine: "line-through" } : undefined}>{task.title}</Text>

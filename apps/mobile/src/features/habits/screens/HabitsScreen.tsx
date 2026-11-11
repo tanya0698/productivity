@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { habitProgress, isScheduled, localDate, newHabit, streak } from "@productivity/domain";
 import { useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import { ListCardSkeleton, TileRowSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import { Button } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
 import ScreenFrame from "../../../components/ScreenFrame";
@@ -25,7 +27,8 @@ export default function HabitsScreen() {
   const runtime = useSyncRuntime();
   const p = usePalette();
   const today = localDate(useNow(60_000));
-  const { habits, archived, logs, index, loading, tick, untick } = useHabits();
+  const { habits, archived, logs, index, loading: habitsLoading, tick, untick } = useHabits();
+  const loading = !useDataReady(habitsLoading);
   const [editing, setEditing] = useState<{ habit: Habit; isNew: boolean } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
@@ -61,6 +64,8 @@ export default function HabitsScreen() {
         </StatRow>
       ) : null}
 
+      {loading && !habits.length ? <TileRowSkeleton /> : null}
+      {loading && !habits.length ? <ListCardSkeleton rows={4} /> : null}
       {!loading && !habits.length ? <EmptyState title="No habits yet" body="Start with one small thing you want to do most days." /> : null}
 
       {dueToday.length ? (

@@ -13,7 +13,8 @@ import { radii, usePalette } from "../theme";
 import { go } from "../navigation/ref";
 
 /** Every module without a tab, then the account. */
-export default function MoreScreen() {  const { session } = useAuth();
+export default function MoreScreen() {
+  const { session } = useAuth();
   const p = usePalette();
   const user = session?.user;
   const rest = modules

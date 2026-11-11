@@ -8,7 +8,8 @@ import { plusDays, timeRange, useCalendarItems, ymd } from "../components/items"
 import { go } from "../../../navigation/ref";
 
 /** Today's events and timed tasks, in order; past ones dimmed (as on the web). */
-export default function TodayEventsWidget() {  const p = usePalette();
+export default function TodayEventsWidget() {
+  const p = usePalette();
   const now = useNow(60_000);
   const today = ymd(now);
   const { items } = useCalendarItems(today, ymd(plusDays(now, 1)));

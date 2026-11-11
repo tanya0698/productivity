@@ -10,7 +10,8 @@ import { go } from "../../../navigation/ref";
 type Note = LocalNote & { deletedAt: string | null };
 
 /** The last few notes touched; tap one to open it. */
-export default function RecentNotesWidget() {  const p = usePalette();
+export default function RecentNotesWidget() {
+  const p = usePalette();
   const { records } = useLocalRecords<Note>("note");
   const recent = useMemo(
     () => [...records].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4),

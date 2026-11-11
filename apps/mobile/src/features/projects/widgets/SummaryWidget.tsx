@@ -11,7 +11,8 @@ import ProjectProgress from "../components/ProjectProgress";
 import { go } from "../../../navigation/ref";
 
 /** Today's view of active projects and how far along each is. */
-export default function SummaryWidget() {  const p = usePalette();
+export default function SummaryWidget() {
+  const p = usePalette();
   const { projects } = useProjects();
   const { records: tasks } = useLocalRecords<Task>("task");
   const active = projects.filter((x) => x.status === "active").slice(0, 4);

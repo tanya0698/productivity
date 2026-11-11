@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GlassBackground from "./GlassBackground";
 import GlassCard from "./GlassCard";
+import { Reveal, RevealProvider, useRevealScope } from "./Motion";
 import SyncPill from "./SyncPill";
 import Text from "./Text";
 import { useIsPushed } from "../navigation/pushed";
@@ -42,6 +43,7 @@ export default function ScreenFrame({
   const navigation = useNavigation();
   const isPushed = useIsPushed();
   const back = onBack ?? (isPushed ? () => navigation.goBack() : undefined);
+  const { scope, scrollProps } = useRevealScope();
   return (
     <View style={{ flex: 1, backgroundColor: p.page }}>
       <GlassBackground style={{ paddingTop: insets.top + 8, paddingBottom: 26, paddingHorizontal: 16 }}>
@@ -79,10 +81,16 @@ export default function ScreenFrame({
       <ScrollView
         style={[styles.sheet, { backgroundColor: p.page }]}
         keyboardShouldPersistTaps="handled"
+        {...scrollProps}
         // Room for the floating tab bar on tab screens.
         contentContainerStyle={{ padding: 12, paddingBottom: isPushed ? insets.bottom + 32 : 110, gap: 10 }}
       >
-        {children}
+        {/* Each block comes in as it scrolls into view, every time (the web's scroll reveal). */}
+        <RevealProvider scope={scope}>
+          {React.Children.toArray(children).map((child, i) => (
+            <Reveal key={React.isValidElement(child) && child.key != null ? child.key : i}>{child}</Reveal>
+          ))}
+        </RevealProvider>
       </ScrollView>
     </View>
   );

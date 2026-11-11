@@ -5,6 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { addDays, groupTasks, localDate, newTask, taskGroupTitle, type TaskGroupKey } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import { ListCardSkeleton } from "../../../components/Skeleton";
+import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import TaskEditor from "../components/TaskEditor";
@@ -22,7 +24,8 @@ const OPEN_GROUPS: TaskGroupKey[] = ["overdue", "today", "upcoming", "someday"];
 export default function TasksScreen() {
   const runtime = useSyncRuntime();
   const p = usePalette();
-  const { records } = useLocalRecords<Task>("task");
+  const { records, loading } = useLocalRecords<Task>("task");
+  const ready = useDataReady(loading);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<Due>("none");
   const [showDone, setShowDone] = useState(false);
@@ -99,7 +102,8 @@ export default function TasksScreen() {
         </View>
       </View>
 
-      {!records.length ? (
+      {!ready && !records.length ? <ListCardSkeleton rows={5} /> : null}
+      {ready && !records.length ? (
         <EmptyState title="No tasks yet" body="Add one above. Tasks are saved on this phone first and sync to the web app." />
       ) : null}
 

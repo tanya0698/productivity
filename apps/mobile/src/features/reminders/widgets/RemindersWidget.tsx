@@ -8,7 +8,8 @@ import { usePalette } from "../../../theme";
 import { go } from "../../../navigation/ref";
 
 /** What's due now and the next few, on the Today screen. */
-export default function RemindersWidget() {  const p = usePalette();
+export default function RemindersWidget() {
+  const p = usePalette();
   const now = useNow(30_000);
   const { items } = useActiveReminders(now);
   const shown = items.slice(0, 5);
