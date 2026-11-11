@@ -10,6 +10,7 @@ import habitsModule from "./habits/config/module";
 import notesModule from "./notes/config/module";
 import projectsModule from "./projects/config/module";
 import remindersModule from "./reminders/config/module";
+import reportsModule from "./reports/config/module";
 import tasksModule from "./tasks/config/module";
 
-export const modules: MobileModuleManifest[] = [calendarModule, focusModule, goalsModule, habitsModule, notesModule, projectsModule, remindersModule, tasksModule];
+export const modules: MobileModuleManifest[] = [calendarModule, focusModule, goalsModule, habitsModule, notesModule, projectsModule, remindersModule, reportsModule, tasksModule];
