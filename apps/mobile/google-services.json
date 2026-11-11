@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "2157585808",
+    "project_id": "creedence-f6a5c",
+    "storage_bucket": "creedence-f6a5c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2157585808:android:d32dfb3a60cc0835a63f15",
+        "android_client_info": {
+          "package_name": "com.creedence.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBm-3IAgorV2uHQuG5RWwEk7x5lruXDZwI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

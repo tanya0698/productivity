@@ -12,6 +12,12 @@ import { PrismaService } from "../../common/prisma.module";
  *   POST   /api/push/subscriptions   { endpoint, keys: { p256dh, auth } }
  *   DELETE /api/push/subscriptions   { endpoint }
  *   POST   /api/push/test            →  { sent }   (a test notification to this user's browsers)
+ *
+ * And the Android app registers here for reminders pushed by the worker through
+ * Firebase Cloud Messaging (FIREBASE_SERVICE_ACCOUNT_FILE):
+ *
+ *   POST   /api/push/devices         { token, platform }   (after sign-in, and when FCM renews the token)
+ *   DELETE /api/push/devices         { token }             (on sign-out)
  */
 
 /**
@@ -35,6 +41,10 @@ const subscribeBody = z.object({
   keys: z.object({ p256dh: base64url, auth: base64url }),
 });
 const unsubscribeBody = z.object({ endpoint: z.string().max(2000) });
+/** FCM registration tokens are long opaque strings; no URLs, no spaces. */
+const fcmToken = z.string().min(20).max(4096).regex(/^[A-Za-z0-9:_\-.]+$/);
+const deviceBody = z.object({ token: fcmToken, platform: z.enum(["android"]) });
+const deviceTokenBody = z.object({ token: fcmToken });
 
 function vapid() {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -99,5 +109,28 @@ class PushController {
   }
 }
 
-@Module({ controllers: [PushController] })
+@Controller("push/devices")
+class DevicePushController {
+  constructor(private readonly prisma: PrismaService) {}
+
+  @Post()
+  @HttpCode(204)
+  async register(@CurrentUser() userId: string, @Body() body: unknown) {
+    const parsed = deviceBody.safeParse(body);
+    if (!parsed.success) throw new BadRequestException("Send { token, platform: \"android\" }.");
+    const { token, platform } = parsed.data;
+    // One phone, one row: signing in as someone else on it moves the token over.
+    await this.prisma.devicePushToken.upsert({ where: { token }, create: { userId, token, platform }, update: { userId, platform } });
+  }
+
+  @Delete()
+  @HttpCode(204)
+  async unregister(@CurrentUser() userId: string, @Body() body: unknown) {
+    const parsed = deviceTokenBody.safeParse(body);
+    if (!parsed.success) throw new BadRequestException("Send { token }.");
+    await this.prisma.devicePushToken.deleteMany({ where: { userId, token: parsed.data.token } });
+  }
+}
+
+@Module({ controllers: [PushController, DevicePushController] })
 export class PushModule {}

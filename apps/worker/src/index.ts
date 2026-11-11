@@ -3,10 +3,12 @@
  * later AI and automation jobs. Runs as its own process from the same repo,
  * started with Node 24's type stripping — no build step.
  *
- * Jobs: a heartbeat, and web push for due reminders (when VAPID_* is set).
+ * Jobs: a heartbeat, and push for due reminders: to browsers (when VAPID_* is
+ * set) and to the Android app (when FIREBASE_SERVICE_ACCOUNT_FILE is set).
  */
 import prismaPkg from "@prisma/client";
 import webpush from "web-push";
+import { fcmFromEnv } from "@productivity/push";
 import { pushDueReminders, type Deliver } from "./pushReminders.ts";
 
 const { PrismaClient } = prismaPkg;
@@ -39,8 +41,17 @@ const vapid =
     : null;
 const prisma = new PrismaClient();
 
+let fcm: ReturnType<typeof fcmFromEnv> = null;
+try {
+  fcm = fcmFromEnv();
+} catch (e) {
+  console.error(`[worker] phone push is off: ${e instanceof Error ? e.message : e}`);
+}
+if (!fcm) console.log("[worker] FIREBASE_SERVICE_ACCOUNT_FILE not set: phone push is off");
+
+let deliver: Deliver | null = null;
 if (vapid) {
-  const deliver: Deliver = async (sub, payload) => {
+  deliver = async (sub, payload) => {
     try {
       await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload), {
         vapidDetails: vapid,
@@ -55,16 +66,20 @@ if (vapid) {
       return "failed";
     }
   };
+} else {
+  console.log("[worker] VAPID_* not set: web push is off");
+}
+
+if (deliver || fcm) {
+  const device = fcm ? fcm.send.bind(fcm) : null;
   jobs.push({
     name: "push-reminders",
     everyMs: 30_000,
     async run() {
-      const { sent, alerts } = await pushDueReminders(prisma, new Date(), deliver);
-      if (alerts) console.log(`[worker] pushed ${alerts} reminder(s) to ${sent} browser(s)`);
+      const { sent, alerts } = await pushDueReminders(prisma, new Date(), { web: deliver, device });
+      if (alerts) console.log(`[worker] pushed ${alerts} reminder(s) to ${sent} browser(s) and phone(s)`);
     },
   });
-} else {
-  console.log("[worker] VAPID_* not set: web push is off");
 }
 
 const controller = new AbortController();

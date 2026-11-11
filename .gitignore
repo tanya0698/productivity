@@ -79,3 +79,7 @@ web-build/
 
 # ---- Prisma ----
 /apps/api/prisma/*.db
+
+# Firebase service account key for phone push (FIREBASE_SERVICE_ACCOUNT_FILE). Secret.
+firebase-service-account*.json
+*-firebase-adminsdk-*.json

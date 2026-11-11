@@ -9,9 +9,11 @@ import {
   type LocalReminder,
 } from "@productivity/domain";
 import type { ReminderRepeat, ReminderStatus, TaskStatus } from "@productivity/contracts";
+import type { DevicePush, DeviceResult } from "@productivity/push";
 
 /**
- * Sends due reminders as web push (plan §8.1), with the same rules the apps
+ * Sends due reminders as web push (plan §8.1) and to the Android app through
+ * Firebase Cloud Messaging, with the same rules the apps
  * use to decide when a reminder is due (@productivity/domain), including
  * reminders on repeating events that follow moved and cancelled occurrences.
  *
@@ -44,22 +46,42 @@ export interface Subscription {
 /** Sends one push. "gone" means the browser unsubscribed: the row is removed. */
 export type Deliver = (sub: Subscription, payload: PushPayload) => Promise<"ok" | "gone" | "failed">;
 
+/** Sends one push to a phone's FCM token. "gone": the app was removed; the row is removed. */
+export type DeliverToDevice = (token: string, push: DevicePush) => Promise<DeviceResult>;
+
+/** Where alerts can go: browsers (web push) and phones (FCM). Either may be off. */
+export interface Channels {
+  web?: Deliver | null;
+  device?: DeliverToDevice | null;
+}
+
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const wall = (d: Date | null) => (d ? d.toISOString().slice(0, 19) : null);
 const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 
-type Db = Pick<PrismaClient, "pushSubscription" | "reminder" | "task" | "note" | "calendarEvent" | "calendarEventException" | "pushDelivery">;
+type Db = Pick<
+  PrismaClient,
+  "pushSubscription" | "devicePushToken" | "reminder" | "task" | "note" | "calendarEvent" | "calendarEventException" | "pushDelivery"
+>;
 
-export async function pushDueReminders(db: Db, now: Date, deliver: Deliver): Promise<{ sent: number; alerts: number }> {
-  const subs = await db.pushSubscription.findMany();
-  if (!subs.length) return { sent: 0, alerts: 0 };
+/** What the phone opens on a tap, matching its own notifications (see the app's handleResponse). */
+const categoryFor = (row: { taskId: string | null }) => (row.taskId ? "task-reminder" : "reminder");
+
+export async function pushDueReminders(db: Db, now: Date, channels: Channels | Deliver): Promise<{ sent: number; alerts: number }> {
+  const { web, device } = typeof channels === "function" ? { web: channels, device: null } : channels;
+  const subs = web ? await db.pushSubscription.findMany() : [];
+  const devices = device ? await db.devicePushToken.findMany() : [];
+  if (!subs.length && !devices.length) return { sent: 0, alerts: 0 };
   const subsByUser = new Map<string, Subscription[]>();
   for (const s of subs) subsByUser.set(s.userId, [...(subsByUser.get(s.userId) ?? []), s]);
+  const devicesByUser = new Map<string, { id: string; token: string }[]>();
+  for (const d of devices) devicesByUser.set(d.userId, [...(devicesByUser.get(d.userId) ?? []), d]);
+  const users = new Set([...subsByUser.keys(), ...devicesByUser.keys()]);
 
   // Only what could be due: repeating ones, or one-offs and snoozes already past.
   const rows = await db.reminder.findMany({
     where: {
-      userId: { in: [...subsByUser.keys()] },
+      userId: { in: [...users] },
       deletedAt: null,
       status: { in: ["scheduled", "snoozed"] },
       OR: [{ recurrenceRule: { not: null } }, { remindAt: { lte: now } }, { snoozedUntil: { lte: now } }],
@@ -174,13 +196,31 @@ export async function pushDueReminders(db: Db, now: Date, deliver: Deliver): Pro
 
     const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: row.timezone }).format(at);
     const payload: PushPayload = { title, body: `${kind} · ${reminder.status === "snoozed" ? "snoozed, " : ""}${time}`, tag: key, url };
-    for (const sub of subsByUser.get(row.userId) ?? []) {
-      const result = await deliver(sub, payload);
+    for (const sub of web ? (subsByUser.get(row.userId) ?? []) : []) {
+      const result = await web!(sub, payload);
       if (result === "ok") {
         sent++;
         await db.pushSubscription.update({ where: { id: sub.id }, data: { lastUsedAt: now } }).catch(() => {});
       } else if (result === "gone") {
         await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+      }
+    }
+    // The phone: same alert key as the alarm the app scheduled itself, so the two replace each other.
+    for (const d of device ? (devicesByUser.get(row.userId) ?? []) : []) {
+      const result = await device!(d.token, {
+        title: payload.title,
+        body: payload.body,
+        tag: key,
+        data: { reminderId: row.id, url },
+        channelId: "reminders",
+        categoryId: categoryFor(row),
+        ttlSeconds: 60 * 60,
+      });
+      if (result === "ok") {
+        sent++;
+        await db.devicePushToken.update({ where: { id: d.id }, data: { lastUsedAt: now } }).catch(() => {});
+      } else if (result === "gone") {
+        await db.devicePushToken.delete({ where: { id: d.id } }).catch(() => {});
       }
     }
   }

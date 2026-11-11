@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import { unregisterDevicePush } from "../reminders/devicePush";
 import { clearAllNotifications } from "../reminders/notifications";
 
 export interface AuthState {
@@ -73,7 +74,9 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
       refreshAssurance,
       getAccessToken: async () => (await client.auth.getSession()).data.session?.access_token ?? null,
       signOut: async () => {
-        // This account's reminders shouldn't keep alerting on the phone after it leaves.
+        // This account's reminders shouldn't keep alerting on the phone after it leaves:
+        // stop the server pushing here (while still signed in), then clear what's scheduled.
+        await unregisterDevicePush(async () => (await client.auth.getSession()).data.session?.access_token ?? null).catch(() => undefined);
         await clearAllNotifications().catch(() => undefined);
         await client.auth.signOut();
       },
