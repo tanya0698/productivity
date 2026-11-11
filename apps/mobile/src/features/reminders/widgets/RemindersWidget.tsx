@@ -1,16 +1,14 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import { FootLink } from "../../../components/ListCard";
 import Text from "../../../components/Text";
 import { useActiveReminders, useNow, whenText } from "../../../shared/reminders/active";
 import { usePalette } from "../../../theme";
+import { go } from "../../../navigation/ref";
 
 /** What's due now and the next few, on the Today screen. */
-export default function RemindersWidget() {
-  const navigation = useNavigation<{ navigate: (name: string) => void }>();
-  const p = usePalette();
+export default function RemindersWidget() {  const p = usePalette();
   const now = useNow(30_000);
   const { items } = useActiveReminders(now);
   const shown = items.slice(0, 5);
@@ -34,7 +32,7 @@ export default function RemindersWidget() {
           No reminders coming up.
         </Text>
       )}
-      <FootLink label="All reminders" onPress={() => navigation.navigate("reminders")} />
+      <FootLink label="All reminders" onPress={() => go("reminders")} />
     </>
   );
 }

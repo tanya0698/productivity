@@ -1,16 +1,14 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { FootLink } from "../../../components/ListCard";
 import Text from "../../../components/Text";
 import { useNow } from "../../../shared/reminders/active";
 import { usePalette } from "../../../theme";
 import { plusDays, timeRange, useCalendarItems, ymd } from "../components/items";
+import { go } from "../../../navigation/ref";
 
 /** Today's events and timed tasks, in order; past ones dimmed (as on the web). */
-export default function TodayEventsWidget() {
-  const navigation = useNavigation<{ navigate: (name: string, params?: object) => void }>();
-  const p = usePalette();
+export default function TodayEventsWidget() {  const p = usePalette();
   const now = useNow(60_000);
   const today = ymd(now);
   const { items } = useCalendarItems(today, ymd(plusDays(now, 1)));
@@ -24,7 +22,7 @@ export default function TodayEventsWidget() {
             <Pressable
               key={i.key}
               accessibilityRole="button"
-              onPress={() => (i.kind === "task" ? navigation.navigate("tasks", { task: i.task!.id }) : navigation.navigate("calendar", { date: today }))}
+              onPress={() => (i.kind === "task" ? go("tasks", { task: i.task!.id }) : go("calendar", { date: today }))}
               style={[styles.row, { borderColor: p.border, borderTopWidth: n ? StyleSheet.hairlineWidth : 0, opacity: past ? 0.55 : 1 }]}
             >
               <Text style={{ fontSize: 12, width: 92, color: p.textSecondary }}>{timeRange(i)}</Text>
@@ -40,7 +38,7 @@ export default function TodayEventsWidget() {
           Nothing on the calendar today.
         </Text>
       )}
-      <FootLink label="Open calendar" onPress={() => navigation.navigate("calendar")} />
+      <FootLink label="Open calendar" onPress={() => go("calendar")} />
     </>
   );
 }

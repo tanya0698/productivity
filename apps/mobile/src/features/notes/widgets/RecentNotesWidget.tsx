@@ -1,19 +1,16 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { noteDisplayTitle, sortNotes, type LocalNote } from "@productivity/domain";
 import { useLocalRecords } from "@productivity/sync-engine/react";
 import { FootLink } from "../../../components/ListCard";
 import Text from "../../../components/Text";
 import { usePalette } from "../../../theme";
+import { go } from "../../../navigation/ref";
 
 type Note = LocalNote & { deletedAt: string | null };
-type Nav = { navigate: (name: string, params?: object) => void };
 
 /** The last few notes touched; tap one to open it. */
-export default function RecentNotesWidget() {
-  const navigation = useNavigation<Nav>();
-  const p = usePalette();
+export default function RecentNotesWidget() {  const p = usePalette();
   const { records } = useLocalRecords<Note>("note");
   const recent = useMemo(
     () => [...records].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4),
@@ -26,7 +23,7 @@ export default function RecentNotesWidget() {
           <Pressable
             key={n.id}
             accessibilityRole="button"
-            onPress={() => navigation.navigate("notes", { note: n.id })}
+            onPress={() => go("notes", { note: n.id })}
             style={({ pressed }) => [styles.row, { borderColor: p.border, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, opacity: pressed ? 0.7 : 1 }]}
           >
             <Text weight="medium" numberOfLines={1} style={{ flex: 1 }}>
@@ -42,7 +39,7 @@ export default function RecentNotesWidget() {
           No notes yet. Switch capture to Note above.
         </Text>
       )}
-      <FootLink label="All notes" onPress={() => navigation.navigate("notes")} />
+      <FootLink label="All notes" onPress={() => go("notes")} />
     </>
   );
 }

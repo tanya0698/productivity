@@ -3,6 +3,7 @@ import { Alert, Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   editTask,
+  isOpenProject,
   localDate,
   planTaskReminder,
   priorityLabel,
@@ -16,6 +17,7 @@ import Sheet from "../../../components/Sheet";
 import { Button, Chips, DateTimeButton, Field, Input } from "../../../components/Field";
 import { askForNotifications } from "../../../shared/reminders/notifications";
 import { deviceTimezone, type Reminder } from "../../../shared/reminders/active";
+import { useProjects } from "../../../shared/projects";
 import { usePalette } from "../../../theme";
 import type { Task } from "./TaskRow";
 
@@ -53,6 +55,13 @@ export default function TaskEditor({ task, onClose }: { task: Task | null; onClo
   const [time, setTime] = useState<Date | null>(null);
   const [priority, setPriority] = useState<TaskPriority>(3);
   const [remind, setRemind] = useState<TaskReminderChoice>("none");
+  const [projectId, setProjectId] = useState("");
+  const { projects } = useProjects();
+  // Open projects, plus the task's own even when finished, so editing never drops it.
+  const projectOptions = [
+    { value: "", label: "None" },
+    ...projects.filter((x) => isOpenProject(x) || x.id === task?.projectId).map((x) => ({ value: x.id, label: x.title })),
+  ];
 
   const id = task?.id;
   useEffect(() => {
@@ -62,6 +71,7 @@ export default function TaskEditor({ task, onClose }: { task: Task | null; onClo
     setDay(task.dueAt ? new Date(task.dueAt) : task.dueDate ? dayDate(task.dueDate) : null);
     setTime(task.dueAt ? new Date(task.dueAt) : null);
     setPriority(task.priority);
+    setProjectId(task.projectId ?? "");
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The reminder choice waits for reminders to load: showing "No reminder"
@@ -81,7 +91,7 @@ export default function TaskEditor({ task, onClose }: { task: Task | null; onClo
     if (!task || loading) return;
     const updated = editTask(
       task,
-      { title, description: notes.trim() ? notes.trim() : null, ...dueFrom(day, time), priority },
+      { title, description: notes.trim() ? notes.trim() : null, ...dueFrom(day, time), priority, projectId: projectId || null },
       new Date(),
     );
     void runtime.write("task", updated);
@@ -159,6 +169,11 @@ export default function TaskEditor({ task, onClose }: { task: Task | null; onClo
       <Field label="Priority">
         <Chips value={String(priority)} options={priorities} onChange={(v) => setPriority(Number(v) as TaskPriority)} />
       </Field>
+      {projects.length ? (
+        <Field label="Project">
+          <Chips value={projectId} options={projectOptions} onChange={setProjectId} />
+        </Field>
+      ) : null}
       <Button kind="primary" label="Save" onPress={save} disabled={loading || !title.trim()} />
       <Button label="Cancel" onPress={onClose} />
     </Sheet>

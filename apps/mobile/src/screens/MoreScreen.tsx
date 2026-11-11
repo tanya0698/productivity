@@ -1,7 +1,6 @@
 import React from "react";
 import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import AppearancePicker from "../components/AppearancePicker";
 import Avatar from "../components/Avatar";
 import { Card, LinkRow } from "../components/ListCard";
@@ -11,11 +10,10 @@ import { modules } from "../features/registry";
 import { useAuth } from "../shared/auth/AuthProvider";
 import { displayName } from "../shared/auth/profile";
 import { radii, usePalette } from "../theme";
+import { go } from "../navigation/ref";
 
 /** Every module without a tab, then the account. */
-export default function MoreScreen() {
-  const navigation = useNavigation<{ navigate: (name: string) => void }>();
-  const { session } = useAuth();
+export default function MoreScreen() {  const { session } = useAuth();
   const p = usePalette();
   const user = session?.user;
   const rest = modules
@@ -27,7 +25,7 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Account"
-        onPress={() => navigation.navigate("account")}
+        onPress={() => go("account")}
         style={({ pressed }) => [
           { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderWidth: 1, borderRadius: radii.lg, backgroundColor: p.surface, borderColor: p.border, opacity: pressed ? 0.8 : 1 },
         ]}
@@ -58,7 +56,7 @@ export default function MoreScreen() {
               title={m.name}
               detail={m.status === "soon" ? "Coming to Android" : m.description}
               disabled={m.status === "soon"}
-              onPress={() => navigation.navigate(m.key)}
+              onPress={() => go(m.key)}
             />
           ))}
         </Card>

@@ -10,6 +10,7 @@ import { deviceTimezone, useNow } from "../../../shared/reminders/active";
 import { radii, usePalette } from "../../../theme";
 import EventEditor, { type EditorTarget } from "../components/EventEditor";
 import { dateOf, itemsOn, plusDays, timeRange, useCalendarItems, weekStart, ymd, type CalendarItem } from "../components/items";
+import { go } from "../../../navigation/ref";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 type Nav = { navigate: (name: string, params?: object) => void; setParams: (p: object) => void };
@@ -74,7 +75,7 @@ export default function CalendarScreen() {
   };
 
   const open = (i: CalendarItem) => {
-    if (i.kind === "task") navigation.navigate("tasks", { task: i.task!.id });
+    if (i.kind === "task") go("tasks", { task: i.task!.id });
     else setTarget({ kind: "edit", occurrence: i.occurrence! });
   };
 

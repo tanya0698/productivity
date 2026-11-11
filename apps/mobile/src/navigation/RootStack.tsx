@@ -10,7 +10,7 @@ const Stack = createNativeStackNavigator();
 /**
  * The tabs at the bottom, with every module that has no tab (and the account)
  * pushed over them from More. Route names are the module keys, so any screen
- * can `navigation.navigate("habits")` whether that module is a tab or not.
+ * can `go("habits")` (navigation/ref) whether that module is a tab or not.
  */
 const screens = modules
   .filter((m) => m.status !== "soon" && m.tabOrder === undefined)

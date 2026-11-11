@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { ActionSheetIOS, Alert, Linking, Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
 import {
   dismissReminder,
@@ -25,6 +25,7 @@ import { deviceTimezone, useActiveReminders, useNow, whenText, type ActiveRemind
 import { askForNotifications } from "../../../shared/reminders/notifications";
 import { radii, usePalette } from "../../../theme";
 import ReminderEditor from "../components/ReminderEditor";
+import { go } from "../../../navigation/ref";
 
 type Editing = { reminder: Reminder; isNew: boolean; linkedTitle?: string };
 const toast = (m: string) => Platform.OS === "android" && ToastAndroid.show(m, ToastAndroid.SHORT);
@@ -155,15 +156,13 @@ function ReminderRow({
   first: boolean;
   onEdit: (e: Editing) => void;
 }) {
-  const runtime = useSyncRuntime();
-  const navigation = useNavigation<{ navigate: (name: string, params?: object) => void }>();
-  const p = usePalette();
+  const runtime = useSyncRuntime();  const p = usePalette();
   const { reminder, at, title, task, note, event, series } = item;
   const repeating = !!reminder.recurrenceRule;
 
   const open = () => {
-    if (task) navigation.navigate("tasks", { task: task.id });
-    else if (event) navigation.navigate("calendar", { date: localDate(at) });
+    if (task) go("tasks", { task: task.id });
+    else if (event) go("calendar", { date: localDate(at) });
     else onEdit({ reminder, isNew: false, linkedTitle: note ? title : undefined });
   };
   const snooze = () =>

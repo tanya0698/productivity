@@ -28,20 +28,27 @@ export default function NotesScreen() {
   const open = stored ?? (draft && draft.id === openId ? draft : null);
 
   // Opened from elsewhere (Today's recent notes): navigate("notes", { note: id }).
-  const route = useRoute<{ key: string; name: string; params?: { note?: string } }>();
+  // Or on a new note in a project: navigate("notes", { newIn: projectId }).
+  const route = useRoute<{ key: string; name: string; params?: { note?: string; newIn?: string } }>();
   const navigation = useNavigation();
   const requested = route.params?.note;
+  const newIn = route.params?.newIn;
   useEffect(() => {
     if (!requested) return;
     setOpenId(requested);
     navigation.setParams({ note: undefined } as never);
   }, [requested, navigation]);
 
-  const create = () => {
-    const note = newNote(runtime.newId(), new Date());
+  const create = (projectId: string | null = null) => {
+    const note = newNote(runtime.newId(), new Date(), { projectId }) as Note;
     setDraft(note);
     setOpenId(note.id);
   };
+  useEffect(() => {
+    if (!newIn) return;
+    create(newIn);
+    navigation.setParams({ newIn: undefined } as never);
+  }, [newIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = () => {
     setOpenId(null);
@@ -70,7 +77,7 @@ export default function NotesScreen() {
     <ScreenFrame eyebrow="Capture" title="Notes">
       <Pressable
         accessibilityRole="button"
-        onPress={create}
+        onPress={() => create()}
         style={[styles.primary, { backgroundColor: p.primary }]}
       >
         <Text weight="semiBold" style={{ color: p.onPrimary }}>
