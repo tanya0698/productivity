@@ -12,7 +12,19 @@ const meta = (user: MetaUser, key: string): string => {
 };
 
 export const firstNameOf = (user: MetaUser) => meta(user, "first_name") || meta(user, "full_name").split(/\s+/)[0] || "";
+export const lastNameOf = (user: MetaUser) => meta(user, "last_name") || meta(user, "full_name").split(/\s+/).slice(1).join(" ");
+export const phoneOf = (user: MetaUser) => meta(user, "phone");
 export const avatarUrlOf = (user: MetaUser) => meta(user, "avatar_url") || null;
+
+/** The metadata to save for a profile; full_name too, so anything reading it still works. */
+export function profileMetadata(p: { firstName: string; lastName: string; phone?: string | null }) {
+  const first = p.firstName.trim();
+  const last = p.lastName.trim();
+  return { first_name: first, last_name: last, full_name: [first, last].filter(Boolean).join(" "), phone: p.phone?.trim() || null };
+}
+
+/** A phone number people actually type: digits with optional +, spaces, dashes, dots and brackets. */
+export const PHONE_PATTERN = /^\+?[\d\s().-]{7,20}$/;
 
 /** "Elton Chipuka" from first and last name (or an older full name), or "". */
 export const displayName = (user: MetaUser): string =>

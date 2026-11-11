@@ -18,6 +18,7 @@ import RootStack from "./src/navigation/RootStack";
 import SignInScreen from "./src/screens/SignInScreen";
 import MfaChallengeScreen from "./src/screens/MfaChallengeScreen";
 import { AuthProvider, useAuth } from "./src/shared/auth/AuthProvider";
+import { PendingAvatarUpload } from "./src/shared/auth/PendingAvatarUpload";
 import { supabase } from "./src/shared/auth/supabase";
 import { openRuntime } from "./src/shared/data/openRuntime";
 import { SyncTriggers } from "./src/shared/data/SyncTriggers";
@@ -106,6 +107,7 @@ function SignedIn() {
     >
       <SyncTriggers />
       <ReminderNotifications />
+      <PendingAvatarUpload />
       <FocusProvider>
         <Root />
       </FocusProvider>

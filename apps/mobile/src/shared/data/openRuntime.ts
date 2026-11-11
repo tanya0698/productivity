@@ -9,7 +9,7 @@ import { SyncRuntime, createHttpTransport } from "@productivity/sync-engine";
  * emulator. On a real phone, set EXPO_PUBLIC_API_URL in apps/mobile/.env to your
  * computer's LAN address (see .env.example).
  */
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3000/api";
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3000/api";
 
 const newId = () => Crypto.randomUUID();
 

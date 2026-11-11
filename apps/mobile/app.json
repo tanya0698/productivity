@@ -40,7 +40,15 @@
           "backgroundColor": "#0b0f14"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Creedence uses your photos to set your profile picture.",
+          "cameraPermission": "Creedence uses the camera to take your profile picture.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
