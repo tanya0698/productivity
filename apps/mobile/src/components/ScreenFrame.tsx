@@ -8,6 +8,7 @@ import GlassCard from "./GlassCard";
 import SyncPill from "./SyncPill";
 import Text from "./Text";
 import { useIsPushed } from "../navigation/pushed";
+import { go } from "../navigation/ref";
 import { usePalette, radii } from "../theme";
 
 /**
@@ -21,6 +22,7 @@ export default function ScreenFrame({
   capturePlaceholder,
   capture,
   onBack,
+  searchable = true,
   children,
 }: {
   eyebrow?: string;
@@ -31,6 +33,8 @@ export default function ScreenFrame({
   capture?: React.ReactNode;
   /** Overrides the back button (e.g. closing an editor inside the screen). */
   onBack?: () => void;
+  /** Shows the search button in the header (off on the search screen itself). */
+  searchable?: boolean;
   children: React.ReactNode;
 }) {
   const p = usePalette();
@@ -53,7 +57,14 @@ export default function ScreenFrame({
           <Text weight="extraBold" tone="heading" style={styles.title} numberOfLines={1}>
             {title}
           </Text>
-          <SyncPill />
+          <View style={styles.actions}>
+            {searchable ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Search everything" hitSlop={10} onPress={() => go("search")}>
+                <Ionicons name="search" size={20} color={p.text} />
+              </Pressable>
+            ) : null}
+            <SyncPill />
+          </View>
         </View>
         {capture ? (
           <GlassCard strong style={styles.captureLive}>
@@ -78,6 +89,7 @@ export default function ScreenFrame({
 }
 
 const styles = StyleSheet.create({
+  actions: { flexDirection: "row", alignItems: "center", gap: 14 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4, minHeight: 18 },
   back: { marginLeft: -4 },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 },

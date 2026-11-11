@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { modules } from "../features/registry";
 import AccountScreen from "../screens/AccountScreen";
+import SearchScreen from "../screens/SearchScreen";
 import MainTabs from "./MainTabs";
 import { pushed } from "./pushed";
 
@@ -16,12 +17,14 @@ const screens = modules
   .filter((m) => m.status !== "soon" && m.tabOrder === undefined)
   .map((m) => ({ key: m.key, title: m.name, component: pushed(m.screen) }));
 const Account = pushed(AccountScreen);
+const Search = pushed(SearchScreen);
 
 export default function RootStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
       <Stack.Screen name="main" component={MainTabs} />
       <Stack.Screen name="account" component={Account} options={{ title: "Account" }} />
+      <Stack.Screen name="search" component={Search} options={{ title: "Search", animation: "fade_from_bottom" }} />
       {screens.map((s) => (
         <Stack.Screen key={s.key} name={s.key} component={s.component} options={{ title: s.title }} />
       ))}
