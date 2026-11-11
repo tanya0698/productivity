@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GlassBackground from "../components/GlassBackground";
+import ModeButton from "../components/ModeButton";
 import Text from "../components/Text";
 import { useAuth } from "../shared/auth/AuthProvider";
 import { fonts, radii, usePalette } from "../theme";
@@ -61,6 +62,9 @@ export default function SignInScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.page }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <GlassBackground style={{ flex: 1, paddingTop: insets.top + 48, paddingHorizontal: 24 }}>
+        <View style={{ position: "absolute", top: insets.top + 12, right: 20 }}>
+          <ModeButton />
+        </View>
         <Text label tone="brand">Creedence</Text>
         <Text weight="extraBold" tone="heading" style={styles.title}>
           {mode === "sign-in" ? "Welcome back" : "Create your account"}

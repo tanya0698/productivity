@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Alert, BackHandler, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
 import ScreenFrame from "../../../components/ScreenFrame";
@@ -26,24 +27,41 @@ export default function NotesScreen() {
   const stored = notes.find((n) => n.id === openId);
   const open = stored ?? (draft && draft.id === openId ? draft : null);
 
+  // Opened from elsewhere (Today's recent notes): navigate("notes", { note: id }).
+  const route = useRoute<{ key: string; name: string; params?: { note?: string } }>();
+  const navigation = useNavigation();
+  const requested = route.params?.note;
+  useEffect(() => {
+    if (!requested) return;
+    setOpenId(requested);
+    navigation.setParams({ note: undefined } as never);
+  }, [requested, navigation]);
+
   const create = () => {
     const note = newNote(runtime.newId(), new Date());
     setDraft(note);
     setOpenId(note.id);
   };
 
+  const close = () => {
+    setOpenId(null);
+    setDraft(null);
+  };
+
+  // Android's back button closes the open note rather than leaving Notes.
+  useEffect(() => {
+    if (!open) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      close();
+      return true;
+    });
+    return () => sub.remove();
+  }, [open]);
+
   if (open) {
     return (
-      <ScreenFrame eyebrow="Capture" title="Note">
-        <NoteEditor
-          key={open.id}
-          note={open}
-          isDraft={!stored}
-          onClose={() => {
-            setOpenId(null);
-            setDraft(null);
-          }}
-        />
+      <ScreenFrame eyebrow="Capture" title="Note" onBack={close}>
+        <NoteEditor key={open.id} note={open} isDraft={!stored} onClose={close} />
       </ScreenFrame>
     );
   }

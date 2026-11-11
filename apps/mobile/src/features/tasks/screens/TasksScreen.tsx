@@ -1,27 +1,16 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  addDays,
-  dueState,
-  groupTasks,
-  isDone,
-  localDate,
-  newTask,
-  priorityLabel,
-  taskDay,
-  taskGroupTitle,
-  toggleDone,
-  type LocalTask,
-  type TaskGroupKey,
-} from "@productivity/domain";
+import { addDays, groupTasks, localDate, newTask, taskGroupTitle, type TaskGroupKey } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
+import TaskEditor from "../components/TaskEditor";
+import TaskRow, { type Task } from "../components/TaskRow";
 import { fonts, radii, usePalette } from "../../../theme";
 
-type Task = LocalTask & { deletedAt: string | null };
 type Due = "none" | "today" | "tomorrow";
 
 const OPEN_GROUPS: TaskGroupKey[] = ["overdue", "today", "upcoming", "someday"];
@@ -37,6 +26,18 @@ export default function TasksScreen() {
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<Due>("none");
   const [showDone, setShowDone] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editing = records.find((t) => t.id === editingId) ?? null;
+
+  // Opened from elsewhere (a reminder, a notification): navigate("tasks", { task: id }).
+  const route = useRoute<{ key: string; name: string; params?: { task?: string } }>();
+  const navigation = useNavigation();
+  const requested = route.params?.task;
+  useEffect(() => {
+    if (!requested) return;
+    setEditingId(requested);
+    navigation.setParams({ task: undefined } as never);
+  }, [requested, navigation]);
 
   const now = new Date();
   const today = localDate(now);
@@ -56,60 +57,7 @@ export default function TasksScreen() {
       { text: "Delete", style: "destructive", onPress: () => void runtime.write("task", task, "delete") },
     ]);
 
-  const row = (task: Task) => {
-    const done = isDone(task);
-    const state = dueState(task, now, today);
-    const date = taskDay(task);
-    return (
-      <Pressable
-        key={task.id}
-        onLongPress={() => remove(task)}
-        accessibilityHint="Long-press to delete"
-        style={[styles.row, { borderColor: p.border }]}
-      >
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: done }}
-          accessibilityLabel={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
-          hitSlop={10}
-          onPress={() => void runtime.write("task", toggleDone(task, new Date()))}
-        >
-          <Ionicons name={done ? "checkmark-circle" : "ellipse-outline"} size={24} color={done ? p.success : p.borderStrong} />
-        </Pressable>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={done ? { color: p.textMuted, textDecorationLine: "line-through" } : undefined}>{task.title}</Text>
-          {!done && (date || task.priority !== 3) ? (
-            <View style={styles.meta}>
-              {date ? (
-                <View
-                  style={[
-                    styles.badge,
-                    {
-                      backgroundColor: state === "overdue" ? p.errorSoft : state === "due_soon" ? p.warningSoft : p.muted,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: state === "overdue" ? p.errorText : state === "due_soon" ? p.warningText : p.textSecondary,
-                    }}
-                  >
-                    {state === "overdue" ? `Overdue · ${date}` : date === today ? "Due today" : date === addDays(today, 1) ? "Tomorrow" : date}
-                  </Text>
-                </View>
-              ) : null}
-              {task.priority !== 3 ? (
-                <Text tone="secondary" weight={task.priority === 1 ? "semiBold" : "regular"} style={{ fontSize: 12 }}>
-                  ⚑ {priorityLabel[task.priority]}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-      </Pressable>
-    );
-  };
+  const row = (task: Task) => <TaskRow key={task.id} task={task} now={now} today={today} onPress={() => setEditingId(task.id)} onLongPress={() => remove(task)} />;
 
   return (
     <ScreenFrame eyebrow="Plan" title="Tasks">
@@ -174,6 +122,7 @@ export default function TasksScreen() {
           {showDone ? groups.done.slice(0, 50).map(row) : null}
         </View>
       ) : null}
+      <TaskEditor task={editing} onClose={() => setEditingId(null)} />
     </ScreenFrame>
   );
 }
@@ -186,7 +135,4 @@ const styles = StyleSheet.create({
   addButton: { marginLeft: "auto", borderRadius: radii.sm, paddingHorizontal: 16, paddingVertical: 7 },
   group: { borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: 14, paddingBottom: 4 },
   groupHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12 },
-  row: { flexDirection: "row", gap: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, alignItems: "flex-start" },
-  meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
-  badge: { borderRadius: radii.pill, paddingHorizontal: 8, paddingVertical: 2 },
 });

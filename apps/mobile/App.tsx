@@ -14,13 +14,15 @@ import { JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono/500Me
 import { JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono/700Bold";
 import { SyncProvider } from "@productivity/sync-engine/react";
 import Text from "./src/components/Text";
-import MainTabs from "./src/navigation/MainTabs";
+import RootStack from "./src/navigation/RootStack";
 import SignInScreen from "./src/screens/SignInScreen";
 import MfaChallengeScreen from "./src/screens/MfaChallengeScreen";
 import { AuthProvider, useAuth } from "./src/shared/auth/AuthProvider";
 import { supabase } from "./src/shared/auth/supabase";
 import { openRuntime } from "./src/shared/data/openRuntime";
 import { SyncTriggers } from "./src/shared/data/SyncTriggers";
+import { ReminderNotifications } from "./src/shared/reminders/ReminderNotifications";
+import { navigationRef } from "./src/navigation/ref";
 import { ThemeProvider, usePalette } from "./src/theme";
 
 function Loading() {
@@ -41,8 +43,8 @@ function Root() {
     colors: { ...DefaultTheme.colors, background: p.page, card: p.surface, text: p.text, primary: p.primary, border: p.border },
   };
   return (
-    <NavigationContainer theme={navTheme}>
-      <MainTabs />
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
+      <RootStack />
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
     </NavigationContainer>
   );
@@ -102,6 +104,7 @@ function SignedIn() {
       )}
     >
       <SyncTriggers />
+      <ReminderNotifications />
       <Root />
     </SyncProvider>
   );

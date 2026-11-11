@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import { clearAllNotifications } from "../reminders/notifications";
 
 export interface AuthState {
   /** False while the stored session (and its two-factor level) is being read. */
@@ -72,6 +73,8 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
       refreshAssurance,
       getAccessToken: async () => (await client.auth.getSession()).data.session?.access_token ?? null,
       signOut: async () => {
+        // This account's reminders shouldn't keep alerting on the phone after it leaves.
+        await clearAllNotifications().catch(() => undefined);
         await client.auth.signOut();
       },
     }),

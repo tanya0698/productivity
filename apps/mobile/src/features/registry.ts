@@ -3,7 +3,9 @@
  * Add a module by creating src/features/<key>/config/module.ts.
  */
 import type { MobileModuleManifest } from "../shared/modules/types";
+import calendarModule from "./calendar/config/module";
 import notesModule from "./notes/config/module";
+import remindersModule from "./reminders/config/module";
 import tasksModule from "./tasks/config/module";
 
-export const modules: MobileModuleManifest[] = [notesModule, tasksModule];
+export const modules: MobileModuleManifest[] = [calendarModule, notesModule, remindersModule, tasksModule];

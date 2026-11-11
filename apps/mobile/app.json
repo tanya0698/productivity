@@ -27,6 +27,7 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
           "color": "#2dd4bf"
         }
       ],
@@ -38,7 +39,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#0b0f14"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

@@ -1,38 +1,65 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GlassBackground from "./GlassBackground";
 import GlassCard from "./GlassCard";
 import SyncPill from "./SyncPill";
 import Text from "./Text";
+import { useIsPushed } from "../navigation/pushed";
 import { usePalette, radii } from "../theme";
 
 /**
- * Every tab screen's frame: gradient header with title and optional glass
- * capture field, then a solid sheet for the content (plan §4.4).
+ * Every screen's frame: gradient header with title and an optional glass
+ * capture area, then a solid sheet for the content (plan §4.4). Screens pushed
+ * from More get a back button; tab screens leave room for the tab bar.
  */
 export default function ScreenFrame({
   eyebrow,
   title,
   capturePlaceholder,
+  capture,
+  onBack,
   children,
 }: {
   eyebrow?: string;
   title: string;
+  /** Static hint text in the glass field. */
   capturePlaceholder?: string;
+  /** A live capture control in place of the hint. */
+  capture?: React.ReactNode;
+  /** Overrides the back button (e.g. closing an editor inside the screen). */
+  onBack?: () => void;
   children: React.ReactNode;
 }) {
   const p = usePalette();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const isPushed = useIsPushed();
+  const back = onBack ?? (isPushed ? () => navigation.goBack() : undefined);
   return (
     <View style={{ flex: 1, backgroundColor: p.page }}>
       <GlassBackground style={{ paddingTop: insets.top + 8, paddingBottom: 26, paddingHorizontal: 16 }}>
-        {eyebrow ? <Text label tone="brand" style={styles.eyebrow}>{eyebrow}</Text> : null}
+        <View style={styles.eyebrowRow}>
+          {back ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Back" hitSlop={12} onPress={back} style={styles.back}>
+              <Ionicons name="chevron-back" size={18} color={p.primary} />
+            </Pressable>
+          ) : null}
+          {eyebrow ? <Text label tone="brand">{eyebrow}</Text> : null}
+        </View>
         <View style={styles.titleRow}>
-          <Text weight="extraBold" tone="heading" style={styles.title}>{title}</Text>
+          <Text weight="extraBold" tone="heading" style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
           <SyncPill />
         </View>
-        {capturePlaceholder ? (
+        {capture ? (
+          <GlassCard strong style={styles.captureLive}>
+            {capture}
+          </GlassCard>
+        ) : capturePlaceholder ? (
           <GlassCard strong style={styles.capture}>
             <Text tone="secondary">{capturePlaceholder}</Text>
           </GlassCard>
@@ -40,8 +67,9 @@ export default function ScreenFrame({
       </GlassBackground>
       <ScrollView
         style={[styles.sheet, { backgroundColor: p.page }]}
-        // Room for the floating tab bar.
-        contentContainerStyle={{ padding: 12, paddingBottom: 110, gap: 10 }}
+        keyboardShouldPersistTaps="handled"
+        // Room for the floating tab bar on tab screens.
+        contentContainerStyle={{ padding: 12, paddingBottom: isPushed ? insets.bottom + 32 : 110, gap: 10 }}
       >
         {children}
       </ScrollView>
@@ -50,9 +78,11 @@ export default function ScreenFrame({
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginBottom: 4 },
+  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4, minHeight: 18 },
+  back: { marginLeft: -4 },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 },
   title: { fontSize: 30, letterSpacing: -0.6, flexShrink: 1 },
   capture: { paddingHorizontal: 12, paddingVertical: 11 },
+  captureLive: { paddingHorizontal: 6, paddingVertical: 5 },
   sheet: { flex: 1, marginTop: -14, borderTopLeftRadius: radii.lg + 2, borderTopRightRadius: radii.lg + 2 },
 });
