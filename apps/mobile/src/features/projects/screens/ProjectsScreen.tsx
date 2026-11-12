@@ -14,6 +14,8 @@ import {
   projectProgress,
   projectCardStats,
   onTrackShare,
+  openTasksTrend,
+  timeUsedTrend,
   timeUsed,
   projectStatusLabel,
   sortNotes,
@@ -174,7 +176,7 @@ function ProjectList({
             title={x.title}
             subtitle={[projectStatusLabel[x.status], x.dueDate ? `Target ${formatDue(x.dueDate, today)}` : null].filter(Boolean).join(" · ")}
             value={stats.doneThisWeek.now}
-            trend={{ change: stats.doneThisWeek.change }}
+            trend={{ ...stats.doneThisWeek }}
             caption={`done this week · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks` : "no tasks yet"}`}
             ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Complete" }}
             onPress={() => onOpen(x.id)}
@@ -258,20 +260,21 @@ function ProjectDetail({ project, onClose }: { project: Project; onClose: () => 
           subtitle={progress.total ? `${progress.done} of ${progress.total} tasks done` : "No tasks yet"}
           value={`${progress.percent}%`}
           hint={`${cardStats.doneThisWeek.now} done this week`}
-          trend={{ change: cardStats.doneThisWeek.change }}
+          trend={{ ...cardStats.doneThisWeek }}
           ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
         />
         <StatTile
           icon="checkbox"
           iconTone={groups.overdue.length ? "error" : "accent"}
           label="Open tasks"
+          trend={{ ...openTasksTrend(tasks, today), goodWhenUp: false }}
           ring={{ percent: onTrackShare(openTasks.length, groups.overdue.length), label: "On Track" }}
           subtitle="Still to do"
           value={openTasks.length}
           tone={groups.overdue.length ? "error" : undefined}
           hint={groups.overdue.length ? `${groups.overdue.length} overdue` : "none overdue"}
         />
-        <StatTile icon="flag" iconTone="warning" label="Target" ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} compact />
+        <StatTile icon="flag" iconTone="warning" label="Target" trend={{ ...timeUsedTrend(project.createdAt, project.dueDate, now), unit: " pts", neutral: true }} ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} compact />
       </StatRow>
 
       <Card title="Status" right={

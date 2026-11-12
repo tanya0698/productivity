@@ -13,6 +13,8 @@ import {
   groupTasks,
   localDate,
   notesTrend,
+  dueTodayTrend,
+  overdueTrend,
   onTrackShare,
   percentOf,
   todayDoneShare,
@@ -172,6 +174,7 @@ export default function TodayPage() {
             <StatTile
               icon={<CalendarOutlined />}
               label="Due today"
+              trend={{ ...dueTodayTrend(tasks, localDate(now)), goodWhenUp: false, period: "vs yesterday" }}
               subtitle="Tasks"
               value={dueToday}
               hint={dueToday === 1 ? "task left" : "tasks left"}
@@ -183,6 +186,7 @@ export default function TodayPage() {
               icon={<WarningOutlined />}
               iconTone={overdue ? "error" : "success"}
               label="Overdue"
+              trend={{ ...overdueTrend(tasks, localDate(now)), goodWhenUp: false }}
               ring={{ percent: onTrackShare(groups.overdue.length + groups.today.length + groups.upcoming.length, groups.overdue.length), label: "On Track" }}
               subtitle="Tasks"
               value={overdue}
@@ -199,7 +203,7 @@ export default function TodayPage() {
               subtitle="On this device"
               value={notes.length}
               hint={`${notesTrend(notes, localDate(now)).now} written this week`}
-              trend={{ change: notesTrend(notes, localDate(now)).change }}
+              trend={{ ...notesTrend(notes, localDate(now)) }}
               tone="neutral"
             />
           </Col>

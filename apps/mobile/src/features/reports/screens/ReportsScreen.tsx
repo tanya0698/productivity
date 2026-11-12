@@ -176,7 +176,7 @@ export default function ReportsScreen() {
               ring={{ percent: percentOf(report.tasks.completed, report.tasks.completed + report.tasks.overdue), label: "Cleared" }}
               subtitle="This period"
               value={report.tasks.completed.toLocaleString()}
-              trend={{ change: change(report.tasks.completed, before.tasks.completed), period: `vs ${period}` }}
+              trend={{ now: report.tasks.completed, change: change(report.tasks.completed, before.tasks.completed), period: `vs ${period}` }}
               hint={`${before.tasks.completed.toLocaleString()} the ${report.days} days before`}
             />
             <StatTile
@@ -185,7 +185,7 @@ export default function ReportsScreen() {
               ring={{ percent: percentOf(report.focus.completedSessions, report.focus.sessions), label: "Completed" }}
               subtitle="This period"
               value={minutesText(report.focus.minutes * 60)}
-              trend={{ change: change(report.focus.minutes, before.focus.minutes), period: `vs ${period}` }}
+              trend={{ now: report.focus.minutes, change: change(report.focus.minutes, before.focus.minutes), period: `vs ${period}` }}
               hint={plural(report.focus.sessions, "session")}
             />
             <StatTile
@@ -194,11 +194,7 @@ export default function ReportsScreen() {
               label="Habit consistency"
               subtitle="This period"
               value={report.habits.consistency === null ? "—" : `${report.habits.consistency}%`}
-              trend={
-                report.habits.consistency !== null && before.habits.consistency !== null
-                  ? { change: report.habits.consistency - before.habits.consistency, unit: " pts", period: `vs ${period}` }
-                  : undefined
-              }
+              trend={{ now: report.habits.consistency ?? 0, change: report.habits.consistency !== null && before.habits.consistency !== null ? report.habits.consistency - before.habits.consistency : null, unit: " pts", period: `vs ${period}` }}
               hint="of due days met"
               ring={{ percent: report.habits.consistency, label: "Met" }}
             />
@@ -206,6 +202,7 @@ export default function ReportsScreen() {
               icon="alarm"
               iconTone={report.tasks.overdue ? "error" : "accent"}
               label="Done on time"
+              trend={{ now: report.tasks.onTimeRate ?? 0, change: report.tasks.onTimeRate !== null && before.tasks.onTimeRate !== null ? report.tasks.onTimeRate - before.tasks.onTimeRate : null, unit: " pts", period: `vs ${period}` }}
               subtitle="This period"
               value={report.tasks.onTimeRate === null ? "—" : `${report.tasks.onTimeRate}%`}
               hint={report.tasks.overdue ? `${report.tasks.overdue} open and overdue` : "Nothing overdue"}
@@ -218,7 +215,7 @@ export default function ReportsScreen() {
               ring={{ percent: percentOf(report.calendar.hours, report.days * 8), label: "Of Work Hours" }}
               subtitle="This period"
               value={`${report.calendar.hours} h`}
-              trend={{ change: change(report.calendar.hours, before.calendar.hours), period: `vs ${period}` }}
+              trend={{ now: report.calendar.hours, change: change(report.calendar.hours, before.calendar.hours), period: `vs ${period}` }}
               hint={plural(report.calendar.events, "event")}
             />
             <StatTile
@@ -228,7 +225,7 @@ export default function ReportsScreen() {
               ring={{ percent: percentOf(report.tasks.created, report.tasks.created + report.notes.created), label: "Tasks" }}
               subtitle="This period"
               value={(report.tasks.created + report.notes.created).toLocaleString()}
-              trend={{ change: change(report.tasks.created + report.notes.created, before.tasks.created + before.notes.created), period: `vs ${period}` }}
+              trend={{ now: report.tasks.created + report.notes.created, change: change(report.tasks.created + report.notes.created, before.tasks.created + before.notes.created), period: `vs ${period}` }}
               hint={`${plural(report.tasks.created, "task")} · ${plural(report.notes.created, "note")}`}
             />
           </StatRow>

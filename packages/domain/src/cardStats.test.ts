@@ -80,3 +80,32 @@ describe("rings", () => {
     expect(reviewCycleUsed({ ...g, reviewCadence: null }, new Date())).toBe(0);
   });
 });
+
+describe("trends for every card", () => {
+  it("due today, overdue and open, as they stood before", async () => {
+    const { dueTodayTrend, overdueTrend, openTasksTrend } = await import("./cardStats.ts");
+    const task = (due: string, created: number) => ({ ...newTask(crypto.randomUUID(), at(created), { title: "t", dueDate: due }), createdAt: at(created).toISOString() });
+    const tasks = [task("2026-11-11", 1), task("2026-11-10", 1), task("2026-11-10", 1), task("2026-11-02", 1)];
+    expect(dueTodayTrend(tasks, today)).toMatchObject({ now: 1, before: 2 });
+    // Overdue now: the two due yesterday and the one due on the 2nd. A week ago (the 4th): only the 2nd's.
+    expect(overdueTrend(tasks, today)).toMatchObject({ now: 3, before: 1, change: 200 });
+    expect(openTasksTrend(tasks, today)).toMatchObject({ now: 4, before: 4, change: 0 });
+  });
+
+  it("habits done, best streak, count", async () => {
+    const { habitsDoneTrend, bestStreakTrend, habitsCountTrend } = await import("./cardStats.ts");
+    const { newHabit, newHabitLog, indexLogs } = await import("./habits.ts");
+    const h = newHabit("h", at(1), { title: "Read" });
+    const logs = ["2026-11-09", "2026-11-10", "2026-11-11"].map((d) => newHabitLog(crypto.randomUUID(), at(11), h.id, d));
+    const index = indexLogs(logs);
+    expect(habitsDoneTrend([h], index, today)).toMatchObject({ now: 1, before: 1 });
+    expect(bestStreakTrend([h], index, today)).toMatchObject({ now: 3, before: 0 });
+    expect(habitsCountTrend([h], today)).toMatchObject({ now: 1, before: 1 });
+  });
+
+  it("points for rates", async () => {
+    const { pointsTrend, goalProgressTrend } = await import("./cardStats.ts");
+    expect(pointsTrend(75, 50)).toEqual({ now: 75, before: 50, change: 25 });
+    expect(goalProgressTrend([{ doneAt: at(10).toISOString() }, { doneAt: null }], today)).toMatchObject({ now: 50, before: 0, change: 50 });
+  });
+});

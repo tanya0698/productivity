@@ -80,7 +80,7 @@ export default function HomePage() {
                 title={p.title}
                 subtitle={[projectStatusLabel[p.status], p.dueDate ? `Target ${formatDue(p.dueDate, today)}` : null].filter(Boolean).join(" · ")}
                 value={stats.doneThisWeek.now}
-                trend={{ change: stats.doneThisWeek.change }}
+                trend={{ ...stats.doneThisWeek }}
                 caption={`done this week · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks` : "no tasks yet"}`}
                 ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Complete" }}
                 onOpen={() => navigate(p.id)}

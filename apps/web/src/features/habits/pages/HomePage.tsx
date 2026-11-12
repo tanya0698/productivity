@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { App as AntApp, Button, Card, Col, Collapse, Flex, Row } from "antd";
 import { CheckCircleOutlined, FireOutlined, PlusOutlined, UnorderedListOutlined } from "@ant-design/icons";
-import { STREAK_TARGET, habitProgress, isScheduled, localDate, newHabit, percentOf, streak } from "@productivity/domain";
+import { STREAK_TARGET, bestStreakTrend, habitsCountTrend, habitsDoneTrend, habitProgress, isScheduled, localDate, newHabit, percentOf, streak } from "@productivity/domain";
 import { ModulePage, useNow, useSyncRuntime, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListCardSkeleton, TileRowSkeleton } from "@/components/ui/Skeletons";
@@ -58,19 +58,21 @@ export default function HomePage() {
               icon={<CheckCircleOutlined />}
               iconTone="success"
               label="Done today"
+              trend={{ ...habitsDoneTrend(habits, index, today), period: "vs yesterday" }}
               subtitle={`${dueToday.length} due`}
               value={`${doneToday}/${dueToday.length}`}
               ring={{ percent: dueToday.length ? Math.round((doneToday / dueToday.length) * 100) : null, label: "Today" }}
             />
           </Col>
           <Col xs={12} md={8}>
-            <StatTile icon={<FireOutlined />} iconTone="warning" label="Best streak" ring={{ percent: percentOf(best, STREAK_TARGET), label: "30-Day Goal" }} subtitle="In a row" value={best} hint={best === 1 ? "day or week" : "days or weeks"} />
+            <StatTile icon={<FireOutlined />} iconTone="warning" label="Best streak" trend={{ ...bestStreakTrend(habits, index, today) }} ring={{ percent: percentOf(best, STREAK_TARGET), label: "30-Day Goal" }} subtitle="In a row" value={best} hint={best === 1 ? "day or week" : "days or weeks"} />
           </Col>
           <Col xs={24} md={8}>
             <StatTile
               icon={<UnorderedListOutlined />}
               iconTone="accent"
               label="Habits"
+              trend={{ ...habitsCountTrend(habits, today) }}
               ring={{ percent: percentOf(habits.filter((h) => streak(h, index, today) > 0).length, habits.length), label: "On A Streak" }}
               subtitle="Active"
               value={habits.length}

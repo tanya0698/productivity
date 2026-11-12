@@ -22,8 +22,13 @@ import { usePalette, type Palette } from "../theme";
 export type Tone = "primary" | "accent" | "success" | "warning" | "error" | "ai" | "neutral";
 
 export interface CardTrend {
-  /** Percentage change vs the period before; null shows nothing (no earlier data). */
+  /** Percentage change vs the period before; null when the period before was zero. */
   change: number | null;
+  /** The figure now: with no change to show, "▲ New" if it's above zero, else a flat 0%. */
+  now?: number;
+  before?: number;
+  /** Neither good nor bad (time passing towards a date): a grey pill, arrow kept. */
+  neutral?: boolean;
   goodWhenUp?: boolean;
   /** "%" by default; " pts" for a change in a rate. */
   unit?: string;
@@ -39,9 +44,20 @@ const tint = (hex: string, alpha: number) => `${hex.slice(0, 7)}${Math.round(alp
 
 export function TrendPill({ trend }: { trend: CardTrend }) {
   const p = usePalette();
-  const { change, goodWhenUp = true, unit = "%", period = "vs last week" } = trend;
-  if (change === null) return null;
-  if (change === 0) {
+  const { change, goodWhenUp = true, unit = "%", period = "vs last week", neutral = false, now = 0 } = trend;
+  // Always shown, as on the template: up from nothing reads "▲ New", nothing to nothing a flat 0%.
+  if (change === null && now > 0) {
+    const bg = neutral ? p.muted : tint(goodWhenUp ? p.success : p.error, 0.1);
+    const fg = neutral ? p.textSecondary : goodWhenUp ? p.successText : p.errorText;
+    return (
+      <View accessible accessibilityLabel={`New, up from nothing ${period}`} style={[styles.pill, { backgroundColor: bg }]}>
+        <Text style={{ fontSize: 12, color: fg }} weight="medium">
+          ▲ New
+        </Text>
+      </View>
+    );
+  }
+  if (change === null || change === 0) {
     return (
       <View accessible accessibilityLabel={`No change ${period}`} style={[styles.pill, { backgroundColor: p.muted }]}>
         <Text style={{ fontSize: 12, color: p.textSecondary }} weight="medium">{`● 0${unit}`}</Text>
@@ -54,9 +70,9 @@ export function TrendPill({ trend }: { trend: CardTrend }) {
     <View
       accessible
       accessibilityLabel={`${up ? "Up" : "Down"} ${Math.abs(change)}${unit.trim() === "pts" ? " points" : " percent"} ${period}`}
-      style={[styles.pill, { backgroundColor: tint(good ? p.success : p.error, 0.1) }]}
+      style={[styles.pill, { backgroundColor: neutral ? p.muted : tint(good ? p.success : p.error, 0.1) }]}
     >
-      <Text style={{ fontSize: 12, color: good ? p.successText : p.errorText }} weight="medium">
+      <Text style={{ fontSize: 12, color: neutral ? p.textSecondary : good ? p.successText : p.errorText }} weight="medium">
         {`${up ? "▲" : "▼"}${Math.abs(change)}${unit}`}
       </Text>
     </View>

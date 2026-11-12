@@ -19,8 +19,13 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 export type Tone = "primary" | "accent" | "success" | "warning" | "error" | "ai" | "neutral";
 
 export interface CardTrend {
-  /** Percentage change vs the period before; null shows nothing (no earlier data). */
+  /** Percentage change vs the period before; null when the period before was zero. */
   change: number | null;
+  /** The figure now: with no change to show, "▲ New" if it's above zero, else a flat 0%. */
+  now?: number;
+  before?: number;
+  /** Neither good nor bad (time passing towards a date): a grey pill, arrow kept. */
+  neutral?: boolean;
   /** Whether going up is good (tasks done) or bad (overdue). Default true. */
   goodWhenUp?: boolean;
   /** "%" by default; " pts" for a change in a rate. */
@@ -80,10 +85,20 @@ function Counted({ value }: { value: number }) {
   return <>{useCountUp(value).toLocaleString()}</>;
 }
 
+/**
+ * ▲/▼ with the change, as on the template's cards. Always shown: up from
+ * nothing reads "▲ New", nothing to nothing a flat "● 0%".
+ */
 export function TrendPill({ trend }: { trend: CardTrend }) {
-  const { change, goodWhenUp = true, unit = "%", period = "vs last week" } = trend;
-  if (change === null) return null;
-  if (change === 0) {
+  const { change, goodWhenUp = true, unit = "%", period = "vs last week", neutral = false, now = 0 } = trend;
+  if (change === null && now > 0) {
+    return (
+      <span className={`pp-trend ${neutral ? "pp-trend-flat" : goodWhenUp ? "pp-trend-good" : "pp-trend-bad"}`} title={`New ${period}`} aria-label={`New, up from nothing ${period}`}>
+        ▲ New
+      </span>
+    );
+  }
+  if (change === null || change === 0) {
     return (
       <span className="pp-trend pp-trend-flat" title={`No change ${period}`} aria-label={`No change ${period}`}>
         ● 0{unit}
@@ -94,7 +109,7 @@ export function TrendPill({ trend }: { trend: CardTrend }) {
   const good = up === goodWhenUp;
   const text = `${up ? "Up" : "Down"} ${Math.abs(change)}${unit.trim() === "pts" ? " points" : " percent"} ${period}`;
   return (
-    <span className={`pp-trend ${good ? "pp-trend-good" : "pp-trend-bad"}`} title={text} aria-label={text}>
+    <span className={`pp-trend ${neutral ? "pp-trend-flat" : good ? "pp-trend-good" : "pp-trend-bad"}`} title={text} aria-label={text}>
       {up ? "▲" : "▼"}
       {Math.abs(change)}
       {unit}

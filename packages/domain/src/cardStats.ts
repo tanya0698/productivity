@@ -1,6 +1,7 @@
 import { change } from "./reports.ts";
-import { addDays, isDone, localDate, type LocalTask } from "./tasks.ts";
+import { addDays, isDone, localDate, taskDay, type LocalTask } from "./tasks.ts";
 import { goalProgress, type LocalMilestone } from "./goals.ts";
+import { countOn, isScheduled, streak, type LocalHabit, type LogIndex } from "./habits.ts";
 import { projectProgress } from "./projects.ts";
 import type { LocalFocusSession } from "./focus.ts";
 import type { LocalNote } from "./notes.ts";
@@ -118,4 +119,88 @@ export function freshness(lastSyncedAt: Date | null, now: Date): number {
   if (!lastSyncedAt) return 0;
   const minutes = (now.getTime() - lastSyncedAt.getTime()) / 60_000;
   return Math.max(0, Math.min(100, Math.round(100 - (minutes / 60) * 100)));
+}
+
+// ─── Trends for every card: the same figure now and a period ago ─────────────
+
+const trendFrom = (now: number, before: number): Trend => ({ now, before, change: change(now, before) });
+
+type TaskLike = Pick<LocalTask, "status" | "completedAt" | "createdAt" | "updatedAt" | "dueDate" | "dueAt">;
+
+/** When a task was closed: its completion, or for a cancelled one (which keeps no date) its last change. */
+const closedDay = (t: TaskLike): string | null =>
+  t.completedAt ? localDate(new Date(t.completedAt)) : t.status === "cancelled" ? localDate(new Date(t.updatedAt)) : null;
+/** Whether a task was still open at the end of `day`. */
+const openOn = (t: TaskLike, day: string) => {
+  if (localDate(new Date(t.createdAt)) > day) return false;
+  const closed = closedDay(t);
+  return !closed || closed > day;
+};
+
+/** Tasks due today vs due yesterday (any state: how full each day was). */
+export function dueTodayTrend(tasks: readonly TaskLike[], today: string): Trend {
+  const yesterday = addDays(today, -1);
+  let now = 0;
+  let before = 0;
+  for (const t of tasks) {
+    const day = taskDay(t);
+    if (day === today && !isDone(t)) now++;
+    else if (day === yesterday && openOn(t, addDays(yesterday, -1))) before++;
+  }
+  return trendFrom(now, before);
+}
+
+/** Overdue now vs overdue a week ago (open, due before that day). */
+export function overdueTrend(tasks: readonly TaskLike[], today: string): Trend {
+  const weekAgo = addDays(today, -7);
+  let now = 0;
+  let before = 0;
+  for (const t of tasks) {
+    const day = taskDay(t);
+    if (!day) continue;
+    if (day < today && !isDone(t)) now++;
+    if (day < weekAgo && openOn(t, weekAgo)) before++;
+  }
+  return trendFrom(now, before);
+}
+
+/** Open tasks now vs a week ago. */
+export function openTasksTrend(tasks: readonly TaskLike[], today: string): Trend {
+  const weekAgo = addDays(today, -7);
+  return trendFrom(tasks.filter((t) => !isDone(t)).length, tasks.filter((t) => openOn(t, weekAgo)).length);
+}
+
+/** Habits that met their target today vs yesterday (daily habits due that day). */
+export function habitsDoneTrend(habits: readonly LocalHabit[], index: LogIndex, today: string): Trend {
+  const met = (day: string) =>
+    habits.filter((h) => h.cadence === "daily" && isScheduled(h, day) && countOn(index, h.id, day) >= h.targetCount).length;
+  return trendFrom(met(today), met(addDays(today, -1)));
+}
+
+/** The best streak now vs a week ago. */
+export function bestStreakTrend(habits: readonly LocalHabit[], index: LogIndex, today: string): Trend {
+  const best = (day: string) => habits.reduce((m, h) => Math.max(m, streak(h, index, day)), 0);
+  return trendFrom(best(today), best(addDays(today, -7)));
+}
+
+/** Habits now vs a week ago (by when each was created). */
+export function habitsCountTrend(habits: readonly Pick<LocalHabit, "createdAt">[], today: string): Trend {
+  const weekAgo = addDays(today, -7);
+  return trendFrom(habits.length, habits.filter((h) => localDate(new Date(h.createdAt)) <= weekAgo).length);
+}
+
+/** A rate (0–100) now vs before, as a change in points rather than percent. */
+export const pointsTrend = (now: number, before: number): Trend => ({ now, before, change: now - before });
+
+/** Time used towards a target date, now vs a week ago, in points. */
+export function timeUsedTrend(from: string, to: string | null, now: Date): Trend {
+  return pointsTrend(timeUsed(from, to, now), timeUsed(from, to, new Date(now.getTime() - 7 * 86_400_000)));
+}
+
+/** A goal's milestone progress now vs 30 days ago, in points. */
+export function goalProgressTrend(milestones: readonly Pick<LocalMilestone, "doneAt">[], today: string): Trend {
+  const monthAgo = addDays(today, -30);
+  const total = milestones.length;
+  const doneBy = milestones.filter((m) => m.doneAt && localDate(new Date(m.doneAt)) <= monthAgo).length;
+  return pointsTrend(goalProgress(milestones).percent, total ? Math.floor((doneBy / total) * 100) : 0);
 }

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { STREAK_TARGET, habitProgress, isScheduled, localDate, newHabit, percentOf, streak } from "@productivity/domain";
+import { STREAK_TARGET, bestStreakTrend, habitsCountTrend, habitsDoneTrend, habitProgress, isScheduled, localDate, newHabit, percentOf, streak } from "@productivity/domain";
 import { useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
 import { ListCardSkeleton, TileRowSkeleton } from "../../../components/Skeleton";
@@ -62,15 +62,17 @@ export default function HabitsScreen() {
             icon="checkmark-circle"
             iconTone="success"
             label="Done today"
+            trend={{ ...habitsDoneTrend(habits, index, today), period: "vs yesterday" }}
             subtitle={`${dueToday.length} due`}
             value={`${doneToday}/${dueToday.length}`}
             ring={{ percent: dueToday.length ? Math.round((doneToday / dueToday.length) * 100) : null, label: "Today" }}
           />
-          <StatTile icon="flame" iconTone="warning" label="Best streak" ring={{ percent: percentOf(best, STREAK_TARGET), label: "30-Day Goal" }} subtitle="In a row" value={best} hint={best === 1 ? "day or week" : "days or weeks"} />
+          <StatTile icon="flame" iconTone="warning" label="Best streak" trend={{ ...bestStreakTrend(habits, index, today) }} ring={{ percent: percentOf(best, STREAK_TARGET), label: "30-Day Goal" }} subtitle="In a row" value={best} hint={best === 1 ? "day or week" : "days or weeks"} />
           <StatTile
             icon="list"
             iconTone="accent"
             label="Habits"
+            trend={{ ...habitsCountTrend(habits, today) }}
             ring={{ percent: percentOf(habits.filter((h) => streak(h, index, today) > 0).length, habits.length), label: "On A Streak" }}
             subtitle="Active"
             value={habits.length}

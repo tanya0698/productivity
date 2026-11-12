@@ -185,7 +185,7 @@ export default function HomePage() {
                   subtitle="Focus time"
                   value={minutesText(stats.todaySeconds)}
                   hint={`${stats.sessionsToday} session${stats.sessionsToday === 1 ? "" : "s"}`}
-                  trend={{ change: focusTrend(sessions, localDate(today), 1).change, period: "vs yesterday" }}
+                  trend={{ ...focusTrend(sessions, localDate(today), 1), period: "vs yesterday" }}
                 />
               </Col>
               <Col span={12}>
@@ -198,7 +198,7 @@ export default function HomePage() {
                   subtitle="Since Monday"
                   value={minutesText(stats.weekSeconds)}
                   hint={`${minutesText(focusTrend(sessions, localDate(today)).now * 60)} in the last 7 days`}
-                  trend={{ change: focusTrend(sessions, localDate(today)).change }}
+                  trend={{ ...focusTrend(sessions, localDate(today)) }}
                   tone="neutral"
                 />
               </Col>

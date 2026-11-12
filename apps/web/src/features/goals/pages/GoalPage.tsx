@@ -6,6 +6,8 @@ import type { Dayjs } from "dayjs";
 import {
   goalCardStats,
   reviewCycleUsed,
+  goalProgressTrend,
+  timeUsedTrend,
   timeUsed,
   editProject,
   goalProgress,
@@ -134,12 +136,12 @@ export default function GoalPage() {
             subtitle={progress.total ? `${progress.done} of ${progress.total} milestones` : "Add milestones to track progress"}
             value={`${progress.percent}%`}
             hint={`${goalCardStats(milestones, today).reached.now} reached in 30 days`}
-            trend={{ change: goalCardStats(milestones, today).reached.change, period: "vs the 30 days before" }}
+            trend={{ ...goalCardStats(milestones, today).reached, period: "vs the 30 days before" }}
             ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
           />
         </Col>
         <Col xs={12} md={6}>
-          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} tone="neutral" />
+          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" trend={{ ...timeUsedTrend(goal.createdAt, goal.targetDate, now), unit: " pts", neutral: true }} ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} tone="neutral" />
         </Col>
         <Col xs={12} md={6}>
           <StatTile
@@ -147,6 +149,7 @@ export default function GoalPage() {
             icon={<FlagOutlined />}
             iconTone={goal.status === "achieved" ? "success" : goal.status === "dropped" ? "neutral" : "accent"}
             label="Status"
+            trend={{ ...goalProgressTrend(milestones, today), unit: " pts", period: "vs 30 days ago" }}
             ring={{ percent: reviewCycleUsed(goal, now), label: "Review Cycle" }}
             subtitle="Goal"
             value={goalStatusLabel[goal.status]}

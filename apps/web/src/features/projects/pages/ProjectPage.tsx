@@ -5,6 +5,8 @@ import { AimOutlined, ArrowLeftOutlined, CheckSquareOutlined, DeleteOutlined, Ed
 import {
   projectCardStats,
   onTrackShare,
+  openTasksTrend,
+  timeUsedTrend,
   timeUsed,
   editProject,
   groupTasks,
@@ -126,7 +128,7 @@ export default function ProjectPage() {
             subtitle={progress.total ? `${progress.done} of ${progress.total} tasks done` : "No tasks yet"}
             value={`${progress.percent}%`}
             hint={`${projectCardStats(tasks, today).doneThisWeek.now} done this week`}
-            trend={{ change: projectCardStats(tasks, today).doneThisWeek.change }}
+            trend={{ ...projectCardStats(tasks, today).doneThisWeek }}
             ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
           />
         </Col>
@@ -135,6 +137,7 @@ export default function ProjectPage() {
             icon={<CheckSquareOutlined />}
             iconTone={groups.overdue.length ? "error" : "accent"}
             label="Open tasks"
+            trend={{ ...openTasksTrend(tasks, today), goodWhenUp: false }}
             ring={{ percent: onTrackShare(openTasks.length, groups.overdue.length), label: "On Track" }}
             subtitle="Still to do"
             value={openTasks.length}
@@ -143,7 +146,7 @@ export default function ProjectPage() {
           />
         </Col>
         <Col xs={12} md={6}>
-          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} tone="neutral" />
+          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" trend={{ ...timeUsedTrend(project.createdAt, project.dueDate, now), unit: " pts", neutral: true }} ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} tone="neutral" />
         </Col>
       </Row>
 

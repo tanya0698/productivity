@@ -7,6 +7,8 @@ import {
   goalProgress,
   goalCardStats,
   reviewCycleUsed,
+  goalProgressTrend,
+  timeUsedTrend,
   timeUsed,
   goalStatusLabel,
   indexLogs,
@@ -143,7 +145,7 @@ function GoalList({
                 .join(" · ") || "No target date"
             }
             value={stats.reached.now}
-            trend={{ change: stats.reached.change, period: "vs the 30 days before" }}
+            trend={{ ...stats.reached, period: "vs the 30 days before" }}
             caption={`milestones in 30 days · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} done` : "none yet"}`}
             ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Progress" }}
             onPress={() => onOpen(g.id)}
@@ -234,14 +236,15 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
           subtitle={progress.total ? `${progress.done} of ${progress.total} milestones` : "Add milestones to track progress"}
           value={`${progress.percent}%`}
           hint={`${goalCardStats(milestones, today).reached.now} reached in 30 days`}
-          trend={{ change: goalCardStats(milestones, today).reached.change, period: "vs the 30 days before" }}
+          trend={{ ...goalCardStats(milestones, today).reached, period: "vs the 30 days before" }}
           ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
         />
-        <StatTile icon="flag" iconTone="warning" label="Target" ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} compact />
+        <StatTile icon="flag" iconTone="warning" label="Target" trend={{ ...timeUsedTrend(goal.createdAt, goal.targetDate, now), unit: " pts", neutral: true }} ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} compact />
         <StatTile
           icon="trophy"
           iconTone={goal.status === "achieved" ? "success" : goal.status === "dropped" ? "neutral" : "accent"}
           label="Status"
+          trend={{ ...goalProgressTrend(milestones, today), unit: " pts", period: "vs 30 days ago" }}
           ring={{ percent: reviewCycleUsed(goal, now), label: "Review Cycle" }}
           subtitle="Goal"
           value={goalStatusLabel[goal.status]}

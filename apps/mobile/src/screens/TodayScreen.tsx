@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { groupTasks, localDate, notesTrend, onTrackShare, percentOf, todayDoneShare, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
+import { groupTasks, localDate, notesTrend, dueTodayTrend, overdueTrend, onTrackShare, percentOf, todayDoneShare, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Card } from "../components/ListCard";
 import { RowsSkeleton, TileRowSkeleton } from "../components/Skeleton";
@@ -97,6 +97,7 @@ export default function TodayScreen() {
         <StatTile
           icon="calendar"
           label="Due today"
+          trend={{ ...dueTodayTrend(tasks, localDate(now)), goodWhenUp: false, period: "vs yesterday" }}
           subtitle="Tasks"
           value={groups.today.length}
           hint={groups.today.length === 1 ? "task left" : "tasks left"}
@@ -106,6 +107,7 @@ export default function TodayScreen() {
           icon="warning"
           iconTone={groups.overdue.length ? "error" : "success"}
           label="Overdue"
+          trend={{ ...overdueTrend(tasks, localDate(now)), goodWhenUp: false }}
           ring={{ percent: onTrackShare(groups.overdue.length + groups.today.length + groups.upcoming.length, groups.overdue.length), label: "On Track" }}
           subtitle="Tasks"
           value={groups.overdue.length}
@@ -120,7 +122,7 @@ export default function TodayScreen() {
           subtitle="On this phone"
           value={notes.length}
           hint={`${notesTrend(notes, localDate(now)).now} written this week`}
-          trend={{ change: notesTrend(notes, localDate(now)).change }}
+          trend={{ ...notesTrend(notes, localDate(now)) }}
         />
       </StatRow>
       ) : null}

@@ -58,7 +58,7 @@ export default function HomePage() {
                   .filter(Boolean)
                   .join(" · ") || "No target date"}
                 value={stats.reached.now}
-                trend={{ change: stats.reached.change, period: "vs the 30 days before" }}
+                trend={{ ...stats.reached, period: "vs the 30 days before" }}
                 caption={`milestones in 30 days · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} done` : "none yet"}`}
                 ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Progress" }}
                 onOpen={() => navigate(g.id)}

@@ -39,7 +39,7 @@ export default function SummaryWidget() {
                   {stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks · ${stats.doneThisWeek.now} this week` : "No tasks yet"}
                 </Text>
               </View>
-              <TrendPill trend={{ change: stats.doneThisWeek.change }} />
+              <TrendPill trend={{ ...stats.doneThisWeek }} />
             </Pressable>
           );
         })
