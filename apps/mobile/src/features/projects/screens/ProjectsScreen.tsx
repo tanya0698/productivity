@@ -12,6 +12,9 @@ import {
   newTask,
   noteDisplayTitle,
   projectProgress,
+  projectCardStats,
+  onTrackShare,
+  timeUsed,
   projectStatusLabel,
   sortNotes,
   unfile,
@@ -20,6 +23,8 @@ import {
 } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import EntityCard, { type Tone } from "../../../components/EntityCard";
+import { StatRow, StatTile } from "../../../components/StatTile";
 import { CardsSkeleton } from "../../../components/Skeleton";
 import { useDataReady } from "../../../shared/data/useDataReady";
 import { Button, Chips } from "../../../components/Field";
@@ -31,7 +36,6 @@ import { fonts, radii, usePalette } from "../../../theme";
 import TaskEditor from "../../tasks/components/TaskEditor";
 import TaskRow, { type Task } from "../../tasks/components/TaskRow";
 import ProjectEditor from "../components/ProjectEditor";
-import ProjectProgress from "../components/ProjectProgress";
 import { go } from "../../../navigation/ref";
 
 type Note = LocalNote & { deletedAt: string | null };
@@ -40,6 +44,14 @@ type Nav = { navigate: (name: string, params?: object) => void; setParams: (p: o
 
 const toast = (m: string) => Platform.OS === "android" && ToastAndroid.show(m, ToastAndroid.SHORT);
 const statusOptions = (Object.keys(projectStatusLabel) as ProjectStatus[]).map((s) => ({ value: s, label: projectStatusLabel[s] }));
+/** One colour and icon per status: active teal, on hold amber, done green, archived grey. */
+const statusTone: Record<ProjectStatus, Tone> = { active: "primary", paused: "warning", done: "success", archived: "neutral" };
+const statusIcon: Record<ProjectStatus, "play-circle" | "pause-circle" | "checkmark-circle" | "archive"> = {
+  active: "play-circle",
+  paused: "pause-circle",
+  done: "checkmark-circle",
+  archived: "archive",
+};
 const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /**
@@ -152,44 +164,25 @@ function ProjectList({
           body={view === "open" ? "Start one for anything with more than a couple of steps: a trip, a move, a launch." : "Projects you finish or archive show up here."}
         />
       ) : null}
-      {shown.map((x) => (
-        <Pressable
-          key={x.id}
-          accessibilityRole="link"
-          accessibilityLabel={`Open project: ${x.title}`}
-          onPress={() => onOpen(x.id)}
-          style={({ pressed }) => [styles.card, { backgroundColor: p.surface, borderColor: p.border, opacity: pressed ? 0.8 : 1 }]}
-        >
-          <View style={styles.cardHead}>
-            <Text weight="semiBold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>
-              {x.title}
-            </Text>
-            {x.status !== "active" ? <StatusBadge status={x.status} /> : null}
-          </View>
-          {x.description ? (
-            <Text tone="secondary" numberOfLines={2} style={{ fontSize: 13 }}>
-              {x.description}
-            </Text>
-          ) : null}
-          <ProjectProgress progress={projectProgress(tasksByProject.get(x.id) ?? [])} />
-          {x.dueDate ? (
-            <Text label style={{ fontSize: 10 }}>
-              {`Target · ${formatDue(x.dueDate, today)}`}
-            </Text>
-          ) : null}
-        </Pressable>
-      ))}
+      {shown.map((x) => {
+        const stats = projectCardStats(tasksByProject.get(x.id) ?? [], today);
+        return (
+          <EntityCard
+            key={x.id}
+            icon={statusIcon[x.status]}
+            tone={statusTone[x.status]}
+            title={x.title}
+            subtitle={[projectStatusLabel[x.status], x.dueDate ? `Target ${formatDue(x.dueDate, today)}` : null].filter(Boolean).join(" · ")}
+            value={stats.doneThisWeek.now}
+            trend={{ change: stats.doneThisWeek.change }}
+            caption={`done this week · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks` : "no tasks yet"}`}
+            ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Complete" }}
+            onPress={() => onOpen(x.id)}
+            accessibilityLabel={`Open project: ${x.title}`}
+          />
+        );
+      })}
     </ScreenFrame>
-  );
-}
-
-function StatusBadge({ status }: { status: ProjectStatus }) {
-  const p = usePalette();
-  const done = status === "done";
-  return (
-    <View style={[styles.badge, { backgroundColor: done ? p.successSoft : p.muted }]}>
-      <Text style={{ fontSize: 11, color: done ? p.successText : p.textSecondary }}>{projectStatusLabel[status]}</Text>
-    </View>
   );
 }
 
@@ -211,6 +204,7 @@ function ProjectDetail({ project, onClose }: { project: Project; onClose: () => 
   const groups = useMemo(() => groupTasks(tasks, new Date(), localDate(new Date())), [tasks]);
   const openTasks = [...groups.overdue, ...groups.today, ...groups.upcoming, ...groups.someday];
   const progress = projectProgress(tasks);
+  const cardStats = projectCardStats(tasks, today);
   const editingTask = tasks.find((t) => t.id === editingTaskId) ?? null;
 
   const setStatus = (status: ProjectStatus) => void runtime.write("project", editProject(project, { status }, new Date()));
@@ -257,28 +251,28 @@ function ProjectDetail({ project, onClose }: { project: Project; onClose: () => 
     <ScreenFrame eyebrow="Project" title={project.title} onBack={onClose}>
       {project.description ? <Text tone="secondary">{project.description}</Text> : null}
 
-      <View style={styles.tiles}>
-        <View style={[styles.tile, { flex: 1.4, backgroundColor: p.surface, borderColor: p.border }]}>
-          <Text label>Progress</Text>
-          <Text weight="extraBold" style={{ fontSize: 26, color: p.primary }}>{`${progress.percent}%`}</Text>
-          <ProjectProgress progress={progress} />
-        </View>
-        <View style={{ flex: 1, gap: 8 }}>
-          <View style={[styles.tile, { backgroundColor: p.surface, borderColor: p.border }]}>
-            <Text label>Open tasks</Text>
-            <Text weight="bold" style={{ fontSize: 18, color: groups.overdue.length ? p.errorText : p.text }}>
-              {String(openTasks.length)}
-              {groups.overdue.length ? <Text style={{ fontSize: 12, color: p.errorText }}>{`  ${groups.overdue.length} overdue`}</Text> : null}
-            </Text>
-          </View>
-          <View style={[styles.tile, { backgroundColor: p.surface, borderColor: p.border }]}>
-            <Text label>Target</Text>
-            <Text weight="bold" style={{ fontSize: 15 }} numberOfLines={1}>
-              {project.dueDate ? formatDue(project.dueDate, today) : "None"}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <StatRow>
+        <StatTile
+          icon="pie-chart"
+          label="Progress"
+          subtitle={progress.total ? `${progress.done} of ${progress.total} tasks done` : "No tasks yet"}
+          value={`${progress.percent}%`}
+          hint={`${cardStats.doneThisWeek.now} done this week`}
+          trend={{ change: cardStats.doneThisWeek.change }}
+          ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
+        />
+        <StatTile
+          icon="checkbox"
+          iconTone={groups.overdue.length ? "error" : "accent"}
+          label="Open tasks"
+          ring={{ percent: onTrackShare(openTasks.length, groups.overdue.length), label: "On Track" }}
+          subtitle="Still to do"
+          value={openTasks.length}
+          tone={groups.overdue.length ? "error" : undefined}
+          hint={groups.overdue.length ? `${groups.overdue.length} overdue` : "none overdue"}
+        />
+        <StatTile icon="flag" iconTone="warning" label="Target" ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} compact />
+      </StatRow>
 
       <Card title="Status" right={
         <View style={{ flexDirection: "row", gap: 18 }}>

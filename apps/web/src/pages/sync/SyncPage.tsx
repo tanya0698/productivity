@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Alert, App as AntApp, Button, Card, Col, Flex, Row, Tag, Typography } from "antd";
-import { SyncOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined, CloudUploadOutlined, SyncOutlined } from "@ant-design/icons";
 import type { ConflictEntry, LocalRecord, OutboxEntry } from "@productivity/database-local";
-import { localDate, noteDisplayTitle, priorityLabel, type LocalNote, type LocalTask } from "@productivity/domain";
+import { freshness, localDate, noteDisplayTitle, priorityLabel, type LocalNote, type LocalTask } from "@productivity/domain";
 import { useSyncDetails, useSyncRuntime, useSyncStatus } from "@productivity/sync-engine/react";
 import { ModulePage } from "@/shared/page/ModulePage";
 import { StatTile } from "@/components/ui/StatTile";
@@ -45,13 +45,30 @@ export default function SyncPage() {
 
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={8}>
-            <StatTile label="Status" value={statusText(status.state)} tone={status.state === "needs_attention" ? "error" : "primary"} />
+            <StatTile
+              size="small"
+              icon={<SyncOutlined />}
+              iconTone={status.state === "needs_attention" ? "error" : "primary"}
+              label="Status"
+              ring={{ percent: queued.length ? 0 : 100, label: "Sent" }}
+              subtitle="This device"
+              value={statusText(status.state)}
+              tone={status.state === "needs_attention" ? "error" : "primary"}
+            />
           </Col>
           <Col xs={24} sm={8}>
-            <StatTile label="Last synced" value={lastSyncedAt ? timeAgo(lastSyncedAt) : "Not yet"} />
+            <StatTile size="small" icon={<ClockCircleOutlined />} iconTone="accent" label="Last synced" ring={{ percent: freshness(lastSyncedAt ? new Date(lastSyncedAt) : null, new Date()), label: "Fresh" }} subtitle="With the server" value={lastSyncedAt ? timeAgo(lastSyncedAt) : "Not yet"} />
           </Col>
           <Col xs={24} sm={8}>
-            <StatTile label="Waiting to send" value={loading ? "…" : String(queued.length)} />
+            <StatTile
+              size="small"
+              icon={<CloudUploadOutlined />}
+              iconTone={queued.length ? "warning" : "success"}
+              label="Waiting to send"
+              ring={{ percent: loading ? 0 : queued.length ? 0 : 100, label: "Sent" }}
+              subtitle="Changes"
+              value={loading ? "…" : String(queued.length)}
+            />
           </Col>
         </Row>
 

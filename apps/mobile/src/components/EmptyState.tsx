@@ -10,7 +10,7 @@ export default function EmptyState({ title, body }: { title: string; body: strin
     <View
       style={{
         backgroundColor: p.surface,
-        borderColor: p.border,
+        borderColor: p.cardBorder,
         borderWidth: 1,
         borderRadius: radii.lg,
         padding: 16,

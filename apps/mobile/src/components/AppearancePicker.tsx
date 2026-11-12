@@ -24,7 +24,7 @@ export default function AppearancePicker() {
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
             onPress={() => setMode(o.value)}
-            style={[styles.option, on && { backgroundColor: p.surface, borderColor: p.border }]}
+            style={[styles.option, on && { backgroundColor: p.surface, borderColor: p.cardBorder }]}
           >
             <Ionicons name={o.icon} size={16} color={on ? p.primary : p.textSecondary} />
             <Text weight={on ? "semiBold" : "regular"} style={{ fontSize: 13, color: on ? p.text : p.textSecondary }}>

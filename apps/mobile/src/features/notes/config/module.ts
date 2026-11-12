@@ -7,7 +7,6 @@ export default defineMobileModule({
   name: "Notes",
   description: "Quick notes and longer writing",
   icon: "document-text",
-  tabOrder: 20,
   entities: ["note"],
   screen: NotesScreen,
   widgets: [{ id: "recent", title: "Recent notes", order: 90, component: RecentNotesWidget }],

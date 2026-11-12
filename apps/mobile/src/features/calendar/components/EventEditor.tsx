@@ -215,7 +215,7 @@ export default function EventEditor({ target, onClose }: { target: EditorTarget 
           value={allDay}
           onValueChange={setAllDay}
           trackColor={{ true: p.primary, false: p.borderStrong }}
-          thumbColor={p.surface}
+          thumbColor={p.elevated}
         />
       </View>
       <Field label={allDay ? "First day" : "Date"}>

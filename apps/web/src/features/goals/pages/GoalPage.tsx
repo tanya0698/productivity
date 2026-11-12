@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Alert, App as AntApp, Button, Card, Checkbox, Col, DatePicker, Flex, Input, Popconfirm, Row, Select, Typography } from "antd";
-import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, FireOutlined, PlusOutlined } from "@ant-design/icons";
+import { AimOutlined, ArrowLeftOutlined, DeleteOutlined, EditOutlined, FireOutlined, FlagOutlined, PieChartOutlined, PlusOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import {
+  goalCardStats,
+  reviewCycleUsed,
+  timeUsed,
   editProject,
   goalProgress,
   goalStatusLabel,
@@ -125,20 +128,27 @@ export default function GoalPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <div className="pp-tile">
-            <span className="pp-label">Progress</span>
-            <span className="pp-tile-value pp-num" style={{ color: "var(--pp-primary)" }}>
-              {progress.percent}%
-            </span>
-            <span className="pp-tile-hint">{progress.total ? `${progress.done} of ${progress.total} milestones` : "Add milestones to track progress"}</span>
-          </div>
+          <StatTile
+            icon={<PieChartOutlined />}
+            label="Progress"
+            subtitle={progress.total ? `${progress.done} of ${progress.total} milestones` : "Add milestones to track progress"}
+            value={`${progress.percent}%`}
+            hint={`${goalCardStats(milestones, today).reached.now} reached in 30 days`}
+            trend={{ change: goalCardStats(milestones, today).reached.change, period: "vs the 30 days before" }}
+            ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
+          />
         </Col>
         <Col xs={12} md={6}>
-          <StatTile label="Target" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} tone="neutral" />
+          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} tone="neutral" />
         </Col>
         <Col xs={12} md={6}>
           <StatTile
+            size="small"
+            icon={<FlagOutlined />}
+            iconTone={goal.status === "achieved" ? "success" : goal.status === "dropped" ? "neutral" : "accent"}
             label="Status"
+            ring={{ percent: reviewCycleUsed(goal, now), label: "Review Cycle" }}
+            subtitle="Goal"
             value={goalStatusLabel[goal.status]}
             tone="neutral"
             hint={next ? `Next review ${formatDue(localDate(next), today).replace(/^(Today|Tomorrow|Yesterday)/, (w) => w.toLowerCase())}` : undefined}

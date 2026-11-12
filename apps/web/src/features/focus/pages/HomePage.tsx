@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Flex, Row, Segmented, Select, Typography } from "antd";
-import { CaretRightOutlined, CheckOutlined, PauseOutlined, StopOutlined } from "@ant-design/icons";
+import { CalendarOutlined, CaretRightOutlined, CheckOutlined, ClockCircleOutlined, PauseOutlined, StopOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
+  focusTrend,
+  percentOf,
+  FOCUS_DAY_TARGET_MIN,
+  FOCUS_WEEK_TARGET_MIN,
+  localDate,
   FOCUS_PRESETS,
   clock,
   elapsedMs,
@@ -172,10 +177,30 @@ export default function HomePage() {
           <Flex vertical gap={16}>
             <Row gutter={[12, 12]}>
               <Col span={12}>
-                <StatTile size="small" label="Today" value={minutesText(stats.todaySeconds)} hint={`${stats.sessionsToday} session${stats.sessionsToday === 1 ? "" : "s"}`} />
+                <StatTile
+                  size="small"
+                  icon={<ClockCircleOutlined />}
+                  label="Today"
+                  ring={{ percent: percentOf(Math.round(stats.todaySeconds / 60), FOCUS_DAY_TARGET_MIN), label: "Of 2 H" }}
+                  subtitle="Focus time"
+                  value={minutesText(stats.todaySeconds)}
+                  hint={`${stats.sessionsToday} session${stats.sessionsToday === 1 ? "" : "s"}`}
+                  trend={{ change: focusTrend(sessions, localDate(today), 1).change, period: "vs yesterday" }}
+                />
               </Col>
               <Col span={12}>
-                <StatTile size="small" label="This week" value={minutesText(stats.weekSeconds)} tone="neutral" />
+                <StatTile
+                  size="small"
+                  icon={<CalendarOutlined />}
+                  iconTone="accent"
+                  label="This week"
+                  ring={{ percent: percentOf(Math.round(stats.weekSeconds / 60), FOCUS_WEEK_TARGET_MIN), label: "Of 10 H" }}
+                  subtitle="Since Monday"
+                  value={minutesText(stats.weekSeconds)}
+                  hint={`${minutesText(focusTrend(sessions, localDate(today)).now * 60)} in the last 7 days`}
+                  trend={{ change: focusTrend(sessions, localDate(today)).change }}
+                  tone="neutral"
+                />
               </Col>
             </Row>
             <Card className="pp-card" title="Recent sessions">

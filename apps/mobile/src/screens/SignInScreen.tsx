@@ -198,7 +198,7 @@ export default function SignInScreen() {
       style={{ flex: 1, backgroundColor: p.page }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <GlassBackground style={{ flex: 1 }}>
+      <GlassBackground glows style={{ flex: 1 }}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{

@@ -45,8 +45,8 @@ export default function ScreenFrame({
   const back = onBack ?? (isPushed ? () => navigation.goBack() : undefined);
   const { scope, scrollProps } = useRevealScope();
   return (
-    <View style={{ flex: 1, backgroundColor: p.page }}>
-      <GlassBackground style={{ paddingTop: insets.top + 8, paddingBottom: 26, paddingHorizontal: 16 }}>
+    <GlassBackground glows style={{ flex: 1 }}>
+      <View style={{ paddingTop: insets.top + 8, paddingBottom: 14, paddingHorizontal: 16 }}>
         <View style={styles.eyebrowRow}>
           {back ? (
             <Pressable accessibilityRole="button" accessibilityLabel="Back" hitSlop={12} onPress={back} style={styles.back}>
@@ -77,23 +77,39 @@ export default function ScreenFrame({
             <Text tone="secondary">{capturePlaceholder}</Text>
           </GlassCard>
         ) : null}
-      </GlassBackground>
+      </View>
       <ScrollView
-        style={[styles.sheet, { backgroundColor: p.page }]}
+        style={styles.sheet}
         keyboardShouldPersistTaps="handled"
         {...scrollProps}
         // Room for the floating tab bar on tab screens.
-        contentContainerStyle={{ padding: 12, paddingBottom: isPushed ? insets.bottom + 32 : 110, gap: 10 }}
+        // Even spacing: 16 at the edges (as the header), 12 between every card, across and down.
+        contentContainerStyle={{ padding: 16, paddingBottom: isPushed ? insets.bottom + 32 : 110, gap: 12 }}
       >
         {/* Each block comes in as it scrolls into view, every time (the web's scroll reveal). */}
         <RevealProvider scope={scope}>
-          {React.Children.toArray(children).map((child, i) => (
-            <Reveal key={React.isValidElement(child) && child.key != null ? child.key : i}>{child}</Reveal>
+          {blocks(children).map(({ key, node }) => (
+            <Reveal key={key}>{node}</Reveal>
           ))}
         </RevealProvider>
       </ScrollView>
-    </View>
+    </GlassBackground>
   );
+}
+
+/**
+ * The screen's blocks, one per card, with fragments opened up: content written
+ * as `<>…</>` (a loaded state, say) would otherwise be one block, and the
+ * cards inside it would get no gap between them.
+ */
+function blocks(children: React.ReactNode, prefix = ""): { key: string; node: React.ReactNode }[] {
+  return React.Children.toArray(children).flatMap((child, i) => {
+    const key = `${prefix}${React.isValidElement(child) && child.key != null ? child.key : i}`;
+    if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.type === React.Fragment) {
+      return blocks(child.props.children, `${key}/`);
+    }
+    return [{ key, node: child }];
+  });
 }
 
 const styles = StyleSheet.create({
@@ -104,5 +120,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, letterSpacing: -0.6, flexShrink: 1 },
   capture: { paddingHorizontal: 12, paddingVertical: 11 },
   captureLive: { paddingHorizontal: 6, paddingVertical: 5 },
-  sheet: { flex: 1, marginTop: -14, borderTopLeftRadius: radii.lg + 2, borderTopRightRadius: radii.lg + 2 },
+  // Transparent: content floats on the screen's gradient, as glass.
+  sheet: { flex: 1 },
 });

@@ -90,7 +90,8 @@ describe("Today", () => {
     await runtime.write("task", newTask(crypto.randomUUID(), new Date(), { title: "Renew licence", dueDate: addDays(today, -2) }));
     await runtime.write("task", newTask(crypto.randomUUID(), new Date(), { title: "Someday idea" }));
 
-    expect(await screen.findByText("Pay rent")).toBeTruthy();
+    // Up next is a lazy-loaded widget: under a parallel test run it can take over a second to appear.
+    expect(await screen.findByText("Pay rent", undefined, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByText("Renew licence")).toBeTruthy();
     expect(screen.queryByText("Someday idea")).toBeNull(); // no date: not "up next"
     expect(screen.getByText(/Overdue ·/)).toBeTruthy();

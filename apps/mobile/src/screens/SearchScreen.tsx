@@ -174,6 +174,6 @@ const styles = StyleSheet.create({
   field: { flexDirection: "row", alignItems: "center", gap: 10 },
   input: { flex: 1, fontSize: 16, fontFamily: fonts.native.regular, paddingVertical: 4 },
   hit: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  icon: { width: 32, height: 32, borderRadius: radii.sm, alignItems: "center", justifyContent: "center" },
+  icon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   empty: { textAlign: "center", paddingVertical: 24, paddingHorizontal: 12 },
 });

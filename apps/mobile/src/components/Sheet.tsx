@@ -25,7 +25,7 @@ export default function Sheet({
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <Pressable accessibilityLabel="Close" style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.45)" }]} onPress={onClose} />
         <View style={{ flex: 1 }} pointerEvents="box-none" />
-        <View style={[styles.sheet, { backgroundColor: p.surface, borderColor: p.border, paddingBottom: insets.bottom + 16 }]}>
+        <View style={[styles.sheet, { backgroundColor: p.elevated, borderColor: p.border, paddingBottom: insets.bottom + 16 }]}>
           <View style={[styles.grabber, { backgroundColor: p.borderStrong }]} />
           <View style={styles.head}>
             <Text label tone="brand">

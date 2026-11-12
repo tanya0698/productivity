@@ -5,6 +5,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   editProject,
   goalProgress,
+  goalCardStats,
+  reviewCycleUsed,
+  timeUsed,
   goalStatusLabel,
   indexLogs,
   localDate,
@@ -22,6 +25,7 @@ import {
 } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import EmptyState from "../../../components/EmptyState";
+import EntityCard from "../../../components/EntityCard";
 import { CardsSkeleton } from "../../../components/Skeleton";
 import { useDataReady } from "../../../shared/data/useDataReady";
 import { Button, DateTimeButton } from "../../../components/Field";
@@ -35,7 +39,6 @@ import { go } from "../../../navigation/ref";
 import { formatDue, useProjects } from "../../../shared/projects";
 import { useNow } from "../../../shared/reminders/active";
 import { fonts, radii, usePalette } from "../../../theme";
-import ProjectProgress from "../../projects/components/ProjectProgress";
 import type { Task } from "../../tasks/components/TaskRow";
 import GoalEditor from "../components/GoalEditor";
 import { useGoals, type Goal } from "../components/useGoals";
@@ -125,43 +128,27 @@ function GoalList({
       {loading && !goals.length ? <CardsSkeleton count={2} /> : null}
       {!loading && !goals.length ? <EmptyState title="No goals yet" body="Pick one outcome that matters this year, then break it into milestones." /> : null}
       {goals.map((g) => {
-        const progress = goalProgress(milestonesOf(g.id));
+        const stats = goalCardStats(milestonesOf(g.id), today);
         const linked = projects.filter((x) => x.goalId === g.id).length;
-        const badge =
-          g.status !== "active"
-            ? { text: goalStatusLabel[g.status], bg: g.status === "achieved" ? p.successSoft : p.muted, fg: g.status === "achieved" ? p.successText : p.textSecondary }
-            : reviewDue(g, now)
-              ? { text: "Review due", bg: p.warningSoft, fg: p.warningText }
-              : null;
+        const due = g.status === "active" && reviewDue(g, now);
         return (
-          <Pressable
+          <EntityCard
             key={g.id}
-            accessibilityRole="link"
-            accessibilityLabel={`Open goal: ${g.title}`}
+            icon="flag"
+            tone={g.status === "achieved" ? "success" : g.status === "dropped" ? "neutral" : due ? "warning" : "accent"}
+            title={g.title}
+            subtitle={
+              [g.status !== "active" ? goalStatusLabel[g.status] : due ? "Review due" : null, g.targetDate ? `By ${formatDue(g.targetDate, today)}` : null, linked ? `${linked} project${linked === 1 ? "" : "s"}` : null]
+                .filter(Boolean)
+                .join(" · ") || "No target date"
+            }
+            value={stats.reached.now}
+            trend={{ change: stats.reached.change, period: "vs the 30 days before" }}
+            caption={`milestones in 30 days · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} done` : "none yet"}`}
+            ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Progress" }}
             onPress={() => onOpen(g.id)}
-            style={({ pressed }) => [styles.card, { backgroundColor: p.surface, borderColor: p.border, opacity: pressed ? 0.8 : g.status === "active" ? 1 : 0.75 }]}
-          >
-            <View style={styles.cardHead}>
-              <Text weight="semiBold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>
-                {g.title}
-              </Text>
-              {badge ? (
-                <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                  <Text style={{ fontSize: 11, color: badge.fg }}>{badge.text}</Text>
-                </View>
-              ) : null}
-            </View>
-            {g.description ? (
-              <Text tone="secondary" numberOfLines={2} style={{ fontSize: 13 }}>
-                {g.description}
-              </Text>
-            ) : null}
-            <ProjectProgress progress={progress} label="Milestones done" empty="No milestones yet" />
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              {g.targetDate ? <Text label style={{ fontSize: 10 }}>{`By · ${formatDue(g.targetDate, today)}`}</Text> : null}
-              {linked ? <Text label style={{ fontSize: 10 }}>{`${linked} project${linked === 1 ? "" : "s"}`}</Text> : null}
-            </View>
-          </Pressable>
+            accessibilityLabel={`Open goal: ${g.title}`}
+          />
         );
       })}
     </ScreenFrame>
@@ -240,16 +227,25 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
         </View>
       ) : null}
 
-      <View style={[styles.tile, { backgroundColor: p.surface, borderColor: p.border }]}>
-        <Text label>Progress</Text>
-        <Text weight="extraBold" style={{ fontSize: 26, color: p.primary }}>{`${progress.percent}%`}</Text>
-        <ProjectProgress progress={progress} label="Milestones done" empty="Add milestones to track progress" />
-      </View>
       <StatRow>
-        <StatTile label="Target" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} />
         <StatTile
+          icon="pie-chart"
+          label="Progress"
+          subtitle={progress.total ? `${progress.done} of ${progress.total} milestones` : "Add milestones to track progress"}
+          value={`${progress.percent}%`}
+          hint={`${goalCardStats(milestones, today).reached.now} reached in 30 days`}
+          trend={{ change: goalCardStats(milestones, today).reached.change, period: "vs the 30 days before" }}
+          ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
+        />
+        <StatTile icon="flag" iconTone="warning" label="Target" ring={{ percent: timeUsed(goal.createdAt, goal.targetDate, now), label: "Time Used" }} subtitle="Reach by" value={goal.targetDate ? formatDue(goal.targetDate, today) : "None"} compact />
+        <StatTile
+          icon="trophy"
+          iconTone={goal.status === "achieved" ? "success" : goal.status === "dropped" ? "neutral" : "accent"}
           label="Status"
+          ring={{ percent: reviewCycleUsed(goal, now), label: "Review Cycle" }}
+          subtitle="Goal"
           value={goalStatusLabel[goal.status]}
+          compact
           hint={next ? `Next review ${formatDue(localDate(next), today).replace(/^(Today|Tomorrow|Yesterday)/, (w) => w.toLowerCase())}` : undefined}
         />
       </StatRow>

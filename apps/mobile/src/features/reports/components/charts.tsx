@@ -152,21 +152,6 @@ export function Meter({ percent, label }: { percent: number | null; label: strin
   );
 }
 
-/** "↑ 20% vs previous 7 days", coloured by whether that direction is good, with the arrow so it isn't colour alone. */
-export function Delta({ value, unit = "%", goodWhenUp = true, period }: { value: number | null; unit?: string; goodWhenUp?: boolean; period: string }) {
-  const p = usePalette();
-  const style = { fontSize: 11 };
-  if (value === null) return <Text tone="muted" style={style} numberOfLines={2}>No earlier data to compare</Text>;
-  if (value === 0) return <Text tone="muted" style={style} numberOfLines={2}>{`No change vs ${period}`}</Text>;
-  const up = value > 0;
-  const good = up === goodWhenUp;
-  return (
-    <Text style={[style, { color: good ? p.successText : p.errorText }]} numberOfLines={2}>
-      {`${up ? "↑" : "↓"} ${Math.abs(value)}${unit} vs ${period}`}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
   tick: { position: "absolute", right: 4, fontSize: 9 },
   grid: { position: "absolute", left: 0, right: 0, height: StyleSheet.hairlineWidth },

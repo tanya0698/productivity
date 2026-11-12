@@ -93,7 +93,7 @@ export default function NotesScreen() {
             key={note.id}
             accessibilityRole="button"
             onPress={() => setOpenId(note.id)}
-            style={[styles.row, { backgroundColor: p.surface, borderColor: p.border }]}
+            style={[styles.row, { backgroundColor: p.surface, borderColor: p.cardBorder }]}
           >
             <Text weight="semiBold" numberOfLines={1}>
               {noteDisplayTitle(note)}
@@ -171,7 +171,7 @@ function NoteEditor({ note, isDraft, onClose }: { note: Note; isDraft: boolean; 
 
   return (
     <View style={{ gap: 10 }}>
-      <View style={[styles.editor, { backgroundColor: p.surface, borderColor: p.border }]}>
+      <View style={[styles.editor, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
         <TextInput
           accessibilityLabel="Note title"
           placeholder="Title"

@@ -18,7 +18,7 @@ export function Card({
 }) {
   const p = usePalette();
   return (
-    <View style={[styles.card, { backgroundColor: p.surface, borderColor: p.border }, style]}>
+    <View style={[styles.card, { backgroundColor: p.surface, borderColor: p.cardBorder }, style]}>
       {title ? (
         <View style={styles.head}>
           <Text label>{title}</Text>
@@ -90,5 +90,6 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: 14, paddingBottom: 4 },
   head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11 },
-  icon: { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center" },
+  // Round, like the tab bar's circles (and clipped, so Android doesn't square the fill).
+  icon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", overflow: "hidden" },
 });

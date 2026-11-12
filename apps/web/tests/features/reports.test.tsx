@@ -53,9 +53,9 @@ describe("Reports", () => {
     const db = new MemoryDatabase();
     await seed(db);
     await renderReports(db);
-    const tasksTile = (await screen.findByText("Tasks completed")).closest(".pp-tile") as HTMLElement;
+    const tasksTile = (await screen.findByText("Tasks completed")).closest(".pp-entity") as HTMLElement;
     await waitFor(() => expect(within(tasksTile).getByText("3")).toBeTruthy());
-    const focusTile = screen.getByText("Focus time").closest(".pp-tile") as HTMLElement;
+    const focusTile = screen.getByText("Focus time").closest(".pp-entity") as HTMLElement;
     expect(within(focusTile).getByText("25 min")).toBeTruthy();
     expect(screen.getByText("Tasks completed per day")).toBeTruthy();
   });

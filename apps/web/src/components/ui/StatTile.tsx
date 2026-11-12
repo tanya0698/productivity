@@ -1,43 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-
-const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-/** Counts up to `target` (ease-out, ~0.6 s), from where it was; instant with reduced motion. */
-function useCountUp(target: number, duration = 650): number {
-  const [shown, setShown] = useState(target);
-  const from = useRef(0);
-  const still = reducedMotion();
-  useEffect(() => {
-    if (still) {
-      from.current = target;
-      return;
-    }
-    const start = performance.now();
-    const begin = from.current;
-    let frame = 0;
-    const step = (t: number) => {
-      const k = Math.min(1, (t - start) / duration);
-      const eased = 1 - (1 - k) ** 3;
-      setShown(Math.round(begin + (target - begin) * eased));
-      if (k < 1) frame = requestAnimationFrame(step);
-      else from.current = target;
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [target, duration, still]);
-  return still ? target : shown;
-}
-
-function Counted({ value }: { value: number }) {
-  return <>{useCountUp(value).toLocaleString()}</>;
-}
+import type { ReactNode } from "react";
+import { EntityCard, type CardTrend, type Tone } from "./EntityCard";
 
 /**
- * A mono label over a big figure, like the portfolio card's "FROM $300".
- * `tone` colours the figure: teal by default, or a state colour when the
- * number itself is a warning (overdue). Plain numbers count up when they
- * appear or change. Proportional figures here (big standalone numbers);
- * tabular figures are for columns.
+ * A stat card: the EntityCard layout for a single figure (Done today, Focus
+ * time, …). `label` is the card's title; `hint` the caption under the value.
+ * `tone` "error" colours the value when the number itself is a warning
+ * (overdue); the icon carries the card's colour (`iconTone`).
  */
 export function StatTile({
   label,
@@ -45,22 +13,36 @@ export function StatTile({
   hint,
   tone = "primary",
   size = "default",
+  icon,
+  iconTone = "primary",
+  subtitle,
+  trend,
+  ring,
 }: {
   label: string;
   value: ReactNode;
   hint?: ReactNode;
   tone?: "primary" | "error" | "neutral";
-  /** "small" for tiles in a narrow column. */
+  /** "small" for a narrow column or a long value like a date. */
   size?: "default" | "small";
+  icon?: ReactNode;
+  iconTone?: Tone;
+  subtitle?: ReactNode;
+  trend?: CardTrend;
+  ring?: { percent: number | null; label: string };
 }) {
-  const color = { primary: "var(--pp-primary)", error: "var(--pp-error)", neutral: "var(--pp-heading)" }[tone];
   return (
-    <div className="pp-tile">
-      <span className="pp-label">{label}</span>
-      <span className={`pp-tile-value${size === "small" ? " pp-tile-value-small" : ""}`} style={{ color }}>
-        {typeof value === "number" ? <Counted value={value} /> : value}
-      </span>
-      {hint ? <span className="pp-tile-hint">{hint}</span> : null}
-    </div>
+    <EntityCard
+      icon={icon}
+      tone={iconTone}
+      title={label}
+      subtitle={subtitle}
+      value={value}
+      valueTone={tone === "error" ? "error" : "default"}
+      compact={size === "small"}
+      trend={trend}
+      caption={hint}
+      ring={ring}
+    />
   );
 }

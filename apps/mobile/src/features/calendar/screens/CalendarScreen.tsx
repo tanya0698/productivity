@@ -90,7 +90,7 @@ export default function CalendarScreen() {
 
   return (
     <ScreenFrame eyebrow="Plan" title="Calendar">
-      <View style={[styles.month, { backgroundColor: p.surface, borderColor: p.border }]}>
+      <View style={[styles.month, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
         <View style={styles.monthHead}>
           <Pressable accessibilityRole="button" accessibilityLabel="Previous month" hitSlop={10} onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
             <Ionicons name="chevron-back" size={20} color={p.text} />

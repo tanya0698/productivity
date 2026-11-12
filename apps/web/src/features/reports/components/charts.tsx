@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Tooltip } from "antd";
 import dayjs from "dayjs";
 import { niceTicks } from "./ticks";
@@ -111,20 +110,6 @@ export function Meter({ percent, label }: { percent: number | null; label: strin
         {percent ? <span className="pp-meter-fill" style={{ width: `${percent}%` }} /> : null}
       </span>
       <span className="pp-num pp-meter-text">{percent === null ? "—" : `${percent}%`}</span>
-    </span>
-  );
-}
-
-/** "↑ 20% vs previous 7 days", coloured by whether that direction is good, with the arrow so it isn't colour alone. */
-export function Delta({ value, unit = "%", goodWhenUp = true, period }: { value: number | null; unit?: string; goodWhenUp?: boolean; period: string }): ReactNode {
-  if (value === null) return <span className="pp-delta">No earlier data to compare</span>;
-  if (value === 0) return <span className="pp-delta">No change vs {period}</span>;
-  const up = value > 0;
-  const good = up === goodWhenUp;
-  return (
-    <span className={`pp-delta ${good ? "pp-delta-good" : "pp-delta-bad"}`}>
-      {up ? "↑" : "↓"} {Math.abs(value)}
-      {unit} vs {period}
     </span>
   );
 }

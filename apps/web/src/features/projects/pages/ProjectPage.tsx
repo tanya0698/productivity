@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { App as AntApp, Button, Card, Col, Collapse, Flex, Popconfirm, Row, Select, Typography } from "antd";
-import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { AimOutlined, ArrowLeftOutlined, CheckSquareOutlined, DeleteOutlined, EditOutlined, PieChartOutlined, PlusOutlined } from "@ant-design/icons";
 import {
+  projectCardStats,
+  onTrackShare,
+  timeUsed,
   editProject,
   groupTasks,
   localDate,
@@ -30,7 +33,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSkeleton } from "@/components/ui/Skeletons";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProjectEditor } from "../components/ProjectEditor";
-import { ProjectProgress } from "../components/ProjectProgress";
 import { statusOptions } from "../components/status";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -118,19 +120,30 @@ export default function ProjectPage() {
     >
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <div className="pp-tile">
-            <span className="pp-label">Progress</span>
-            <span className="pp-tile-value pp-num" style={{ color: "var(--pp-primary)" }}>
-              {progress.percent}%
-            </span>
-            <ProjectProgress progress={progress} />
-          </div>
+          <StatTile
+            icon={<PieChartOutlined />}
+            label="Progress"
+            subtitle={progress.total ? `${progress.done} of ${progress.total} tasks done` : "No tasks yet"}
+            value={`${progress.percent}%`}
+            hint={`${projectCardStats(tasks, today).doneThisWeek.now} done this week`}
+            trend={{ change: projectCardStats(tasks, today).doneThisWeek.change }}
+            ring={{ percent: progress.total ? progress.percent : null, label: "Complete" }}
+          />
         </Col>
         <Col xs={12} md={6}>
-          <StatTile label="Open tasks" value={openTasks.length} tone={groups.overdue.length ? "error" : "primary"} hint={groups.overdue.length ? `${groups.overdue.length} overdue` : undefined} />
+          <StatTile
+            icon={<CheckSquareOutlined />}
+            iconTone={groups.overdue.length ? "error" : "accent"}
+            label="Open tasks"
+            ring={{ percent: onTrackShare(openTasks.length, groups.overdue.length), label: "On Track" }}
+            subtitle="Still to do"
+            value={openTasks.length}
+            tone={groups.overdue.length ? "error" : "primary"}
+            hint={groups.overdue.length ? `${groups.overdue.length} overdue` : "none overdue"}
+          />
         </Col>
         <Col xs={12} md={6}>
-          <StatTile label="Target" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} tone="neutral" />
+          <StatTile size="small" icon={<AimOutlined />} iconTone="warning" label="Target" ring={{ percent: timeUsed(project.createdAt, project.dueDate, now), label: "Time Used" }} subtitle="Finish by" value={project.dueDate ? formatDue(project.dueDate, today) : "None"} tone="neutral" />
         </Col>
       </Row>
 

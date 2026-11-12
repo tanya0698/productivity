@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { App as AntApp, Button, Card, Col, Flex, Row, Segmented, Typography } from "antd";
+import { App as AntApp, Button, Card, Col, Row, Segmented } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { byProject, isOpenProject, localDate, newProject, projectProgress } from "@productivity/domain";
+import { byProject, isOpenProject, localDate, newProject, projectCardStats, projectStatusLabel, type ProjectStatus } from "@productivity/domain";
 import { ModulePage, formatDue, useLocalRecords, useProjects, useSyncRuntime, type Project, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardGridSkeleton } from "@/components/ui/Skeletons";
 import { ProjectEditor } from "../components/ProjectEditor";
-import { ProjectProgress } from "../components/ProjectProgress";
-import { StatusBadge } from "../components/StatusBadge";
+import { EntityCard, type Tone } from "@/components/ui/EntityCard";
+import { statusIcon } from "../components/status";
+
+/** One colour per status, on the card's icon: active teal, on hold amber, done green, archived grey. */
+const statusTone: Record<ProjectStatus, Tone> = { active: "primary", paused: "warning", done: "success", archived: "neutral" };
 
 type View = "open" | "finished";
 
@@ -68,40 +71,21 @@ export default function HomePage() {
 
       <Row gutter={[16, 16]}>
         {shown.map((p) => {
-          const projectTasks = tasksByProject.get(p.id) ?? [];
+          const stats = projectCardStats(tasksByProject.get(p.id) ?? [], today);
           return (
-            <Col key={p.id} xs={24} md={12} xl={8}>
-              <Card
-                className="pp-card pp-project-card"
-                hoverable
-                onClick={() => navigate(p.id)}
-                role="link"
-                tabIndex={0}
-                aria-label={`Open project: ${p.title}`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") navigate(p.id);
-                }}
-              >
-                <Flex vertical gap={10}>
-                  <Flex align="flex-start" gap={8}>
-                    <Typography.Text strong style={{ fontSize: 16, flex: 1, minWidth: 0 }} ellipsis>
-                      {p.title}
-                    </Typography.Text>
-                    {p.status !== "active" ? <StatusBadge status={p.status} /> : null}
-                  </Flex>
-                  {p.description ? (
-                    <Typography.Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
-                      {p.description}
-                    </Typography.Paragraph>
-                  ) : null}
-                  <ProjectProgress progress={projectProgress(projectTasks)} />
-                  {p.dueDate ? (
-                    <span className="pp-label" style={{ fontSize: 10 }}>
-                      Target · {formatDue(p.dueDate, today)}
-                    </span>
-                  ) : null}
-                </Flex>
-              </Card>
+            <Col key={p.id} xs={24} sm={12} xl={6}>
+              <EntityCard
+                icon={statusIcon(p.status)}
+                tone={statusTone[p.status]}
+                title={p.title}
+                subtitle={[projectStatusLabel[p.status], p.dueDate ? `Target ${formatDue(p.dueDate, today)}` : null].filter(Boolean).join(" · ")}
+                value={stats.doneThisWeek.now}
+                trend={{ change: stats.doneThisWeek.change }}
+                caption={`done this week · ${stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks` : "no tasks yet"}`}
+                ring={{ percent: stats.progress.total ? stats.progress.percent : null, label: "Complete" }}
+                onOpen={() => navigate(p.id)}
+                ariaLabel={`Open project: ${p.title}`}
+              />
             </Col>
           );
         })}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, Share, StyleSheet, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   buildReport,
@@ -7,26 +7,28 @@ import {
   goalStatusLabel,
   localDate,
   minutesText,
+  percentOf,
   previousRange,
-  reportToCsv,
   type ReportInput,
   type ReportRange,
 } from "@productivity/domain";
 import { useLocalRecords } from "@productivity/sync-engine/react";
 import { Button, Chips, DateTimeButton } from "../../../components/Field";
 import { Card } from "../../../components/ListCard";
+import { StatRow, StatTile } from "../../../components/StatTile";
 import { ListCardSkeleton, TileRowSkeleton } from "../../../components/Skeleton";
 import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { radii, usePalette } from "../../../theme";
 import { dateOf, plusDays, ymd } from "../../calendar/components/items";
-import { ColumnChart, Delta, Meter, RankedBars } from "../components/charts";
+import { ColumnChart, Meter, RankedBars } from "../components/charts";
+import { exportCsv, exportPdf } from "../components/exportReport";
+import Sheet from "../../../components/Sheet";
 
 type Preset = "7d" | "30d" | "month" | "90d" | "custom";
 type View_ = "chart" | "table";
 
-const APP_NAME = "Creedence";
 const presetOptions: { value: Preset; label: string }[] = [
   { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
@@ -97,11 +99,23 @@ export default function ReportsScreen() {
     </Pressable>
   );
 
-  const share = () =>
-    void Share.share({
-      title: `${APP_NAME} report, ${rangeText}`,
-      message: reportToCsv(report, APP_NAME),
-    });
+  // Export, as on the web: CSV for spreadsheets, or a PDF laid out for paper. Both go to the share sheet.
+  const [exporting, setExporting] = useState(false);
+  const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
+  const runExport = async (kind: "csv" | "pdf") => {
+    setExporting(false);
+    setBusy(kind);
+    try {
+      await new Promise((r) => setTimeout(r, 250)); // let the sheet close before Android's share sheet opens
+      if (kind === "csv") await exportCsv(report);
+      else await exportPdf(report, rangeText);
+      if (Platform.OS === "android") ToastAndroid.show(kind === "csv" ? "Report exported as CSV" : "Report exported as PDF", ToastAndroid.SHORT);
+    } catch (e) {
+      Alert.alert("Couldn't export the report", e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const dayTable = (rows: { date: string; value: number }[], heading: string) => (
     <View style={{ paddingBottom: 8 }}>
@@ -128,9 +142,23 @@ export default function ReportsScreen() {
           </View>
         </View>
       ) : null}
-      <Text tone="secondary" style={{ fontSize: 13 }}>
-        {`${rangeText}, compared with the ${report.days} days before.`}
-      </Text>
+      <View style={styles.rangeRow}>
+        <Text tone="secondary" style={{ fontSize: 13, flex: 1 }}>
+          {`${rangeText}, compared with the ${report.days} days before.`}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Export report"
+          disabled={loading || busy !== null}
+          onPress={() => setExporting(true)}
+          style={({ pressed }) => [styles.export, { backgroundColor: p.primary, opacity: loading || busy ? 0.5 : pressed ? 0.85 : 1 }]}
+        >
+          <Ionicons name="download-outline" size={16} color={p.onPrimary} />
+          <Text weight="semiBold" style={{ color: p.onPrimary, fontSize: 13 }}>
+            {busy ? "Exporting…" : "Export"}
+          </Text>
+        </Pressable>
+      </View>
 
       {loading ? (
         <>
@@ -140,34 +168,70 @@ export default function ReportsScreen() {
         </>
       ) : (
         <>
-          <View style={styles.kpis}>
-            <Kpi label="Tasks completed" value={report.tasks.completed.toLocaleString()} hint={<Delta value={change(report.tasks.completed, before.tasks.completed)} period={period} />} />
-            <Kpi label="Focus time" value={minutesText(report.focus.minutes * 60)} hint={<Delta value={change(report.focus.minutes, before.focus.minutes)} period={period} />} />
-            <Kpi
+          <StatRow>
+            <StatTile
+              icon="checkmark-circle"
+              iconTone="success"
+              label="Tasks completed"
+              ring={{ percent: percentOf(report.tasks.completed, report.tasks.completed + report.tasks.overdue), label: "Cleared" }}
+              subtitle="This period"
+              value={report.tasks.completed.toLocaleString()}
+              trend={{ change: change(report.tasks.completed, before.tasks.completed), period: `vs ${period}` }}
+              hint={`${before.tasks.completed.toLocaleString()} the ${report.days} days before`}
+            />
+            <StatTile
+              icon="time"
+              label="Focus time"
+              ring={{ percent: percentOf(report.focus.completedSessions, report.focus.sessions), label: "Completed" }}
+              subtitle="This period"
+              value={minutesText(report.focus.minutes * 60)}
+              trend={{ change: change(report.focus.minutes, before.focus.minutes), period: `vs ${period}` }}
+              hint={plural(report.focus.sessions, "session")}
+            />
+            <StatTile
+              icon="flame"
+              iconTone="warning"
               label="Habit consistency"
+              subtitle="This period"
               value={report.habits.consistency === null ? "—" : `${report.habits.consistency}%`}
-              hint={
-                report.habits.consistency !== null && before.habits.consistency !== null ? (
-                  <Delta value={report.habits.consistency - before.habits.consistency} unit=" pts" period={period} />
-                ) : (
-                  <Hint text="of due days met" />
-                )
+              trend={
+                report.habits.consistency !== null && before.habits.consistency !== null
+                  ? { change: report.habits.consistency - before.habits.consistency, unit: " pts", period: `vs ${period}` }
+                  : undefined
               }
+              hint="of due days met"
+              ring={{ percent: report.habits.consistency, label: "Met" }}
             />
-            <Kpi
+            <StatTile
+              icon="alarm"
+              iconTone={report.tasks.overdue ? "error" : "accent"}
               label="Done on time"
+              subtitle="This period"
               value={report.tasks.onTimeRate === null ? "—" : `${report.tasks.onTimeRate}%`}
-              tone={report.tasks.overdue ? "error" : "primary"}
-              hint={<Hint text={report.tasks.overdue ? `${report.tasks.overdue} open and overdue` : "Nothing overdue"} />}
+              hint={report.tasks.overdue ? `${report.tasks.overdue} open and overdue` : "Nothing overdue"}
+              ring={{ percent: report.tasks.onTimeRate, label: "On time" }}
             />
-            <Kpi label="In the calendar" value={`${report.calendar.hours} h`} tone="neutral" hint={<Hint text={plural(report.calendar.events, "event")} />} />
-            <Kpi
+            <StatTile
+              icon="calendar"
+              iconTone="accent"
+              label="In the calendar"
+              ring={{ percent: percentOf(report.calendar.hours, report.days * 8), label: "Of Work Hours" }}
+              subtitle="This period"
+              value={`${report.calendar.hours} h`}
+              trend={{ change: change(report.calendar.hours, before.calendar.hours), period: `vs ${period}` }}
+              hint={plural(report.calendar.events, "event")}
+            />
+            <StatTile
+              icon="add-circle"
+              iconTone="ai"
               label="Created"
+              ring={{ percent: percentOf(report.tasks.created, report.tasks.created + report.notes.created), label: "Tasks" }}
+              subtitle="This period"
               value={(report.tasks.created + report.notes.created).toLocaleString()}
-              tone="neutral"
-              hint={<Hint text={`${plural(report.tasks.created, "task")} · ${plural(report.notes.created, "note")}`} />}
+              trend={{ change: change(report.tasks.created + report.notes.created, before.tasks.created + before.notes.created), period: `vs ${period}` }}
+              hint={`${plural(report.tasks.created, "task")} · ${plural(report.notes.created, "note")}`}
             />
-          </View>
+          </StatRow>
 
           <Card title="Tasks completed per day" right={toggle("tasks")}>
             {view("tasks") === "chart" ? (
@@ -262,33 +326,35 @@ export default function ReportsScreen() {
             )}
           </Card>
 
-          <Button label="Share as CSV" onPress={share} />
         </>
       )}
+      <Sheet open={exporting} title="Export report" onClose={() => setExporting(false)}>
+        <Text tone="secondary" style={{ fontSize: 13 }}>
+          {rangeText}
+        </Text>
+        <Pressable accessibilityRole="button" onPress={() => void runExport("csv")} style={({ pressed }) => [styles.option, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="document-text-outline" size={22} color={p.primary} />
+          <View style={{ flex: 1 }}>
+            <Text weight="semiBold">CSV, for spreadsheets</Text>
+            <Text tone="secondary" style={{ fontSize: 12 }}>
+              Every figure and table, for Excel or Google Sheets.
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => void runExport("pdf")} style={({ pressed }) => [styles.option, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="print-outline" size={22} color={p.primary} />
+          <View style={{ flex: 1 }}>
+            <Text weight="semiBold">PDF, to print or share</Text>
+            <Text tone="secondary" style={{ fontSize: 12 }}>
+              Laid out for A4: the figures, then each breakdown.
+            </Text>
+          </View>
+        </Pressable>
+        <Button label="Cancel" onPress={() => setExporting(false)} />
+      </Sheet>
     </ScreenFrame>
   );
 }
-
-function Kpi({ label, value, hint, tone = "primary" }: { label: string; value: string; hint: React.ReactNode; tone?: "primary" | "error" | "neutral" }) {
-  const p = usePalette();
-  return (
-    <View style={[styles.kpi, { backgroundColor: p.surface, borderColor: p.border }]}>
-      <Text label style={{ fontSize: 10, letterSpacing: 1 }} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text weight="extraBold" numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 24, letterSpacing: -0.6, color: tone === "error" ? p.errorText : tone === "primary" ? p.primary : p.heading }}>
-        {value}
-      </Text>
-      {hint}
-    </View>
-  );
-}
-
-const Hint = ({ text }: { text: string }) => (
-  <Text tone="muted" style={{ fontSize: 11 }} numberOfLines={2}>
-    {text}
-  </Text>
-);
 
 const Empty = ({ text }: { text: string }) => (
   <Text tone="secondary" style={{ paddingBottom: 12 }}>
@@ -323,6 +389,9 @@ function TableRow({ cells }: { cells: string[] }) {
 }
 
 const styles = StyleSheet.create({
+  rangeRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  export: { flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radii.md, paddingHorizontal: 14, paddingVertical: 9 },
+  option: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: radii.md, padding: 14 },
   kpis: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   kpi: { flexBasis: "48%", flexGrow: 1, borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: 12, paddingVertical: 10, gap: 2 },
   item: { paddingVertical: 10, gap: 6 },

@@ -13,6 +13,11 @@ import {
   Typography,
 } from "antd";
 import {
+  CalendarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  FieldTimeOutlined,
+  PlusCircleOutlined,
   DownloadOutlined,
   FilePdfOutlined,
   FileTextOutlined,
@@ -25,6 +30,7 @@ import {
   goalStatusLabel,
   localDate,
   minutesText,
+  percentOf,
   previousRange,
   reportToCsv,
   type ReportInput,
@@ -33,6 +39,7 @@ import {
 import { ModulePage, useDataReady, useLocalRecords } from "@/shared";
 import { APP_NAME } from "@/shared/brand";
 import { StatTile } from "@/components/ui/StatTile";
+import type { CardTrend, Tone } from "@/components/ui/EntityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
   Bone,
@@ -40,7 +47,7 @@ import {
   ListCardSkeleton,
   TileRowSkeleton,
 } from "@/components/ui/Skeletons";
-import { ColumnChart, Delta, Meter, RankedBars } from "../components/charts";
+import { ColumnChart, Meter, RankedBars } from "../components/charts";
 
 type Preset = "7d" | "30d" | "month" | "90d" | "custom";
 type View = "chart" | "table";
@@ -263,7 +270,7 @@ export default function ReportsPage() {
 
       {!ready ? (
         <>
-          <TileRowSkeleton count={6} span={{ xs: 12, md: 8, xl: 4 }} />
+          <TileRowSkeleton count={6} span={{ xs: 24, sm: 12, xl: 8 }} />
           <Row gutter={[16, 16]}>
             {[0, 1].map((i) => (
               <Col key={i} xs={24} xl={12}>
@@ -279,85 +286,60 @@ export default function ReportsPage() {
         <>
           <Row gutter={[16, 16]}>
             <Kpi
+              icon={<CheckCircleOutlined />}
+              iconTone="success"
               label="Tasks completed"
+              ring={{ percent: percentOf(report.tasks.completed, report.tasks.completed + report.tasks.overdue), label: "Cleared" }}
               value={report.tasks.completed.toLocaleString()}
-              hint={
-                <Delta
-                  value={change(report.tasks.completed, before.tasks.completed)}
-                  period={period}
-                />
-              }
+              trend={{ change: change(report.tasks.completed, before.tasks.completed), period: `vs ${period}` }}
+              hint={`${before.tasks.completed.toLocaleString()} the ${report.days} days before`}
             />
             <Kpi
+              icon={<ClockCircleOutlined />}
               label="Focus time"
+              ring={{ percent: percentOf(report.focus.completedSessions, report.focus.sessions), label: "Completed" }}
               value={minutesText(report.focus.minutes * 60)}
-              hint={
-                <Delta
-                  value={change(report.focus.minutes, before.focus.minutes)}
-                  period={period}
-                />
-              }
+              trend={{ change: change(report.focus.minutes, before.focus.minutes), period: `vs ${period}` }}
+              hint={plural(report.focus.sessions, "session")}
             />
             <Kpi
+              icon={<FireOutlined />}
+              iconTone="warning"
               label="Habit consistency"
-              value={
-                report.habits.consistency === null
-                  ? "—"
-                  : `${report.habits.consistency}%`
+              value={report.habits.consistency === null ? "—" : `${report.habits.consistency}%`}
+              trend={
+                report.habits.consistency !== null && before.habits.consistency !== null
+                  ? { change: report.habits.consistency - before.habits.consistency, unit: " pts", period: `vs ${period}` }
+                  : undefined
               }
-              hint={
-                report.habits.consistency !== null &&
-                before.habits.consistency !== null ? (
-                  <Delta
-                    value={
-                      report.habits.consistency - before.habits.consistency
-                    }
-                    unit=" pts"
-                    period={period}
-                  />
-                ) : (
-                  <span className="pp-delta">of due days met</span>
-                )
-              }
+              hint="of due days met"
+              ring={{ percent: report.habits.consistency, label: "Met" }}
             />
             <Kpi
+              icon={<FieldTimeOutlined />}
+              iconTone={report.tasks.overdue ? "error" : "accent"}
               label="Done on time"
-              value={
-                report.tasks.onTimeRate === null
-                  ? "—"
-                  : `${report.tasks.onTimeRate}%`
-              }
-              hint={
-                <span className="pp-delta">
-                  {report.tasks.overdue
-                    ? `${report.tasks.overdue} open and overdue`
-                    : "Nothing overdue"}
-                </span>
-              }
-              tone={report.tasks.overdue ? "error" : "primary"}
+              value={report.tasks.onTimeRate === null ? "—" : `${report.tasks.onTimeRate}%`}
+              hint={report.tasks.overdue ? `${report.tasks.overdue} open and overdue` : "Nothing overdue"}
+              ring={{ percent: report.tasks.onTimeRate, label: "On time" }}
             />
             <Kpi
+              icon={<CalendarOutlined />}
+              iconTone="accent"
               label="In the calendar"
+              ring={{ percent: percentOf(report.calendar.hours, report.days * 8), label: "Of Work Hours" }}
               value={`${report.calendar.hours} h`}
-              hint={
-                <span className="pp-delta">
-                  {plural(report.calendar.events, "event")}
-                </span>
-              }
-              tone="neutral"
+              trend={{ change: change(report.calendar.hours, before.calendar.hours), period: `vs ${period}` }}
+              hint={plural(report.calendar.events, "event")}
             />
             <Kpi
+              icon={<PlusCircleOutlined />}
+              iconTone="ai"
               label="Created"
-              value={(
-                report.tasks.created + report.notes.created
-              ).toLocaleString()}
-              hint={
-                <span className="pp-delta">
-                  {plural(report.tasks.created, "task")} ·{" "}
-                  {plural(report.notes.created, "note")}
-                </span>
-              }
-              tone="neutral"
+              ring={{ percent: percentOf(report.tasks.created, report.tasks.created + report.notes.created), label: "Tasks" }}
+              value={(report.tasks.created + report.notes.created).toLocaleString()}
+              trend={{ change: change(report.tasks.created + report.notes.created, before.tasks.created + before.notes.created), period: `vs ${period}` }}
+              hint={`${plural(report.tasks.created, "task")} · ${plural(report.notes.created, "note")}`}
             />
           </Row>
 
@@ -605,22 +587,22 @@ function Kpi({
   label,
   value,
   hint,
-  tone = "primary",
+  icon,
+  iconTone = "primary",
+  trend,
+  ring,
 }: {
   label: string;
   value: ReactNode;
   hint: ReactNode;
-  tone?: "primary" | "error" | "neutral";
+  icon: ReactNode;
+  iconTone?: Tone;
+  trend?: CardTrend;
+  ring?: { percent: number | null; label: string };
 }) {
   return (
-    <Col xs={12} md={8} xl={4} className="pp-kpi">
-      <StatTile
-        size="small"
-        label={label}
-        value={value}
-        hint={hint}
-        tone={tone}
-      />
+    <Col xs={24} sm={12} xl={8} className="pp-kpi">
+      <StatTile size="small" icon={icon} iconTone={iconTone} label={label} subtitle="This period" value={value} hint={hint} trend={trend} ring={ring} />
     </Col>
   );
 }

@@ -23,7 +23,7 @@ export function ModulePage({
   children: ReactNode;
 }) {
   return (
-    <Flex vertical gap={20}>
+    <Flex vertical gap={16}>
       <Flex justify="space-between" align="flex-end" wrap gap={12}>
         <Flex vertical gap={6}>
           {back}

@@ -95,3 +95,12 @@ export const sortGoals = <T extends Pick<LocalGoal, "status" | "targetDate" | "t
       (a.targetDate ?? "9999-12-31").localeCompare(b.targetDate ?? "9999-12-31") ||
       a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
   );
+
+/** How far through its current review period a goal is (0–100); 0 for no cadence or a finished goal. */
+export function reviewCycleUsed(g: LocalGoal, now: Date): number {
+  const next = nextReview(g);
+  if (!next) return 0;
+  const from = new Date(g.lastReviewedAt ?? g.createdAt).getTime();
+  const span = next.getTime() - from;
+  return span > 0 ? Math.max(0, Math.min(100, Math.round(((now.getTime() - from) / span) * 100))) : 100;
+}

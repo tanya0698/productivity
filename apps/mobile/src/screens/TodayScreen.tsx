@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { groupTasks, localDate, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
+import { groupTasks, localDate, notesTrend, onTrackShare, percentOf, todayDoneShare, newNote, newTask, type LocalNote, type LocalTask } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
 import { Card } from "../components/ListCard";
 import { RowsSkeleton, TileRowSkeleton } from "../components/Skeleton";
@@ -94,14 +94,34 @@ export default function TodayScreen() {
       {!ready ? <TileRowSkeleton /> : null}
       {ready ? (
       <StatRow>
-        <StatTile label="Due today" value={groups.today.length} hint={groups.today.length === 1 ? "task" : "tasks"} />
         <StatTile
+          icon="calendar"
+          label="Due today"
+          subtitle="Tasks"
+          value={groups.today.length}
+          hint={groups.today.length === 1 ? "task left" : "tasks left"}
+          ring={{ percent: todayDoneShare(tasks, groups.today.length, localDate(now)), label: "Done" }}
+        />
+        <StatTile
+          icon="warning"
+          iconTone={groups.overdue.length ? "error" : "success"}
           label="Overdue"
+          ring={{ percent: onTrackShare(groups.overdue.length + groups.today.length + groups.upcoming.length, groups.overdue.length), label: "On Track" }}
+          subtitle="Tasks"
           value={groups.overdue.length}
           hint={groups.overdue.length ? "need attention" : "all clear"}
           tone={groups.overdue.length ? "error" : undefined}
         />
-        <StatTile label="Notes" value={notes.length} hint="on this phone" />
+        <StatTile
+          icon="document-text"
+          iconTone="accent"
+          label="Notes"
+          ring={{ percent: percentOf(notes.filter((n) => n.projectId).length, notes.length), label: "In Projects" }}
+          subtitle="On this phone"
+          value={notes.length}
+          hint={`${notesTrend(notes, localDate(now)).now} written this week`}
+          trend={{ change: notesTrend(notes, localDate(now)).change }}
+        />
       </StatRow>
       ) : null}
       {widgets.map(({ key, title, component: Widget }) => (

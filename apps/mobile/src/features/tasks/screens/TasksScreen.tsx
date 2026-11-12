@@ -64,7 +64,7 @@ export default function TasksScreen() {
 
   return (
     <ScreenFrame eyebrow="Plan" title="Tasks">
-      <View style={[styles.add, { backgroundColor: p.surface, borderColor: p.border }]}>
+      <View style={[styles.add, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
         <TextInput
           accessibilityLabel="New task"
           placeholder="Add a task"
@@ -108,7 +108,7 @@ export default function TasksScreen() {
       ) : null}
 
       {OPEN_GROUPS.filter((k) => groups[k].length).map((key) => (
-        <View key={key} style={[styles.group, { backgroundColor: p.surface, borderColor: p.border }]}>
+        <View key={key} style={[styles.group, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
           <View style={styles.groupHead}>
             <Text label>{taskGroupTitle[key]}</Text>
             <Text label>{String(groups[key].length)}</Text>
@@ -118,7 +118,7 @@ export default function TasksScreen() {
       ))}
 
       {groups.done.length ? (
-        <View style={[styles.group, { backgroundColor: p.surface, borderColor: p.border }]}>
+        <View style={[styles.group, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
           <Pressable onPress={() => setShowDone(!showDone)} style={styles.groupHead} accessibilityRole="button">
             <Text label>{`Done · ${groups.done.length}`}</Text>
             <Ionicons name={showDone ? "chevron-up" : "chevron-down"} size={16} color={p.textMuted} />

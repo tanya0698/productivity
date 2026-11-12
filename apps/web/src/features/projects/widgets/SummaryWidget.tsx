@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { Flex } from "antd";
-import { byProject, projectProgress } from "@productivity/domain";
+import { byProject, localDate, projectCardStats } from "@productivity/domain";
 import { useLocalRecords, useProjects, type Task, useDataReady } from "@/shared";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RowsSkeleton } from "@/components/ui/Skeletons";
-import { ProjectProgress } from "../components/ProjectProgress";
+import { ProgressRing, TrendPill } from "@/components/ui/EntityCard";
 
 /** Today's view of active projects and how far along each is. */
 export default function SummaryWidget() {
@@ -20,9 +20,22 @@ export default function SummaryWidget() {
   return (
     <Flex vertical gap={14}>
       {active.map((p) => (
-        <Link key={p.id} to={`/projects/${p.id}`} className="pp-widget-project">
-          <span className="pp-task-title">{p.title}</span>
-          <ProjectProgress progress={projectProgress(grouped.get(p.id) ?? [])} />
+        <Link key={p.id} to={`/projects/${p.id}`} className="pp-widget-entity">
+          {(() => {
+            const stats = projectCardStats(grouped.get(p.id) ?? [], localDate(new Date()));
+            return (
+              <>
+                <ProgressRing percent={stats.progress.percent} size={40} label={`${p.title} complete`} />
+                <span className="pp-widget-entity-text">
+                  <span className="pp-task-title">{p.title}</span>
+                  <span className="pp-entity-caption">
+                    {stats.progress.total ? `${stats.progress.done} of ${stats.progress.total} tasks · ${stats.doneThisWeek.now} this week` : "No tasks yet"}
+                  </span>
+                </span>
+                <TrendPill trend={{ change: stats.doneThisWeek.change }} />
+              </>
+            );
+          })()}
         </Link>
       ))}
       <Link to="/projects">All projects</Link>

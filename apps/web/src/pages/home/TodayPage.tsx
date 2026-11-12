@@ -8,10 +8,14 @@ import {
   Segmented,
   Space,
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { CalendarOutlined, FileTextOutlined, PlusOutlined, WarningOutlined } from "@ant-design/icons";
 import {
   groupTasks,
   localDate,
+  notesTrend,
+  onTrackShare,
+  percentOf,
+  todayDoneShare,
   newNote,
   newTask,
   type LocalNote,
@@ -166,14 +170,21 @@ export default function TodayPage() {
         <Row gutter={[16, 16]}>
           <Col xs={12} md={8}>
             <StatTile
+              icon={<CalendarOutlined />}
               label="Due today"
+              subtitle="Tasks"
               value={dueToday}
-              hint={dueToday === 1 ? "task" : "tasks"}
+              hint={dueToday === 1 ? "task left" : "tasks left"}
+              ring={{ percent: todayDoneShare(tasks, dueToday, localDate(now)), label: "Done" }}
             />
           </Col>
           <Col xs={12} md={8}>
             <StatTile
+              icon={<WarningOutlined />}
+              iconTone={overdue ? "error" : "success"}
               label="Overdue"
+              ring={{ percent: onTrackShare(groups.overdue.length + groups.today.length + groups.upcoming.length, groups.overdue.length), label: "On Track" }}
+              subtitle="Tasks"
               value={overdue}
               hint={overdue ? "need attention" : "all clear"}
               tone={overdue ? "error" : "neutral"}
@@ -181,9 +192,14 @@ export default function TodayPage() {
           </Col>
           <Col xs={24} md={8}>
             <StatTile
+              icon={<FileTextOutlined />}
+              iconTone="accent"
               label="Notes"
+              ring={{ percent: percentOf(notes.filter((n) => n.projectId).length, notes.length), label: "In Projects" }}
+              subtitle="On this device"
               value={notes.length}
-              hint="saved on this device"
+              hint={`${notesTrend(notes, localDate(now)).now} written this week`}
+              trend={{ change: notesTrend(notes, localDate(now)).change }}
               tone="neutral"
             />
           </Col>

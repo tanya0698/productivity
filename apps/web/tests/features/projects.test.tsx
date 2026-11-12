@@ -71,7 +71,9 @@ describe("Projects", () => {
     await put(db, "task", newTask(crypto.randomUUID(), now, { title: "Unrelated" }));
     renderAt(db, "/projects");
     expect(await screen.findByText("Move house")).toBeTruthy();
-    expect(screen.getByText("1 of 2 done")).toBeTruthy();
+    // The entity card: tasks done this week with how many in all, and the ring at 50%.
+    expect(screen.getByText("done this week · 1 of 2 tasks")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Complete: 50%" })).toBeTruthy();
   });
 
   it("adds a task inside the project", async () => {
@@ -87,7 +89,7 @@ describe("Projects", () => {
     await waitFor(async () => expect(await db.list("task")).toHaveLength(1));
     expect((await db.list("task"))[0]).toMatchObject({ title: "Book van", projectId: p.id });
     expect(await screen.findByText("Book van")).toBeTruthy();
-    expect(screen.getByText("0 of 1 done")).toBeTruthy();
+    expect(screen.getByText("0 of 1 tasks done")).toBeTruthy();
   });
 
   it("deleting a project keeps its tasks and notes, without a project", async () => {

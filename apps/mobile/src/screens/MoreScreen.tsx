@@ -28,7 +28,7 @@ export default function MoreScreen() {
         accessibilityLabel="Account"
         onPress={() => go("account")}
         style={({ pressed }) => [
-          { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderWidth: 1, borderRadius: radii.lg, backgroundColor: p.surface, borderColor: p.border, opacity: pressed ? 0.8 : 1 },
+          { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderWidth: 1, borderRadius: radii.lg, backgroundColor: p.surface, borderColor: p.cardBorder, opacity: pressed ? 0.8 : 1 },
         ]}
       >
         <Avatar user={user} size={46} />

@@ -36,6 +36,13 @@ const SIDER_WIDTH = 232;
 const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
 
 /**
+ * Even spacing (the hub's rule): one gap between cards, rows and panels, the
+ * same across as down, and one edge around the page on every side. Rows use
+ * gutter={[16, 16]}; ModulePage stacks its sections 16 apart.
+ */
+export const SPACE = { gap: 16, edge: 24, edgeMobile: 16 } as const;
+
+/**
  * The app frame (plan §4.1, §4.4): gradient behind everything, glass sidebar
  * and header, and a solid sheet where pages render. The sidebar is built from
  * the module registry, so a new module folder adds its own entry.
@@ -43,6 +50,7 @@ const shortcutLabel = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test
 export function AppShell({ children }: { children: ReactNode }) {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
+  const edge = isMobile ? SPACE.edgeMobile : SPACE.edge;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -73,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           onClose={() => setDrawerOpen(false)}
           placement="left"
           size={SIDER_WIDTH + 24}
-          styles={{ body: { padding: 12 } }}
+          styles={{ body: { padding: SPACE.gap } }}
         >
           {nav}
         </Drawer>
@@ -81,7 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         // No panel: the menu floats on the ink like the portfolio's navigation; only the selected item is tinted.
         <Layout.Sider
           width={SIDER_WIDTH}
-          style={{ padding: "20px 12px", height: "100vh", position: "sticky", top: 0 }}
+          style={{ padding: SPACE.gap, height: "100vh", position: "sticky", top: 0 }}
         >
           {nav}
         </Layout.Sider>
@@ -89,7 +97,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <Layout style={{ background: "transparent" }}>
         <Layout.Header
-          style={{ height: "auto", lineHeight: "normal", padding: isMobile ? "14px 16px" : "20px 32px 4px", maxWidth: 1180 }}
+          // Even spacing: the header shares the page's edge on top and both sides; the content's own top padding is the gap below it.
+          style={{ height: "auto", lineHeight: "normal", padding: `${edge}px ${edge}px 0`, maxWidth: 1180 }}
         >
           <Flex align="center" gap={12}>
             {isMobile ? (
@@ -125,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <Layout.Content
           style={{
-            padding: isMobile ? "8px 16px 24px" : "12px 32px 40px",
+            padding: edge,
             maxWidth: 1180,
             width: "100%",
             minHeight: 0,

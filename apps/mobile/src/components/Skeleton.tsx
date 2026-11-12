@@ -51,16 +51,39 @@ function Loading({ what, children, style }: { what: string; children: React.Reac
 // Varied widths, the same every render, so it reads as text rather than bars.
 const WIDTHS: DimensionValue[] = ["62%", "48%", "71%", "39%", "56%", "66%", "44%"];
 
-/** A row of stat tiles. */
-export function TileRowSkeleton({ count = 3 }: { count?: number }) {
+/** One entity card's outline: icon tile and two lines, a value with its pill, and a ring. */
+function EntityBones({ ring, i }: { ring: boolean; i: number }) {
   const p = usePalette();
   return (
-    <Loading what="figures" style={{ flexDirection: "row", gap: 8 }}>
+    <View style={[styles.entity, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Bone w={38} h={38} r={10} />
+        <View style={{ flex: 1, gap: 7 }}>
+          <Bone w={WIDTHS[(i + 2) % WIDTHS.length]} h={11} />
+          <Bone w="40%" h={8} />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: "auto" }}>
+        <View style={{ gap: 7 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Bone w={54} h={22} r={7} />
+            <Bone w={36} h={16} r={999} />
+          </View>
+          <Bone w={90} h={8} />
+        </View>
+        {ring ? <Bone w={44} h={44} r={22} /> : null}
+      </View>
+    </View>
+  );
+}
+
+/** Stat cards, two to a row (an odd one full width), like StatRow. */
+export function TileRowSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <Loading what="figures" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
       {Array.from({ length: count }, (_, i) => (
-        <View key={i} style={[styles.tile, { backgroundColor: p.surface, borderColor: p.border }]}>
-          <Bone w="55%" h={9} />
-          <Bone w="45%" h={26} r={8} />
-          <Bone w="40%" h={9} />
+        <View key={i} style={{ flexBasis: "46%", flexGrow: 1 }}>
+          <EntityBones ring={i % 2 === 0} i={i} />
         </View>
       ))}
     </Loading>
@@ -88,7 +111,7 @@ export function RowsSkeleton({ rows = 4, check = true }: { rows?: number; check?
 export function ListCardSkeleton({ rows = 4, check = true }: { rows?: number; check?: boolean }) {
   const p = usePalette();
   return (
-    <View style={[styles.card, { backgroundColor: p.surface, borderColor: p.border }]}>
+    <View style={[styles.card, { backgroundColor: p.surface, borderColor: p.cardBorder }]}>
       <PulseProvider>
         <Bone w={110} h={10} style={{ marginVertical: 14 }} />
       </PulseProvider>
@@ -97,24 +120,19 @@ export function ListCardSkeleton({ rows = 4, check = true }: { rows?: number; ch
   );
 }
 
-/** Cards like projects or goals: a title, two lines, a progress bar. */
+/** Cards like projects or goals: entity cards, one per row. */
 export function CardsSkeleton({ count = 3 }: { count?: number }) {
-  const p = usePalette();
   return (
-    <Loading what="cards" style={{ gap: 10 }}>
+    <Loading what="cards" style={{ gap: 12 }}>
       {Array.from({ length: count }, (_, i) => (
-        <View key={i} style={[styles.card, { backgroundColor: p.surface, borderColor: p.border, paddingVertical: 14, gap: 10 }]}>
-          <Bone w={WIDTHS[(i + 2) % WIDTHS.length]} h={14} />
-          <Bone w="90%" h={9} />
-          <Bone w="100%" h={6} r={3} />
-        </View>
+        <EntityBones key={i} ring i={i} />
       ))}
     </Loading>
   );
 }
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, borderWidth: 1, borderRadius: radii.lg, padding: 12, gap: 8 },
+  entity: { flex: 1, borderWidth: 1, borderRadius: 8, padding: 16, gap: 16 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
   card: { borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: 14 },
 });

@@ -15,18 +15,39 @@ export function Bone({ w = "100%", h = 12, r = 6, style }: { w?: number | string
 /** A label for assistive tech; the bones themselves are hidden from it. */
 const Loading = ({ what }: { what: string }) => <span className="pp-sr-only">Loading {what}…</span>;
 
-/** A row of stat tiles. */
-export function TileRowSkeleton({ count = 3, span = { xs: 12, md: 8 } }: { count?: number; span?: { xs?: number; md?: number; xl?: number } }) {
+/** One entity card's outline: icon tile and two lines, a value with its pill, a ring. */
+export function EntityCardBones({ ring = true }: { ring?: boolean }) {
+  return (
+    <div className="pp-entity pp-skel-tile">
+      <Flex gap={12} align="center" style={{ marginBottom: 16 }}>
+        <Bone w={40} h={40} r={10} />
+        <Flex vertical gap={8} style={{ flex: 1 }}>
+          <Bone w="55%" h={12} />
+          <Bone w="35%" h={9} />
+        </Flex>
+      </Flex>
+      <Flex justify="space-between" align="flex-end" style={{ marginTop: "auto" }}>
+        <Flex vertical gap={8}>
+          <Flex gap={8} align="center">
+            <Bone w={64} h={22} r={6} />
+            <Bone w={44} h={18} r={999} />
+          </Flex>
+          <Bone w={110} h={9} />
+        </Flex>
+        {ring ? <Bone w={44} h={44} r={999} /> : null}
+      </Flex>
+    </div>
+  );
+}
+
+/** A row of stat cards. */
+export function TileRowSkeleton({ count = 3, span = { xs: 12, md: 8 } }: { count?: number; span?: { xs?: number; sm?: number; md?: number; xl?: number } }) {
   return (
     <Row gutter={[16, 16]} aria-busy="true">
       <Loading what="figures" />
       {Array.from({ length: count }, (_, i) => (
         <Col key={i} {...span}>
-          <div className="pp-tile pp-skel-tile">
-            <Bone w="45%" h={10} />
-            <Bone w="55%" h={34} r={8} />
-            <Bone w="35%" h={10} />
-          </div>
+          <EntityCardBones ring={i % 2 === 0} />
         </Col>
       ))}
     </Row>
@@ -68,18 +89,8 @@ export function CardGridSkeleton({ count = 3 }: { count?: number }) {
     <Row gutter={[16, 16]} aria-busy="true">
       <Loading what="cards" />
       {Array.from({ length: count }, (_, i) => (
-        <Col key={i} xs={24} md={12} xl={8}>
-          <Card className="pp-card">
-            <Flex vertical gap={12}>
-              <Bone w="60%" h={16} />
-              <Bone w="90%" h={10} />
-              <Bone w="75%" h={10} />
-              <Flex gap={10} align="center" style={{ marginTop: 6 }}>
-                <Bone h={6} r={999} />
-                <Bone w={70} h={10} />
-              </Flex>
-            </Flex>
-          </Card>
+        <Col key={i} xs={24} sm={12} xl={6}>
+          <EntityCardBones />
         </Col>
       ))}
     </Row>
