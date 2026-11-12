@@ -7,15 +7,17 @@ import { SyncRuntime, type SyncTransport } from "@productivity/sync-engine";
 import { SyncProvider } from "@productivity/sync-engine/react";
 import { addDays, localDate, newTask } from "@productivity/domain";
 import TodayPage from "@/pages/home/TodayPage";
+import { getLiveModules } from "@/shared/modules/registry";
 
 const unused: SyncTransport = {
   push: async () => ({ results: [] }),
   pull: async (cursor) => ({ changes: [], cursor, hasMore: false }),
 };
 
-function renderToday(db: MemoryDatabase) {
+async function renderToday(db: MemoryDatabase) {
   // A device that has its data already: empty means empty, not "still downloading".
-  void db.setMeta("syncedOnce", "test");
+  // Awaited: the runtime reads this flag the moment it's created.
+  await db.setMeta("syncedOnce", "test");
   const runtime = new SyncRuntime({ db, transport: unused, deviceId: crypto.randomUUID(), newId: () => crypto.randomUUID() });
   vi.spyOn(runtime, "start").mockImplementation(() => {});
   function Harness() {
@@ -36,11 +38,17 @@ function renderToday(db: MemoryDatabase) {
 const enter = (el: HTMLElement) => fireEvent.keyDown(el, { key: "Enter", code: "Enter", keyCode: 13 });
 
 describe("Today", () => {
+  // Today's panels are lazy-loaded widgets. Load them once up front, so a test
+  // checks what the page does rather than how long the first compile of each
+  // widget takes (which made "Up next" time out under load).
+  beforeAll(async () => {
+    await Promise.all(getLiveModules().flatMap((m) => (m.widgets ?? []).map((w) => w.load())));
+  }, 120_000);
   beforeEach(() => localStorage.clear());
 
   it("quick capture adds a task by default, and clears the box", async () => {
     const db = new MemoryDatabase();
-    renderToday(db);
+    await renderToday(db);
     const box = (await screen.findByLabelText("Quick capture")) as HTMLInputElement;
     fireEvent.change(box, { target: { value: "Call the bank about the card" } });
     enter(box);
@@ -56,7 +64,7 @@ describe("Today", () => {
 
   it("switches to notes, and remembers the choice", async () => {
     const db = new MemoryDatabase();
-    renderToday(db);
+    await renderToday(db);
     fireEvent.click(await screen.findByText("Note"));
     const box = await screen.findByLabelText("Quick capture");
     fireEvent.change(box, { target: { value: "Ideas for the weekend" } });
@@ -72,7 +80,7 @@ describe("Today", () => {
 
   it("ignores Enter on an empty box", async () => {
     const db = new MemoryDatabase();
-    renderToday(db);
+    await renderToday(db);
     const box = await screen.findByLabelText("Quick capture");
     fireEvent.change(box, { target: { value: "   " } });
     enter(box);
@@ -84,14 +92,13 @@ describe("Today", () => {
   it("counts tasks due today and overdue, and lists them under Up next", async () => {
     const db = new MemoryDatabase();
     const today = localDate(new Date());
-    const { runtime } = renderToday(db);
+    const { runtime } = await renderToday(db);
     await screen.findByLabelText("Quick capture");
     await runtime.write("task", newTask(crypto.randomUUID(), new Date(), { title: "Pay rent", dueDate: today }));
     await runtime.write("task", newTask(crypto.randomUUID(), new Date(), { title: "Renew licence", dueDate: addDays(today, -2) }));
     await runtime.write("task", newTask(crypto.randomUUID(), new Date(), { title: "Someday idea" }));
 
-    // Up next is a lazy-loaded widget: under a parallel test run it can take over a second to appear.
-    expect(await screen.findByText("Pay rent", undefined, { timeout: 5000 })).toBeTruthy();
+    expect(await screen.findByText("Pay rent")).toBeTruthy();
     expect(screen.getByText("Renew licence")).toBeTruthy();
     expect(screen.queryByText("Someday idea")).toBeNull(); // no date: not "up next"
     expect(screen.getByText(/Overdue ·/)).toBeTruthy();

@@ -1,6 +1,7 @@
 import type { EntityType } from "@productivity/contracts";
 import type { LocalDatabase, LocalRecord } from "@productivity/database-local";
 import { SyncEngine, TransientSyncError, backoffDelay, type SyncStatus, type SyncTransport } from "./engine.ts";
+import { SYNC_HISTORY_KEY, parseHistory, recordSync, type SyncEvent } from "./history.ts";
 
 const SYNCED_ONCE = "syncedOnce";
 
@@ -47,6 +48,11 @@ export class SyncRuntime {
       newId: o.newId,
       onStatus: (s) => this.setStatus(s),
     });
+    void o.db.getMeta(SYNC_HISTORY_KEY).then((raw) => {
+      // Anything recorded before this loaded (a sync already ran) stays, after the saved ones.
+      this.history = [...parseHistory(raw), ...this.history];
+      this.listeners.forEach((l) => l());
+    });
     // Remembered per device, so only the very first visit waits for a sync.
     void o.db.getMeta(SYNCED_ONCE).then((v) => {
       if (v && !this.syncedOnce) {
@@ -74,6 +80,17 @@ export class SyncRuntime {
     this.listeners.add(listener);
     return () => void this.listeners.delete(listener);
   };
+
+  /** This device's recent syncs (the last day), for comparing now with an hour ago. */
+  getHistory = (): readonly SyncEvent[] => this.history;
+  private history: SyncEvent[] = [];
+
+  private async remember(ok: boolean) {
+    const queued = (await this.db.pendingOperations(Number.MAX_SAFE_INTEGER)).length;
+    this.history = recordSync(this.history, { at: new Date().toISOString(), ok, queued });
+    await this.db.setMeta(SYNC_HISTORY_KEY, JSON.stringify(this.history)).catch(() => undefined);
+    this.listeners.forEach((l) => l());
+  }
 
   /** When a sync last finished cleanly in this session, whatever the status says now. */
   getLastSyncedAt = (): string | null => this.lastSyncedAt;
@@ -134,6 +151,8 @@ export class SyncRuntime {
     try {
       await this.engine.sync();
       this.failures = 0;
+      // Recording is best effort: a failure here must not count the sync as failed.
+      await this.remember(true).catch(() => undefined);
       if (!this.syncedOnce) {
         this.syncedOnce = true;
         await this.db.setMeta(SYNCED_ONCE, new Date().toISOString());
@@ -142,6 +161,7 @@ export class SyncRuntime {
       // Edits made while that sync was running still need to go out.
       if (this.started && (await this.db.pendingOperations(1)).length) this.scheduleSoon();
     } catch (err) {
+      await this.remember(false).catch(() => undefined);
       if (err instanceof TransientSyncError && this.started) {
         this.retryTimer = setTimeout(() => void this.syncNow(), backoffDelay(this.failures++, 2000));
       } else if (!(err instanceof TransientSyncError)) {

@@ -2,8 +2,9 @@ import { useState, type ReactNode } from "react";
 import { Alert, App as AntApp, Button, Card, Col, Flex, Row, Tag, Typography } from "antd";
 import { ClockCircleOutlined, CloudUploadOutlined, SyncOutlined } from "@ant-design/icons";
 import type { ConflictEntry, LocalRecord, OutboxEntry } from "@productivity/database-local";
-import { freshness, localDate, noteDisplayTitle, priorityLabel, type LocalNote, type LocalTask } from "@productivity/domain";
-import { useSyncDetails, useSyncRuntime, useSyncStatus } from "@productivity/sync-engine/react";
+import { change, freshness, localDate, noteDisplayTitle, priorityLabel, type LocalNote, type LocalTask } from "@productivity/domain";
+import { syncHistoryStats } from "@productivity/sync-engine";
+import { useSyncDetails, useSyncHistory, useSyncRuntime, useSyncStatus } from "@productivity/sync-engine/react";
 import { ModulePage } from "@/shared/page/ModulePage";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -21,6 +22,9 @@ export default function SyncPage() {
   const status = useSyncStatus();
   const { conflicts, queued, loading } = useSyncDetails();
   const lastSyncedAt = runtime.getLastSyncedAt();
+  // The last hour against the hour before, from this device's own sync history.
+  const history = syncHistoryStats(useSyncHistory(), new Date());
+  const rate = history.successRate;
 
   return (
     <ModulePage
@@ -50,14 +54,15 @@ export default function SyncPage() {
               icon={<SyncOutlined />}
               iconTone={status.state === "needs_attention" ? "error" : "primary"}
               label="Status"
-              ring={{ percent: queued.length ? 0 : 100, label: "Sent" }}
+              trend={{ now: rate.now ?? 0, change: rate.now !== null && rate.before !== null ? rate.now - rate.before : null, unit: " pts", period: "vs the hour before" }}
+              ring={{ percent: rate.now ?? (status.state === "needs_attention" ? 0 : 100), label: "Succeeded" }}
               subtitle="This device"
               value={statusText(status.state)}
               tone={status.state === "needs_attention" ? "error" : "primary"}
             />
           </Col>
           <Col xs={24} sm={8}>
-            <StatTile size="small" icon={<ClockCircleOutlined />} iconTone="accent" label="Last synced" ring={{ percent: freshness(lastSyncedAt ? new Date(lastSyncedAt) : null, new Date()), label: "Fresh" }} subtitle="With the server" value={lastSyncedAt ? timeAgo(lastSyncedAt) : "Not yet"} />
+            <StatTile size="small" icon={<ClockCircleOutlined />} iconTone="accent" label="Last synced" hint={`${history.synced.now} sync${history.synced.now === 1 ? "" : "s"} in the last hour`} trend={{ now: history.synced.now, change: change(history.synced.now, history.synced.before), period: "vs the hour before" }} ring={{ percent: freshness(lastSyncedAt ? new Date(lastSyncedAt) : null, new Date()), label: "Fresh" }} subtitle="With the server" value={lastSyncedAt ? timeAgo(lastSyncedAt) : "Not yet"} />
           </Col>
           <Col xs={24} sm={8}>
             <StatTile
@@ -65,6 +70,12 @@ export default function SyncPage() {
               icon={<CloudUploadOutlined />}
               iconTone={queued.length ? "warning" : "success"}
               label="Waiting to send"
+              trend={{
+                now: queued.length,
+                change: history.queuedHourAgo === null ? null : change(queued.length, history.queuedHourAgo),
+                goodWhenUp: false,
+                period: "vs an hour ago",
+              }}
               ring={{ percent: loading ? 0 : queued.length ? 0 : 100, label: "Sent" }}
               subtitle="Changes"
               value={loading ? "…" : String(queued.length)}

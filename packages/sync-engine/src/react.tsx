@@ -69,6 +69,12 @@ export function useSyncStatus(): SyncStatus {
   return useSyncExternalStore(runtime.subscribe, runtime.getStatus);
 }
 
+/** This device's recent syncs (the last day), newest last: for the Sync page's comparisons. */
+export function useSyncHistory() {
+  const runtime = useSyncRuntime();
+  return useSyncExternalStore(runtime.subscribe, runtime.getHistory);
+}
+
 /**
  * Whether screens can trust that "empty" means empty: this device has synced
  * at least once, or it can't sync right now (offline, signed out, an error),

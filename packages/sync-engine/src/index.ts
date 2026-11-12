@@ -4,3 +4,4 @@ export * from "./engine.ts";
 export { createHttpTransport } from "./http.ts";
 export { SyncRuntime } from "./runtime.ts";
 export type { SyncRuntimeOptions } from "./runtime.ts";
+export { syncHistoryStats, type SyncEvent, type SyncHistoryStats } from "./history.ts";
