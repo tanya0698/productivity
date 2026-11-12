@@ -15,6 +15,11 @@
     "preview": {
       "distribution": "internal",
       "autoIncrement": true,
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://productivity-1ana.onrender.com/api",
+        "EXPO_PUBLIC_WEB_URL": "https://productivity-taupe-mu.vercel.app"
+      },
       "android": {
         "buildType": "apk"
       }
