@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
@@ -23,6 +24,15 @@ async function bootstrap() {
   const port = Number(process.env.API_PORT ?? 3000);
   await app.listen(port);
   console.log(`API listening on http://localhost:${port}/api`);
+
+  // Free hosting has no separate worker process: with RUN_WORKER=true the
+  // worker's jobs (push for due reminders) run inside this process instead.
+  // Loading the worker's entry file starts them, exactly as `npm run start -w
+  // @productivity/worker` does; Node 24 runs its TypeScript directly. Leave
+  // it unset wherever the worker runs on its own (locally, or a paid host).
+  if (process.env.RUN_WORKER === "true") {
+    await import(pathToFileURL(resolve(__dirname, "../../worker/src/index.ts")).href);
+  }
 }
 
 void bootstrap();

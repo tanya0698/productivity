@@ -1,0 +1,45 @@
+# Render Blueprint for Creedence on Render's free tier: one web service that
+# runs the API and, with RUN_WORKER=true, the worker's jobs (push for due
+# reminders) in the same process. See DEPLOY.md.
+#
+# Secrets are `sync: false`: Render asks for them when the Blueprint is first
+# applied (or set them under the service's Environment). Never put values here.
+services:
+  - type: web
+    name: creedence-api
+    runtime: node
+    plan: free
+    # The repo root: the apps share code through npm workspaces.
+    buildCommand: >-
+      npm ci &&
+      npm run prisma:generate -w @productivity/api &&
+      npm run build -w @productivity/api &&
+      npm run db:migrate
+    startCommand: npm run start -w @productivity/api
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Render routes traffic to this port; the API reads API_PORT.
+      - key: API_PORT
+        value: "10000"
+      # No separate worker on the free tier: run its jobs here.
+      - key: RUN_WORKER
+        value: "true"
+      - key: FIREBASE_SERVICE_ACCOUNT_FILE
+        value: /etc/secrets/firebase-service-account.json
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false

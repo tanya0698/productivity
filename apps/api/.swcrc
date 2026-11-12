@@ -7,5 +7,5 @@
     "target": "es2022",
     "keepClassNames": true
   },
-  "module": { "type": "commonjs" }
+  "module": { "type": "commonjs", "ignoreDynamic": true }
 }
