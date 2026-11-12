@@ -73,9 +73,3 @@ export async function disablePush(token: string | null): Promise<void> {
   }).catch(() => {});
   await sub.unsubscribe().catch(() => {});
 }
-
-export async function sendTestPush(token: string | null): Promise<number> {
-  const res = await fetch("/api/push/test", { method: "POST", headers: auth(token) });
-  if (!res.ok) throw new Error(`The test didn't send (${res.status}).`);
-  return ((await res.json()) as { sent: number }).sent;
-}

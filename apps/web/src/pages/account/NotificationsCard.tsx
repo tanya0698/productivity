@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Alert, App as AntApp, Button, Card, Flex, Typography } from "antd";
-import { BellOutlined, SendOutlined } from "@ant-design/icons";
+import { BellOutlined } from "@ant-design/icons";
 import { useAuth } from "@/shared/auth/AuthProvider";
-import { currentPushState, disablePush, enablePush, sendTestPush, type PushState } from "@/shared/push/push";
+import { currentPushState, disablePush, enablePush, type PushState } from "@/shared/push/push";
 
 const COPY: Record<PushState, { badge: string; text: string }> = {
   on: { badge: "On", text: "Reminders reach this browser even when Creedence is closed." },
@@ -14,7 +14,7 @@ const COPY: Record<PushState, { badge: string; text: string }> = {
   unsupported: { badge: "Not available", text: "This browser can't receive push notifications. Reminders still show while the app is open." },
 };
 
-/** Push notifications on this browser: on/off and a test. Each browser decides for itself. */
+/** Push notifications on this browser: on or off. Each browser decides for itself. */
 export function NotificationsCard() {
   const { getAccessToken } = useAuth();
   const { message } = AntApp.useApp();
@@ -55,11 +55,6 @@ export function NotificationsCard() {
       setState("off");
       void message.success("Notifications off for this browser");
     });
-  const test = () =>
-    run(async () => {
-      const sent = await sendTestPush(await getAccessToken());
-      void message.info(sent ? "Test sent. It should appear in a moment." : "No browser is set up to receive it.");
-    });
 
   const copy = state ? COPY[state] : null;
   return (
@@ -78,14 +73,9 @@ export function NotificationsCard() {
             </Button>
           ) : null}
           {state === "on" ? (
-            <>
-              <Button icon={<SendOutlined />} loading={busy} onClick={() => void test()}>
-                Send a test
-              </Button>
-              <Button loading={busy} onClick={() => void turnOff()}>
-                Turn off
-              </Button>
-            </>
+            <Button loading={busy} onClick={() => void turnOff()}>
+              Turn off for this browser
+            </Button>
           ) : null}
         </Flex>
       </Flex>

@@ -1,5 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Module, NotFoundException, Post, ServiceUnavailableException, Headers } from "@nestjs/common";
-import webpush from "web-push";
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Module, NotFoundException, Post, Headers } from "@nestjs/common";
 import { z } from "zod";
 import { CurrentUser } from "../../common/current-user";
 import { PrismaService } from "../../common/prisma.module";
@@ -11,7 +10,6 @@ import { PrismaService } from "../../common/prisma.module";
  *   GET    /api/push/key             →  { publicKey }
  *   POST   /api/push/subscriptions   { endpoint, keys: { p256dh, auth } }
  *   DELETE /api/push/subscriptions   { endpoint }
- *   POST   /api/push/test            →  { sent }   (a test notification to this user's browsers)
  *
  * And the Android app registers here for reminders pushed by the worker through
  * Firebase Cloud Messaging (FIREBASE_SERVICE_ACCOUNT_FILE):
@@ -84,28 +82,6 @@ class PushController {
     const parsed = unsubscribeBody.safeParse(body);
     if (!parsed.success) throw new BadRequestException("Send { endpoint }.");
     await this.prisma.pushSubscription.deleteMany({ where: { userId, endpoint: parsed.data.endpoint } });
-  }
-
-  @Post("test")
-  async test(@CurrentUser() userId: string) {
-    const v = vapid();
-    if (!v) throw new ServiceUnavailableException("Push isn't set up on this server.");
-    const subs = await this.prisma.pushSubscription.findMany({ where: { userId } });
-    let sent = 0;
-    for (const s of subs) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title: "Creedence", body: "Notifications are on for this browser.", tag: `test-${Date.now()}`, url: "/reminders" }),
-          { vapidDetails: v, TTL: 60 },
-        );
-        sent++;
-      } catch (e) {
-        const status = (e as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) await this.prisma.pushSubscription.delete({ where: { id: s.id } }).catch(() => {});
-      }
-    }
-    return { sent };
   }
 }
 
