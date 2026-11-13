@@ -62,6 +62,10 @@ export default function MoreScreen() {
           ))}
         </Card>
       ) : null}
+
+      <Card title="Data">
+        <LinkRow first icon="sync" title="Sync" detail="What's waiting to send, conflicts, and syncing now" onPress={() => go("sync")} />
+      </Card>
     </ScreenFrame>
   );
 }

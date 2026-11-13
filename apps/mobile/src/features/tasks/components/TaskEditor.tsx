@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   editTask,
@@ -20,6 +20,7 @@ import { deviceTimezone, type Reminder } from "../../../shared/reminders/active"
 import { useProjects } from "../../../shared/projects";
 import { usePalette } from "../../../theme";
 import type { Task } from "./TaskRow";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 const priorities = ([1, 2, 3, 4] as TaskPriority[]).map((v) => ({ value: String(v), label: priorityLabel[v] }));
 
@@ -44,6 +45,7 @@ function dueFrom(day: Date | null, time: Date | null): { dueDate: string | null;
  */
 export default function TaskEditor({ task, onClose }: { task: Task | null; onClose: () => void }) {
   const runtime = useSyncRuntime();
+  const { confirm } = useConfirm();
   const p = usePalette();
   const { records: reminders, loading } = useLocalRecords<Reminder>("reminder");
   const own = useMemo(() => (task ? reminders.filter((r) => r.taskId === task.id) : []), [reminders, task]);
@@ -104,19 +106,14 @@ export default function TaskEditor({ task, onClose }: { task: Task | null; onClo
 
   const remove = () =>
     task &&
-    Alert.alert("Delete this task?", task.title, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
+    void confirm({ title: "Delete this task?", body: task.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => {
           // Its reminders go with it, so a deleted task never alerts.
           for (const r of own) void runtime.write("reminder", r, "delete");
           void runtime.write("task", task, "delete");
           onClose();
-        },
-      },
-    ]);
+        })();
+    });
 
   return (
     <Sheet

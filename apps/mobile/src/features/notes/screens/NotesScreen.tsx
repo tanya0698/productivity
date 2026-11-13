@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, BackHandler, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { BackHandler, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { editNote, newNote, noteDisplayTitle, noteText, sortNotes, type LocalNote } from "@productivity/domain";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
@@ -9,6 +9,7 @@ import { useDataReady } from "../../../shared/data/useDataReady";
 import ScreenFrame from "../../../components/ScreenFrame";
 import Text from "../../../components/Text";
 import { fonts, radii, usePalette } from "../../../theme";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Note = LocalNote & { deletedAt: string | null };
 
@@ -116,6 +117,7 @@ export default function NotesScreen() {
 }
 
 function NoteEditor({ note, isDraft, onClose }: { note: Note; isDraft: boolean; onClose: () => void }) {
+  const { confirm } = useConfirm();
   const runtime = useSyncRuntime();
   const p = usePalette();
   const [title, setTitle] = useState(note.title);
@@ -154,19 +156,14 @@ function NoteEditor({ note, isDraft, onClose }: { note: Note; isDraft: boolean; 
   useEffect(() => save, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const confirmDelete = () => {
-    Alert.alert("Delete this note?", undefined, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
+    void confirm({ title: "Delete this note?", confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => {
           if (timer.current) clearTimeout(timer.current);
           dirty.current = false;
           if (latest.current.isDraft) onClose(); // never saved, so nothing to delete
           else void runtime.write("note", latest.current.note, "delete").then(onClose);
-        },
-      },
-    ]);
+        })();
+    });
   };
 
   return (

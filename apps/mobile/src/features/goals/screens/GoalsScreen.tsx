@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, BackHandler, Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
+import { BackHandler, Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -44,6 +44,7 @@ import { fonts, radii, usePalette } from "../../../theme";
 import type { Task } from "../../tasks/components/TaskRow";
 import GoalEditor from "../components/GoalEditor";
 import { useGoals, type Goal } from "../components/useGoals";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Habit = LocalHabit & { deletedAt: string | null };
 type HabitLog = LocalHabitLog & { deletedAt: string | null };
@@ -159,6 +160,7 @@ function GoalList({
 
 /** One goal: why, milestones to tick, the projects and habits that serve it, and its review. */
 function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: ReturnType<ReturnType<typeof useGoals>["milestonesOf"]>; onClose: () => void }) {
+  const { confirm } = useConfirm();
   const runtime = useSyncRuntime();
   const p = usePalette();
   const now = useNow(60_000);
@@ -188,12 +190,8 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
   };
 
   const remove = () =>
-    Alert.alert("Delete this goal?", "Its milestones go with it; linked projects and habits stay.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
+    void confirm({ title: "Delete this goal?", body: "Its milestones go with it; linked projects and habits stay.", confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => {
           const t = new Date();
           for (const m of milestones) void runtime.write("goal_milestone", m, "delete");
           for (const x of linkedProjects) void runtime.write("project", editProject(x, { goalId: null }, t));
@@ -201,9 +199,8 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
           void runtime.write("goal", goal, "delete");
           toast("Goal deleted");
           onClose();
-        },
-      },
-    ]);
+        })();
+    });
 
   const unlinkButton = (label: string, onPress: () => void) => (
     <Pressable accessibilityRole="button" accessibilityLabel={`Unlink ${label}`} hitSlop={8} onPress={onPress}>
@@ -315,10 +312,9 @@ function GoalDetail({ goal, milestones, onClose }: { goal: Goal; milestones: Ret
                   accessibilityLabel={`Delete milestone: ${m.title}`}
                   hitSlop={10}
                   onPress={() =>
-                    Alert.alert("Delete this milestone?", m.title, [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Delete", style: "destructive", onPress: () => void runtime.write("goal_milestone", m, "delete") },
-                    ])
+                    void confirm({ title: "Delete this milestone?", body: m.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => void runtime.write("goal_milestone", m, "delete"))();
+    })
                   }
                 >
                   <Ionicons name="close" size={18} color={p.textMuted} />

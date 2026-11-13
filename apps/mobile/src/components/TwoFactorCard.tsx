@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, ToastAndroid, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, ToastAndroid, View } from "react-native";
 import type { Factor } from "@supabase/supabase-js";
 import { useAuth } from "../shared/auth/AuthProvider";
 import { radii, fonts, usePalette } from "../theme";
 import { Button, Input } from "./Field";
 import { Card } from "./ListCard";
 import Text from "./Text";
+import { useConfirm } from "./ConfirmProvider";
 
 type Enrolment = { factorId: string; secret: string; uri: string };
 
@@ -24,6 +25,7 @@ const friendly = (m: string) =>
  */
 export default function TwoFactorCard() {
   const { client, refreshAssurance } = useAuth();
+  const { confirm: ask } = useConfirm();
   const p = usePalette();
   const [factors, setFactors] = useState<Factor[] | null>(null);
   const [enrolment, setEnrolment] = useState<Enrolment | null>(null);
@@ -77,12 +79,8 @@ export default function TwoFactorCard() {
   };
 
   const turnOff = (factorId: string) =>
-    Alert.alert("Turn off two-step verification?", "Your password alone will be enough to sign in.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Turn off",
-        style: "destructive",
-        onPress: async () => {
+    void ask({ title: "Turn off two-step verification?", body: "Your password alone will be enough to sign in.", confirmLabel: "Turn off", destructive: true }).then((ok) => {
+      if (ok) void (async () => {
           setBusy(true);
           setError(null);
           const { error: e } = await client.auth.mfa.unenroll({ factorId });
@@ -91,9 +89,8 @@ export default function TwoFactorCard() {
           await refreshAssurance();
           await load();
           toast("Two-step verification is off");
-        },
-      },
-    ]);
+        })();
+    });
 
   const on = !!factors?.length;
   const badge = factors ? (

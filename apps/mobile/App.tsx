@@ -25,6 +25,7 @@ import { SyncTriggers } from "./src/shared/data/SyncTriggers";
 import { FocusProvider } from "./src/shared/focus/FocusProvider";
 import { ReminderNotifications } from "./src/shared/reminders/ReminderNotifications";
 import { navigationRef } from "./src/navigation/ref";
+import { ConfirmProvider } from "./src/components/ConfirmProvider";
 import { ThemeProvider, usePalette } from "./src/theme";
 
 function Loading() {
@@ -66,6 +67,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <ConfirmProvider>
         {!fontsLoaded ? (
           <Loading />
         ) : supabase ? (
@@ -78,6 +80,7 @@ export default function App() {
             body="Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to apps/mobile/.env (see .env.example), then restart Expo."
           />
         )}
+        </ConfirmProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

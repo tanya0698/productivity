@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { modules } from "../features/registry";
 import AccountScreen from "../screens/AccountScreen";
 import SearchScreen from "../screens/SearchScreen";
+import SyncScreen from "../screens/SyncScreen";
 import MainTabs from "./MainTabs";
 import { pushed } from "./pushed";
 
@@ -18,6 +19,7 @@ const screens = modules
   .map((m) => ({ key: m.key, title: m.name, component: pushed(m.screen) }));
 const Account = pushed(AccountScreen);
 const Search = pushed(SearchScreen);
+const Sync = pushed(SyncScreen);
 
 export default function RootStack() {
   return (
@@ -25,6 +27,7 @@ export default function RootStack() {
       <Stack.Screen name="main" component={MainTabs} />
       <Stack.Screen name="account" component={Account} options={{ title: "Account" }} />
       <Stack.Screen name="search" component={Search} options={{ title: "Search", animation: "fade_from_bottom" }} />
+      <Stack.Screen name="sync" component={Sync} options={{ title: "Sync" }} />
       {screens.map((s) => (
         <Stack.Screen key={s.key} name={s.key} component={s.component} options={{ title: s.title }} />
       ))}

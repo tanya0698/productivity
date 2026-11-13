@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
+import { Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   buildReport,
@@ -25,6 +25,7 @@ import { dateOf, plusDays, ymd } from "../../calendar/components/items";
 import { ColumnChart, Meter, RankedBars } from "../components/charts";
 import { exportCsv, exportPdf } from "../components/exportReport";
 import Sheet from "../../../components/Sheet";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Preset = "7d" | "30d" | "month" | "90d" | "custom";
 type View_ = "chart" | "table";
@@ -102,6 +103,7 @@ export default function ReportsScreen() {
   // Export, as on the web: CSV for spreadsheets, or a PDF laid out for paper. Both go to the share sheet.
   const [exporting, setExporting] = useState(false);
   const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
+  const { notify } = useConfirm();
   const runExport = async (kind: "csv" | "pdf") => {
     setExporting(false);
     setBusy(kind);
@@ -111,7 +113,7 @@ export default function ReportsScreen() {
       else await exportPdf(report, rangeText);
       if (Platform.OS === "android") ToastAndroid.show(kind === "csv" ? "Report exported as CSV" : "Report exported as PDF", ToastAndroid.SHORT);
     } catch (e) {
-      Alert.alert("Couldn't export the report", e instanceof Error ? e.message : String(e));
+      void notify({ title: "Couldn't export the report", body: e instanceof Error ? e.message : String(e) });
     } finally {
       setBusy(null);
     }

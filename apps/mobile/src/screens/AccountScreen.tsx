@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, Pressable, ToastAndroid, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Avatar from "../components/Avatar";
+import { useConfirm } from "../components/ConfirmProvider";
 import AvatarActions from "../components/AvatarActions";
-import { Button, Field, Input } from "../components/Field";
+import { Button, Field, Input, PasswordInput } from "../components/Field";
 import { Card } from "../components/ListCard";
 import ScreenFrame from "../components/ScreenFrame";
 import TwoFactorCard from "../components/TwoFactorCard";
@@ -108,11 +109,17 @@ export default function AccountScreen() {
     setPendingEmail(next);
   };
 
+  const { confirm } = useConfirm();
+  // The dialog stays open with a spinner while it signs out, and shows the error if it can't.
   const confirmSignOut = () =>
-    Alert.alert("Sign out?", "Anything not synced yet stays on this phone and syncs when you sign back in.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => void signOut() },
-    ]);
+    void confirm({
+      title: "Sign out?",
+      body: "Anything not synced yet stays on this phone and syncs when you sign back in.",
+      confirmLabel: "Sign out",
+      destructive: true,
+      icon: "log-out-outline",
+      action: signOut,
+    });
 
   return (
     <ScreenFrame eyebrow="Settings" title="Account">
@@ -218,14 +225,13 @@ function ChangePassword() {
     <Card title="Password">
       <View style={{ gap: 12, paddingBottom: 14 }}>
         <Field label="New password">
-          <Input accessibilityLabel="New password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" textContentType="newPassword" />
+          <PasswordInput accessibilityLabel="New password" value={password} onChangeText={setPassword} autoComplete="new-password" textContentType="newPassword" />
         </Field>
         <Field label="Confirm new password">
-          <Input
+          <PasswordInput
             accessibilityLabel="Confirm new password"
             value={confirm}
             onChangeText={setConfirm}
-            secureTextEntry
             autoComplete="new-password"
             textContentType="newPassword"
             onSubmitEditing={() => void save()}

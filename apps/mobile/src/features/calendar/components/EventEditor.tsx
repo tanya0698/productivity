@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Platform, Pressable, Switch, ToastAndroid, View } from "react-native";
+import { Platform, Pressable, Switch, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   cancelOccurrence,
@@ -25,6 +25,7 @@ import { askForNotifications } from "../../../shared/reminders/notifications";
 import { deviceTimezone, type Reminder } from "../../../shared/reminders/active";
 import { usePalette } from "../../../theme";
 import { dateOf, plusDays, ymd, type EventException } from "./items";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Scope = "this" | "all";
 type Repeat = ReminderRepeat | "none";
@@ -61,6 +62,7 @@ const dueOf = (when: EventWhen) => (when.allDay ? { dueDate: when.startDate, due
  */
 export default function EventEditor({ target, onClose }: { target: EditorTarget | null; onClose: () => void }) {
   const runtime = useSyncRuntime();
+  const { confirm } = useConfirm();
   const p = usePalette();
   const { records: reminders, loading } = useLocalRecords<Reminder>("reminder");
   const { records: exceptions } = useLocalRecords<EventException>("event_exception");
@@ -158,12 +160,8 @@ export default function EventEditor({ target, onClose }: { target: EditorTarget 
 
   const remove = () => {
     if (!occurrence || !event) return;
-    Alert.alert(recurring ? (scope === "all" ? "Delete every occurrence?" : "Delete just this one?") : "Delete this event?", occurrence.title, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
+    void confirm({ title: recurring ? (scope === "all" ? "Delete every occurrence?" : "Delete just this one?") : "Delete this event?", body: occurrence.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => {
           const now = new Date();
           if (thisOnly) {
             void runtime.write("event_exception", cancelOccurrence(runtime.newId(), occurrence, now));
@@ -175,9 +173,8 @@ export default function EventEditor({ target, onClose }: { target: EditorTarget 
             toast(recurring ? "All events deleted" : "Event deleted");
           }
           onClose();
-        },
-      },
-    ]);
+        })();
+    });
   };
 
   return (

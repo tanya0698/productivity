@@ -18,6 +18,23 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** The promise, or a rejection after `ms` milliseconds, whichever comes first. */
+function withinMs<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("Timed out")), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(t);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
+}
+
 /** Holds the Supabase session, and whether a second factor is still owed. Same rules as the web app. */
 export function AuthProvider({ client, children }: { client: SupabaseClient; children: React.ReactNode }) {
   const [sessionReady, setSessionReady] = useState(false);
@@ -76,9 +93,14 @@ export function AuthProvider({ client, children }: { client: SupabaseClient; chi
       signOut: async () => {
         // This account's reminders shouldn't keep alerting on the phone after it leaves:
         // stop the server pushing here (while still signed in), then clear what's scheduled.
-        await unregisterDevicePush(async () => (await client.auth.getSession()).data.session?.access_token ?? null).catch(() => undefined);
-        await clearAllNotifications().catch(() => undefined);
-        await client.auth.signOut();
+        // Each step is capped: a slow network (or a sleeping server) must never leave
+        // the person stuck, unable to sign out.
+        await withinMs(unregisterDevicePush(async () => (await client.auth.getSession()).data.session?.access_token ?? null), 5000).catch(() => undefined);
+        await withinMs(clearAllNotifications(), 3000).catch(() => undefined);
+        // Signing out everywhere needs Supabase. If it can't be reached, sign out on this
+        // phone anyway; the server-side session simply expires.
+        const global = await withinMs(client.auth.signOut(), 8000).catch((e: unknown) => ({ error: e }));
+        if (global.error) await client.auth.signOut({ scope: "local" });
       },
     }),
     [ready, session, client, needsMfa, refreshAssurance],

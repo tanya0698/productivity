@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { addDays, groupTasks, localDate, newTask, taskGroupTitle, type TaskGroupKey } from "@productivity/domain";
 import { useLocalRecords, useSyncRuntime } from "@productivity/sync-engine/react";
@@ -12,6 +12,7 @@ import Text from "../../../components/Text";
 import TaskEditor from "../components/TaskEditor";
 import TaskRow, { type Task } from "../components/TaskRow";
 import { fonts, radii, usePalette } from "../../../theme";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Due = "none" | "today" | "tomorrow";
 
@@ -23,6 +24,7 @@ const OPEN_GROUPS: TaskGroupKey[] = ["overdue", "today", "upcoming", "someday"];
  */
 export default function TasksScreen() {
   const runtime = useSyncRuntime();
+  const { confirm } = useConfirm();
   const p = usePalette();
   const { records, loading } = useLocalRecords<Task>("task");
   const ready = useDataReady(loading);
@@ -55,10 +57,9 @@ export default function TasksScreen() {
   };
 
   const remove = (task: Task) =>
-    Alert.alert("Delete this task?", task.title, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => void runtime.write("task", task, "delete") },
-    ]);
+    void confirm({ title: "Delete this task?", body: task.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => void runtime.write("task", task, "delete"))();
+    });
 
   const row = (task: Task) => <TaskRow key={task.id} task={task} now={now} today={today} onPress={() => setEditingId(task.id)} onLongPress={() => remove(task)} />;
 

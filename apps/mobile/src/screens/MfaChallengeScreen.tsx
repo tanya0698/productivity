@@ -43,7 +43,7 @@ export default function MfaChallengeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: p.page }}>
-      <GlassBackground style={{ flex: 1, paddingTop: insets.top + 48, paddingHorizontal: 24, gap: 12 }}>
+      <GlassBackground style={{ flex: 1, justifyContent: "center", paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 24, gap: 12 }}>
         <Text label tone="brand">Creedence</Text>
         <Text weight="extraBold" tone="heading" style={styles.title}>
           Two-step verification

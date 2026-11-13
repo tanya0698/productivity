@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, BackHandler, Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
+import { BackHandler, Platform, Pressable, StyleSheet, TextInput, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -39,6 +39,7 @@ import TaskEditor from "../../tasks/components/TaskEditor";
 import TaskRow, { type Task } from "../../tasks/components/TaskRow";
 import ProjectEditor from "../components/ProjectEditor";
 import { go } from "../../../navigation/ref";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Note = LocalNote & { deletedAt: string | null };
 type View_ = "open" | "finished";
@@ -190,6 +191,7 @@ function ProjectList({
 
 /** One project: progress, status, its tasks (add, tick, edit) and its notes. */
 function ProjectDetail({ project, onClose }: { project: Project; onClose: () => void }) {
+  const { confirm } = useConfirm();
   const runtime = useSyncRuntime();
   const p = usePalette();
   const { records: allTasks } = useLocalRecords<Task>("task");
@@ -218,21 +220,13 @@ function ProjectDetail({ project, onClose }: { project: Project; onClose: () => 
   };
 
   const removeTask = (task: Task) =>
-    Alert.alert("Delete this task?", task.title, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => void runtime.write("task", task, "delete") },
-    ]);
+    void confirm({ title: "Delete this task?", body: task.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => void runtime.write("task", task, "delete"))();
+    });
 
   const remove = () =>
-    Alert.alert(
-      "Delete this project?",
-      tasks.length || notes.length ? `Its ${count(tasks.length, "task")} and ${count(notes.length, "note")} stay, without a project.` : project.title,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
+    void confirm({ title: "Delete this project?", body: tasks.length || notes.length ? `Its ${count(tasks.length, "task")} and ${count(notes.length, "note")} stay, without a project.` : project.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (async () => {
             // Its tasks and notes stay, filed under no project, on every device.
             const at = new Date();
             for (const t of tasks) await runtime.write("task", unfile(t, at));
@@ -240,10 +234,8 @@ function ProjectDetail({ project, onClose }: { project: Project; onClose: () => 
             await runtime.write("project", project, "delete");
             toast("Project deleted");
             onClose();
-          },
-        },
-      ],
-    );
+          })();
+    });
 
   const row = (t: Task, n: number) => (
     <TaskRow key={t.id} task={t} now={now} today={today} first={n === 0} onPress={() => setEditingTaskId(t.id)} onLongPress={() => removeTask(t)} />

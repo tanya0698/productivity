@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WEEKDAY_NAMES, editHabit, type LocalGoal } from "@productivity/domain";
 import { useLocalRecords } from "@productivity/sync-engine/react";
@@ -8,6 +8,7 @@ import { Button, Chips, Field, Input } from "../../../components/Field";
 import Text from "../../../components/Text";
 import { radii, usePalette } from "../../../theme";
 import type { Habit } from "./useHabits";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7];
 type Cadence = "daily" | "weekly";
@@ -29,6 +30,7 @@ export default function HabitEditor({
   onDelete?: (h: Habit) => void;
 }) {
   const p = usePalette();
+  const { confirm } = useConfirm();
   const { records: goals } = useLocalRecords<LocalGoal & { deletedAt: string | null }>("goal");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -80,10 +82,9 @@ export default function HabitEditor({
                 accessibilityLabel="Delete habit"
                 hitSlop={10}
                 onPress={() =>
-                  Alert.alert("Delete this habit and its history?", habit.title, [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Delete", style: "destructive", onPress: () => onDelete(habit) },
-                  ])
+                  void confirm({ title: "Delete this habit and its history?", body: habit.title, confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => onDelete(habit))();
+    })
                 }
               >
                 <Ionicons name="trash-outline" size={20} color={p.errorText} />

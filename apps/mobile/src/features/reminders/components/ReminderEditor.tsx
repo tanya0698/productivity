@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Pressable } from "react-native";
+import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { repeatLabel, rescheduleReminder } from "@productivity/domain";
 import type { ReminderRepeat } from "@productivity/contracts";
@@ -8,6 +8,7 @@ import { Button, Chips, DateTimeButton, Field, Input } from "../../../components
 import Text from "../../../components/Text";
 import type { Reminder } from "../../../shared/reminders/active";
 import { usePalette } from "../../../theme";
+import { useConfirm } from "../../../components/ConfirmProvider";
 
 type Repeat = ReminderRepeat | "none";
 const repeatOptions: { value: Repeat; label: string }[] = [
@@ -35,6 +36,7 @@ export default function ReminderEditor({
   onDelete?: (r: Reminder) => void;
 }) {
   const p = usePalette();
+  const { confirm } = useConfirm();
   const [title, setTitle] = useState("");
   const [at, setAt] = useState(new Date());
   const [repeat, setRepeat] = useState<Repeat>("none");
@@ -74,10 +76,9 @@ export default function ReminderEditor({
   const confirmDelete = () =>
     reminder &&
     onDelete &&
-    Alert.alert("Delete this reminder?", undefined, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => onDelete(reminder) },
-    ]);
+    void confirm({ title: "Delete this reminder?", confirmLabel: "Delete", destructive: true }).then((ok) => {
+      if (ok) void (() => onDelete(reminder))();
+    });
 
   return (
     <Sheet

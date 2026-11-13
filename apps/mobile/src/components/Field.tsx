@@ -34,6 +34,29 @@ export function Input(props: TextInputProps) {
   );
 }
 
+/**
+ * A password box with an eye to show or hide what's typed. Takes the same
+ * props as Input (its `style` too, so the sign-in screen can keep its look).
+ */
+export function PasswordInput(props: Omit<TextInputProps, "secureTextEntry">) {
+  const p = usePalette();
+  const [shown, setShown] = React.useState(false);
+  return (
+    <View style={{ justifyContent: "center" }}>
+      <Input {...props} secureTextEntry={!shown} autoCapitalize="none" autoCorrect={false} style={[props.style, { paddingRight: 48 }]} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={shown ? "Hide password" : "Show password"}
+        hitSlop={10}
+        onPress={() => setShown((s) => !s)}
+        style={styles.eye}
+      >
+        <Ionicons name={shown ? "eye-off-outline" : "eye-outline"} size={20} color={p.textSecondary} />
+      </Pressable>
+    </View>
+  );
+}
+
 /** A tappable value that opens Android's own date or time dialog. */
 export function DateTimeButton({
   value: given,
@@ -171,6 +194,7 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
+  eye: { position: "absolute", right: 12, top: 0, bottom: 0, justifyContent: "center", alignItems: "center", paddingHorizontal: 4 },
   input: { borderWidth: 1, borderRadius: radii.sm, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, fontFamily: fonts.native.regular },
   button: { flexDirection: "row", alignItems: "center", gap: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

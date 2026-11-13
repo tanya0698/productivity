@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { ActionSheetIOS, Alert, Linking, Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
+import { Linking, Platform, Pressable, StyleSheet, ToastAndroid, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
@@ -27,21 +27,17 @@ import { deviceTimezone, useActiveReminders, useNow, whenText, type ActiveRemind
 import { askForNotifications } from "../../../shared/reminders/notifications";
 import { radii, usePalette } from "../../../theme";
 import ReminderEditor from "../components/ReminderEditor";
+import { useConfirm } from "../../../components/ConfirmProvider";
 import { go } from "../../../navigation/ref";
 
 type Editing = { reminder: Reminder; isNew: boolean; linkedTitle?: string };
 const toast = (m: string) => Platform.OS === "android" && ToastAndroid.show(m, ToastAndroid.SHORT);
 
-/** Ask a question with a few choices: Android shows a dialog, iOS an action sheet. */
-function choose(title: string, options: { label: string; destructive?: boolean; run: () => void }[]) {
-  if (Platform.OS === "ios") {
-    ActionSheetIOS.showActionSheetWithOptions(
-      { title, options: [...options.map((o) => o.label), "Cancel"], cancelButtonIndex: options.length, destructiveButtonIndex: options.findIndex((o) => o.destructive) },
-      (i) => options[i]?.run(),
-    );
-  } else {
-    Alert.alert(title, undefined, [...options.map((o) => ({ text: o.label, style: o.destructive ? ("destructive" as const) : ("default" as const), onPress: o.run })), { text: "Cancel", style: "cancel" as const }], { cancelable: true });
-  }
+/** Ask with a few choices, in the app's own dialog; runs the one picked. */
+function useChoose() {
+  const { choose } = useConfirm();
+  return (title: string, options: { label: string; destructive?: boolean; run: () => void }[]) =>
+    void choose({ title, options: options.map((o) => ({ label: o.label, value: o.run, destructive: o.destructive })) }).then((run) => run?.());
 }
 
 /**
@@ -161,7 +157,9 @@ function ReminderRow({
   first: boolean;
   onEdit: (e: Editing) => void;
 }) {
-  const runtime = useSyncRuntime();  const p = usePalette();
+  const runtime = useSyncRuntime();
+  const p = usePalette();
+  const choose = useChoose();
   const { reminder, at, title, task, note, event, series } = item;
   const repeating = !!reminder.recurrenceRule;
 

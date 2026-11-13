@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Avatar from "../components/Avatar";
+import { PasswordInput } from "../components/Field";
 import AvatarActions from "../components/AvatarActions";
 import GlassBackground from "../components/GlassBackground";
 import ModeButton from "../components/ModeButton";
@@ -201,8 +202,12 @@ export default function SignInScreen() {
       <GlassBackground glows style={{ flex: 1 }}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
+          // The form sits in the middle of the screen, whatever its height; it still
+          // scrolls when the keyboard or a long sign-up form needs the room.
           contentContainerStyle={{
-            paddingTop: insets.top + 48,
+            flexGrow: 1,
+            justifyContent: "center",
+            paddingTop: insets.top + 64,
             paddingHorizontal: 24,
             paddingBottom: insets.bottom + 32,
           }}
@@ -281,11 +286,9 @@ export default function SignInScreen() {
               style={input}
             />
             {mode !== "reset" ? (
-              <TextInput
+              <PasswordInput
                 accessibilityLabel="Password"
                 placeholder="Password"
-                placeholderTextColor={p.textMuted}
-                secureTextEntry
                 autoComplete={
                   mode === "sign-up" ? "new-password" : "current-password"
                 }
@@ -334,18 +337,12 @@ export default function SignInScreen() {
                 switchTo(mode === "sign-in" ? "sign-up" : "sign-in")
               }
             >
-              <Text
-                style={{
-                  color: p.primary,
-                  textAlign: "center",
-                  paddingVertical: 8,
-                }}
-              >
-                {mode === "sign-in"
-                  ? "New here? Create an account"
-                  : mode === "reset"
-                    ? "Remembered it? Back to sign in"
-                    : "Have an account? Sign in"}
+              {/* The question in quiet grey, the action in bold teal, as on the web. */}
+              <Text tone="secondary" style={{ textAlign: "center", paddingVertical: 8 }}>
+                {mode === "sign-in" ? "New here? " : mode === "reset" ? "Remembered it? " : "Have an account? "}
+                <Text weight="semiBold" style={{ color: p.primary }}>
+                  {mode === "sign-in" ? "Create an account" : mode === "reset" ? "Back to sign in" : "Sign in"}
+                </Text>
               </Text>
             </Pressable>
           </View>
